@@ -8,25 +8,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-//#define FIXED_KERNAL
-//#define TRACE
-#define LOAD_HYPERCALLS
-
-#define NUM_MAX_RAM_BANKS 256
-#define NUM_ROM_BANKS 8
-
-#define RAM_SIZE (0xa000 + num_ram_banks * 8192) /* $0000-$9FFF + banks at $A000-$BFFF */
-#ifdef FIXED_KERNAL
-#define ROM_SIZE (8192 + NUM_ROM_BANKS * 8192)   /* $E000-$FFFF + banks at $A000-$BFFF */
-#else
-#define ROM_SIZE (NUM_ROM_BANKS * 16384)   /* banks at $C000-$FFFF */
-#endif
+#define TRACE
 
 typedef enum {
 	ECHO_MODE_NONE,
 	ECHO_MODE_RAW,
 	ECHO_MODE_COOKED,
-	ECHO_MODE_ISO,
 } echo_mode_t;
 
 // GIF recorder commands
@@ -48,8 +35,6 @@ extern uint8_t a, x, y, sp, status;
 extern uint16_t pc;
 extern uint8_t *RAM;
 extern uint8_t ROM[];
-
-extern uint16_t num_ram_banks;
 
 extern bool debugger_enabled;
 extern bool log_video;

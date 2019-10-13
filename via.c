@@ -7,23 +7,9 @@
 #include <time.h>
 #include <stdlib.h>
 #include "via.h"
-#include "ps2.h"
 #include "memory.h"
 //XXX
 #include "glue.h"
-#include "joystick.h"
-
-//
-// VIA#1
-//
-// PA0-7 RAM bank
-// PB0-2 ROM bank
-// PB3   IECATT0
-// PB4   IECCLK0
-// PB5   IECDAT0
-// PB6   IECCLK
-// PB7   IECDAT
-// CB1   IECSRQ
 
 static uint8_t via1registers[16];
 
@@ -31,20 +17,12 @@ void
 via1_init()
 {
 	srand(time(NULL));
-
-	// default banks are 0
-	memory_set_ram_bank(0);
-	memory_set_rom_bank(0);
 }
 
 uint8_t
 via1_read(uint8_t reg)
 {
 	switch (reg) {
-		case 0:
-			return memory_get_rom_bank(); // PB: ROM bank, IEC
-		case 1:
-			return memory_get_ram_bank(); // PA: RAM bank
 		case 4:
 		case 5:
 		case 8:
@@ -61,14 +39,7 @@ void
 via1_write(uint8_t reg, uint8_t value)
 {
 	via1registers[reg] = value;
-	if (reg == 0) { // PB: ROM bank, IEC
-		memory_set_rom_bank(value & 7);
-		// TODO: IEC
-	} else if (reg == 1) { // PA: RAM bank
-		memory_set_ram_bank(value);
-	} else {
-		// TODO
-	}
+	// TODO
 }
 
 //
@@ -100,14 +71,6 @@ via2_read(uint8_t reg)
 		// 1 output -> take output bit
 		return (via2pb_in & (via2registers[2] ^ 0xff)) |
 			(via2registers[0] & via2registers[2]);
-	} else if (reg == 1) {
-		// PA
-		uint8_t value =
-			(via2registers[3] & PS2_CLK_MASK ? 0 : ps2_clk_out << 1) |
-			(via2registers[3] & PS2_DATA_MASK ? 0 : ps2_data_out);
-			value = value | (joystick1_data ? JOY_DATA1_MASK : 0) |
-							(joystick2_data ? JOY_DATA2_MASK : 0);
-		return value;
 	} else {
 		return via2registers[reg];
 	}
@@ -122,12 +85,6 @@ via2_write(uint8_t reg, uint8_t value)
 		// PB
 	} else if (reg == 2) {
 		// PB DDRB
-	} else if (reg == 1 || reg == 3) {
-		// PA
-		ps2_clk_in = via2registers[3] & PS2_CLK_MASK ? via2registers[1] & PS2_CLK_MASK : 1;
-		ps2_data_in = via2registers[3] & PS2_DATA_MASK ? via2registers[1] & PS2_DATA_MASK : 1;
-		joystick_latch = via2registers[1] & JOY_LATCH_MASK;
-		joystick_clock = via2registers[1] & JOY_CLK_MASK;
 	}
 }
 

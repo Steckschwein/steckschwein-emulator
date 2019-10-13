@@ -78,7 +78,7 @@ static void DEBUGExecCmd();
 #define DBGSCANKEY_SHOW	SDL_SCANCODE_TAB 						// Show screen key.
 																// *** MUST BE SCAN CODES ***
 
-enum DBG_CMD { CMD_DUMP_MEM='m', CMD_DISASM='d', CMD_SET_BANK='b', CMD_SET_REGISTER='r' };
+enum DBG_CMD { CMD_DUMP_MEM='m', CMD_DISASM='d', CMD_SET_REGISTER='r' };
 
 // RGB colours
 const SDL_Color col_bkgnd= {0, 0, 0, 255};
@@ -135,10 +135,6 @@ int  DEBUGGetCurrentStatus(void) {
 	if (SDL_GetKeyboardState(NULL)[DBGSCANKEY_BRK]) {			// Stop on break pressed.
 		currentMode = DMODE_STOP;
 		currentPC = pc; 										// Set the PC to what it is.
-	}
-
-	if(currentPCBank<0 && currentPC >= 0xA000) {
-		currentPCBank= currentPC < 0xC000 ? memory_get_ram_bank() : memory_get_rom_bank();
 	}
 
 	if (currentMode != DMODE_RUN) {								// Not running, we own the keyboard.
@@ -240,7 +236,7 @@ static void DEBUGHandleKeyEvent(SDL_Keycode key,int isShift) {
 
 		case DBGKEY_HOME:									// F1 sets the display PC to the actual one.
 			currentPC = pc;
-			currentPCBank= currentPC < 0xC000 ? memory_get_ram_bank() : memory_get_rom_bank();
+			currentPCBank= -1;
 			break;
 
 		case DBGKEY_RESET:									// F2 reset the 6502
@@ -331,17 +327,6 @@ static void DEBUGExecCmd() {
 				currentPCBank= (number & 0xFF0000) >> 16;
 			}
 			currentPC= addr;
-			break;
-
-		case CMD_SET_BANK:
-			sscanf(line, "%s %d", reg, &number);
-
-			if(!strcmp(reg, "rom")) {
-				memory_set_rom_bank(number & 0x00FF);
-			}
-			if(!strcmp(reg, "ram")) {
-				memory_set_ram_bank(number & 0x00FF);
-			}
 			break;
 
 		case CMD_SET_REGISTER:
@@ -479,8 +464,8 @@ static int DEBUGRenderRegisters(void) {
 	DEBUGNumber(DBG_DATX, yc++, y, 2, col_data);
 	yc++;
 
-	DEBUGNumber(DBG_DATX, yc++, memory_get_ram_bank(), 2, col_data);
-	DEBUGNumber(DBG_DATX, yc++, memory_get_rom_bank(), 2, col_data);
+	DEBUGNumber(DBG_DATX, yc++, 0, 2, col_data);
+	DEBUGNumber(DBG_DATX, yc++, 0, 2, col_data);
 	DEBUGNumber(DBG_DATX, yc++, pc, 4, col_data);
 	DEBUGNumber(DBG_DATX, yc++, sp|0x100, 4, col_data);
 	yc++;

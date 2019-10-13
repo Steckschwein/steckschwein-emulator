@@ -13,7 +13,7 @@ endif
 CFLAGS=-std=c99 -O3 -Wall -Werror -g $(shell $(SDL2CONFIG) --cflags) -Iextern/include -Iextern/src
 LDFLAGS=$(shell $(SDL2CONFIG) --libs) -lm
 
-OUTPUT=x16emu
+OUTPUT=steckschwein-emu
 
 ifeq ($(MAC_STATIC),1)
 	LDFLAGS=/usr/local/lib/libSDL2.a -lm -liconv -Wl,-framework,CoreAudio -Wl,-framework,AudioToolbox -Wl,-framework,ForceFeedback -lobjc -Wl,-framework,CoreVideo -Wl,-framework,Cocoa -Wl,-framework,Carbon -Wl,-framework,IOKit -Wl,-weak_framework,QuartzCore -Wl,-weak_framework,Metal
@@ -27,22 +27,16 @@ ifeq ($(CROSS_COMPILE_WINDOWS),1)
 endif
 
 ifdef EMSCRIPTEN
-	LDFLAGS+=--shell-file webassembly/x16emu-template.html --preload-file rom.bin -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
+	LDFLAGS+=--shell-file webassembly/steckschwein-emu-template.html --preload-file rom.bin -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
 	# To the Javascript runtime exported functions
 	LDFLAGS+=-s EXPORTED_FUNCTIONS='["_j2c_reset", "_j2c_paste", "_j2c_start_audio", _main]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'
 
-	OUTPUT=x16emu.html
+	OUTPUT=steckschwein-emu.html
 endif
 
-OBJS = cpu/fake6502.o memory.o disasm.o video.o ps2.o via.o loadsave.o spi.o vera_spi.o sdcard.o main.o debugger.o javascript_interface.o joystick.o rendertext.o
+OBJS = cpu/fake6502.o memory.o disasm.o video.o via.o spi.o sdcard.o main.o debugger.o javascript_interface.o rendertext.o
 
-HEADERS = disasm.h cpu/fake6502.h glue.h memory.h video.h ps2.h via.h loadsave.h joystick.h
-
-ifeq ($(WITH_YM2151),1)
-OBJS += extern/src/ym2151.o
-HEADERS += extern/src/ym2151.h
-CFLAGS += -DWITH_YM2151
-endif
+HEADERS = disasm.h cpu/fake6502.h glue.h memory.h video.h via.h
 
 ifneq ("$(wildcard ./rom_labels.h)","")
 HEADERS+=rom_labels.h
@@ -64,80 +58,5 @@ cpu/tables.h cpu/mnemonics.h: cpu/buildtables.py cpu/6502.opcodes cpu/65c02.opco
 wasm:
 	emmake make
 
-#
-# PACKAGING
-#
-# Packaging is tricky and partially depends on Michael's specific setup. :/
-#
-# * The Mac build is done on a Mac.
-# * The Windows build is cross-compiled on the Mac using mingw. For more info, see:
-#   https://blog.wasin.io/2018/10/21/cross-compile-sdl2-library-and-app-on-windows-from-macos.html
-# * The Linux build is done by sshing into a VMware Ubuntu machine that has the same
-#   directory tree mounted. Since unlike on Windows and Mac, there are 0 libraries guaranteed
-#   to be present, a static build would mean linking everything that is not the kernel. And since
-#   there are always 3 ways of doing something on Linux, it would mean including three graphics
-#   and three sounds backends. Therefore, the Linux build uses dynamic linking, requires libsdl2
-#   to be installed and might only work on the version of Linux I used for building, which is the
-#   current version of Ubuntu.
-# * For converting the documentation from Markdown to HTML, pandoc is required:
-#   brew install pandoc
-#
-
-# hostname of the Linux VM
-LINUX_COMPILE_HOST = ubuntu.local
-# path to the equivalent of `pwd` on the Mac
-LINUX_BASE_DIR = /mnt/Documents/git/x16-emulator
-
-TMPDIR_NAME=TMP-x16emu-package
-
-define add_extra_files_to_package
-	# ROMs
-	cp ../x16-rom/rom.bin $(TMPDIR_NAME)
-	cp ../x16-rom/rom.txt $(TMPDIR_NAME)/rom.sym
-
-	# Documentation
-	mkdir $(TMPDIR_NAME)/docs
-	pandoc --from gfm --to html -c github-pandoc.css --standalone --metadata pagetitle="Commander X16 Emulator" README.md --output $(TMPDIR_NAME)/docs/README.html
-	pandoc --from gfm --to html -c github-pandoc.css --standalone --metadata pagetitle="Commander X16 KERNAL/BASIC/DOS ROM"  ../x16-rom/README.md --output $(TMPDIR_NAME)/docs/KERNAL-BASIC.html
-	pandoc --from gfm --to html -c github-pandoc.css --standalone --metadata pagetitle="Commander X16 Programmer's Reference Guide"  ../x16-docs/Commander\ X16\ Programmer\'s\ Reference\ Guide.md --output $(TMPDIR_NAME)/docs/Programmer\'s\ Reference\ Guide.html --lua-filter=mdtohtml.lua
-	pandoc --from gfm --to html -c github-pandoc.css --standalone --metadata pagetitle="VERA Programmer's Reference.md"  ../x16-docs/VERA\ Programmer\'s\ Reference.md --output $(TMPDIR_NAME)/docs/VERA\ Programmer\'s\ Reference.html
-endef
-
-package: package_mac package_win package_linux
-	make clean
-
-package_mac:
-	(cd ../x16-rom/; make clean all)
-	MAC_STATIC=1 make clean all
-	rm -rf $(TMPDIR_NAME) x16emu_mac.zip
-	mkdir $(TMPDIR_NAME)
-	cp x16emu $(TMPDIR_NAME)
-	$(call add_extra_files_to_package)
-	(cd $(TMPDIR_NAME)/; zip -r "../x16emu_mac.zip" *)
-	rm -rf $(TMPDIR_NAME)
-
-package_win:
-	(cd ../x16-rom/; make clean all)
-	CROSS_COMPILE_WINDOWS=1 make clean all
-	rm -rf $(TMPDIR_NAME) x16emu_win.zip
-	mkdir $(TMPDIR_NAME)
-	cp x16emu.exe $(TMPDIR_NAME)
-	cp $(MINGW32)/lib/libgcc_s_sjlj-1.dll $(TMPDIR_NAME)/
-	cp $(MINGW32)/bin/libwinpthread-1.dll $(TMPDIR_NAME)/
-	cp $(WIN_SDL2)/bin/SDL2.dll $(TMPDIR_NAME)/
-	$(call add_extra_files_to_package)
-	(cd $(TMPDIR_NAME)/; zip -r "../x16emu_win.zip" *)
-	rm -rf $(TMPDIR_NAME)
-
-package_linux:
-	(cd ../x16-rom/; make clean all)
-	ssh $(LINUX_COMPILE_HOST) "cd $(LINUX_BASE_DIR); make clean all"
-	rm -rf $(TMPDIR_NAME) x16emu_linux.zip
-	mkdir $(TMPDIR_NAME)
-	cp x16emu $(TMPDIR_NAME)
-	$(call add_extra_files_to_package)
-	(cd $(TMPDIR_NAME)/; zip -r "../x16emu_linux.zip" *)
-	rm -rf $(TMPDIR_NAME)
-
 clean:
-	rm -f *.o cpu/*.o extern/src/*.o x16emu x16emu.exe x16emu.js x16emu.wasm x16emu.data x16emu.worker.js x16emu.html x16emu.html.mem
+	rm -f *.o cpu/*.o extern/src/*.o steckschwein-emu steckschwein-emu.exe steckschwein-emu.js steckschwein-emu.wasm steckschwein-emu.data steckschwein-emu.worker.js steckschwein-emu.html steckschwein-emu.html.mem

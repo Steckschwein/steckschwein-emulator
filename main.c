@@ -16,20 +16,10 @@
 #include "memory.h"
 #include "video.h"
 #include "via.h"
-#include "ps2.h"
 #include "spi.h"
-#include "vera_spi.h"
 #include "sdcard.h"
-#include "loadsave.h"
 #include "glue.h"
 #include "debugger.h"
-#include "utf8.h"
-#include "joystick.h"
-#include "utf8_encode.h"
-#include "rom_symbols.h"
-#ifdef WITH_YM2151
-#include "ym2151.h"
-#endif
 
 #define AUDIO_SAMPLES 4096
 #define SAMPLERATE 22050
@@ -95,11 +85,6 @@ FILE *prg_file ;
 int prg_override_start = -1;
 bool run_after_load = false;
 
-#ifdef WITH_YM2151
-const char *audio_dev_name = NULL;
-SDL_AudioDeviceID audio_dev = 0;
-#endif
-
 #ifdef TRACE
 #include "rom_labels.h"
 char *
@@ -158,7 +143,6 @@ void
 machine_reset()
 {
 	spi_init();
-	vera_spi_init();
 	via1_init();
 	via2_init();
 	video_reset();
@@ -172,100 +156,6 @@ machine_paste(char *s)
 		paste_text = s;
 		pasting_bas = true;
 	}
-}
-
-uint8_t
-iso8859_15_from_unicode(uint32_t c)
-{
-	// line feed -> carriage return
-	if (c == '\n') {
-		return '\r';
-	}
-
-	// translate Unicode characters not part of Latin-1 but part of Latin-15
-	switch (c) {
-		case 0x20ac: // '€'
-			return 0xa4;
-		case 0x160: // 'Š'
-			return 0xa6;
-		case 0x161: // 'š'
-			return 0xa8;
-		case 0x17d: // 'Ž'
-			return 0xb4;
-		case 0x17e: // 'ž'
-			return 0xb8;
-		case 0x152: // 'Œ'
-			return 0xbc;
-		case 0x153: // 'œ'
-			return 0xbd;
-		case 0x178: // 'Ÿ'
-			return 0xbe;
-	}
-
-	// remove Unicode characters part of Latin-1 but not part of Latin-15
-	switch (c) {
-		case 0xa4: // '¤'
-		case 0xa6: // '¦'
-		case 0xa8: // '¨'
-		case 0xb4: // '´'
-		case 0xb8: // '¸'
-		case 0xbc: // '¼'
-		case 0xbd: // '½'
-		case 0xbe: // '¾'
-			return '?';
-	}
-
-	// all other Unicode characters are also unsupported
-	if (c >= 256) {
-		return '?';
-	}
-
-	// everything else is Latin-15 already
-	return c;
-}
-
-uint32_t
-unicode_from_iso8859_15(uint8_t c)
-{
-	// translate Latin-15 characters not part of Latin-1
-	switch (c) {
-		case 0xa4:
-			return 0x20ac; // '€'
-		case 0xa6:
-			return 0x160; // 'Š'
-		case 0xa8:
-			return 0x161; // 'š'
-		case 0xb4:
-			return 0x17d; // 'Ž'
-		case 0xb8:
-			return 0x17e; // 'ž'
-		case 0xbc:
-			return 0x152; // 'Œ'
-		case 0xbd:
-			return 0x153; // 'œ'
-		case 0xbe:
-			return 0x178; // 'Ÿ'
-		default:
-			return c;
-	}
-}
-
-// converts the character to UTF-8 and prints it
-static void
-print_iso8859_15_char(char c)
-{
-	char utf8[5];
-	utf8_encode(utf8, unicode_from_iso8859_15(c));
-	printf("%s", utf8);
-}
-
-static bool
-is_kernal()
-{
-	return read6502(0xfff6) == 'M' && // only for KERNAL
-			read6502(0xfff7) == 'I' &&
-			read6502(0xfff8) == 'S' &&
-			read6502(0xfff9) == 'T';
 }
 
 static void
@@ -323,10 +213,6 @@ usage()
 	printf("\tChoose what type of joystick to use, e.g. -joy1 SNES\n");
 	printf("-joy2 {NES | SNES}\n");
 	printf("\tChoose what type of joystick to use, e.g. -joy2 SNES\n");
-#ifdef WITH_YM2151
-	printf("-sound <output device>\n");
-	printf("\tSet the output device used for audio emulation");
-#endif
 #ifdef TRACE
 	printf("-trace [<address>]\n");
 	printf("\tPrint instruction trace. Optionally, a trigger address\n");
@@ -345,70 +231,6 @@ usage_keymap()
 	}
 	exit(1);
 }
-
-#ifdef WITH_YM2151
-void audioCallback(void* userdata, Uint8 *stream, int len)
-{
-	YM_stream_update((uint16_t*) stream, len / 4);
-}
-
-void usageSound()
-{
-	// SDL_GetAudioDeviceName doesn't work if audio isn't initialized.
-	// Since argument parsing happens before initializing SDL, ensure the
-	// audio subsystem is initialized before printing audio device names.
-	SDL_InitSubSystem(SDL_INIT_AUDIO);
-
-	// List all available sound devices
-	printf("The following sound output devices are available:\n");
-	const int sounds = SDL_GetNumAudioDevices(0);
-	for (int i=0; i < sounds; ++i) {
-		printf("\t%s\n", SDL_GetAudioDeviceName(i, 0));
-	}
-
-	SDL_Quit();
-	exit(1);
-}
-
-void
-init_audio()
-{
-	SDL_AudioSpec want;
-	SDL_AudioSpec have;
-
-	// setup SDL audio
-	want.freq = SAMPLERATE;
-	want.format = AUDIO_S16SYS;
-	want.channels = 2;
-	want.samples = AUDIO_SAMPLES;
-	want.callback = audioCallback;
-	want.userdata = NULL;
-
-	if (audio_dev > 0)
-	{
-		SDL_CloseAudioDevice(audio_dev);
-	}
-
-	audio_dev = SDL_OpenAudioDevice(audio_dev_name, 0, &want, &have, 9 /* freq | samples */);
-	if ( audio_dev <= 0 ){
-		fprintf(stderr, "SDL_OpenAudioDevice failed: %s\n", SDL_GetError());
-		if (audio_dev_name != NULL) usageSound();
-		exit(-1);
-	}
-
-	// init YM2151 emulation. 4 MHz clock
-	YM_Create(4000000);
-	YM_init(have.freq, 60);
-
-	// start playback
-	SDL_PauseAudioDevice(audio_dev, 0);
-}
-
-void closeAudio()
-{
-	SDL_CloseAudioDevice(audio_dev);
-}
-#endif
 
 int
 main(int argc, char **argv)
@@ -517,8 +339,6 @@ main(int argc, char **argv)
 			if (argc && argv[0][0] != '-') {
 				if (!strcmp(argv[0], "raw")) {
 					echo_mode = ECHO_MODE_RAW;
-				} else if (!strcmp(argv[0], "iso")) {
-						echo_mode = ECHO_MODE_ISO;
 				} else {
 					usage();
 				}
@@ -600,31 +420,6 @@ main(int argc, char **argv)
 				argc--;
 				argv++;
 			}
-		} else if (!strcmp(argv[0], "-joy1")) {
-			argc--;
-			argv++;
-			if (!strcmp(argv[0], "NES")) {
-				joy1_mode = NES;
-				argc--;
-				argv++;
-			} else if (!strcmp(argv[0], "SNES")) {
-				joy1_mode = SNES;
-				argc--;
-				argv++;
-			}
-
-		} else if (!strcmp(argv[0], "-joy2")){
-			argc--;
-			argv++;
-			if (!strcmp(argv[0], "NES")){
-				joy2_mode = NES;
-				argc--;
-				argv++;
-			} else if (!strcmp(argv[0], "SNES")){
-				joy2_mode = SNES;
-				argc--;
-				argv++;
-			}
 #ifdef TRACE
 		} else if (!strcmp(argv[0], "-trace")) {
 			argc--;
@@ -680,17 +475,6 @@ main(int argc, char **argv)
 			}
 			argc--;
 			argv++;
-#ifdef WITH_YM2151
-		} else if (!strcmp(argv[0], "-sound")) {
-			argc--;
-			argv++;
-			if (!argc || argv[0][0] == '-') {
-				usageSound();
-			}
-			audio_dev_name = argv[0];
-			argc--;
-			argv++;
-#endif
 		} else {
 			usage();
 		}
@@ -746,19 +530,11 @@ main(int argc, char **argv)
 	}
 
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER
-#ifdef WITH_YM2151
-		| SDL_INIT_AUDIO
-#endif
 		);
 
-#ifdef WITH_YM2151
-	init_audio();
-#endif
 
 	memory_init();
 	video_init(window_scale, scale_quality);
-
-	joystick_init();
 
 	machine_reset();
 
@@ -770,9 +546,6 @@ main(int argc, char **argv)
 	emulator_loop(NULL);
 #endif
 
-#ifdef WITH_YM2151
-	closeAudio();
-#endif
 	video_end();
 	SDL_Quit();
 	return 0;
@@ -833,27 +606,12 @@ emulator_loop(void *param)
 		}
 #endif
 
-#ifdef LOAD_HYPERCALLS
-		if ((pc == 0xffd5 || pc == 0xffd8) && is_kernal() && RAM[FA] == 1) {
-			if (pc == 0xffd5) {
-				LOAD();
-			} else {
-				SAVE();
-			}
-			pc = (RAM[0x100 + sp + 1] | (RAM[0x100 + sp + 2] << 8)) + 1;
-			sp += 2;
-		}
-#endif
-
 		uint32_t old_clockticks6502 = clockticks6502;
 		step6502();
 		uint8_t clocks = clockticks6502 - old_clockticks6502;
 		bool new_frame = false;
 		for (uint8_t i = 0; i < clocks; i++) {
-			ps2_step();
 			spi_step();
-			joystick_step();
-			vera_spi_step();
 			new_frame |= video_step(MHZ);
 		}
 
@@ -922,7 +680,7 @@ emulator_loop(void *param)
 			break;
 		}
 
-		if (echo_mode != ECHO_MODE_NONE && pc == 0xffd2 && is_kernal()) {
+		if (echo_mode != ECHO_MODE_NONE && pc == 0xffb3) {
 			uint8_t c = a;
 			if (echo_mode == ECHO_MODE_COOKED) {
 				if (c == 0x0d) {
@@ -934,80 +692,12 @@ emulator_loop(void *param)
 				} else {
 					printf("%c", c);
 				}
-			} else if (echo_mode == ECHO_MODE_ISO) {
-				if (c == 0x0d) {
-					printf("\n");
-				} else if (c == 0x0a) {
-					// skip
-				} else if (c < 0x20 || (c >= 0x80 && c < 0xa0)) {
-					printf("\\X%02X", c);
-				} else {
-					print_iso8859_15_char(c);
-				}
 			} else {
 				printf("%c", c);
 			}
 			fflush(stdout);
 		}
 
-		if (pc == 0xffcf && is_kernal()) {
-			// as soon as BASIC starts reading a line...
-			if (prg_file) {
-				// ...inject the app into RAM
-				uint8_t start_lo = fgetc(prg_file);
-				uint8_t start_hi = fgetc(prg_file);
-				uint16_t start;
-				if (prg_override_start >= 0) {
-					start = prg_override_start;
-				} else {
-					start = start_hi << 8 | start_lo;
-				}
-				uint16_t end = start + fread(RAM + start, 1, 65536-start, prg_file);
-				fclose(prg_file);
-				prg_file = NULL;
-				if (start == 0x0801) {
-					// set start of variables
-					RAM[VARTAB] = end & 0xff;
-					RAM[VARTAB + 1] = end >> 8;
-				}
-
-				if (run_after_load) {
-					if (start == 0x0801) {
-						paste_text = "RUN\r";
-					} else {
-						paste_text = paste_text_data;
-						snprintf(paste_text, sizeof(paste_text_data), "SYS$%04x\r", start);
-					}
-				}
-			}
-
-			if (paste_text) {
-				// ...paste BASIC code into the keyboard buffer
-				pasting_bas = true;
-			}
-		}
-
-		while (pasting_bas && RAM[NDX] < 10) {
-			uint32_t c;
-			int e = 0;
-
-			if (paste_text[0] == '\\' && paste_text[1] == 'X' && paste_text[2] && paste_text[3]) {
-				uint8_t hi = strtol((char[]){paste_text[2], 0}, NULL, 16);
-				uint8_t lo = strtol((char[]){paste_text[3], 0}, NULL, 16);
-				c = hi << 4 | lo;
-				paste_text += 4;
-			} else {
-				paste_text = utf8_decode(paste_text, &c, &e);
-				c = iso8859_15_from_unicode(c);
-			}
-			if (c && !e) {
-				RAM[KEYD + RAM[NDX]] = c;
-				RAM[NDX]++;
-			} else {
-				pasting_bas = false;
-				paste_text = NULL;
-			}
-		}
 	}
 
 	return 0;
