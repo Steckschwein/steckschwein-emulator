@@ -9,8 +9,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define ROM_SIZE (48*1024)
-#define RAM_SIZE (16*1024)
+#define ROM_SIZE (32*1024)
+#define RAM_SIZE (64*1024)
 
 uint8_t read6502(uint16_t address);
 uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank);
