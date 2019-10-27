@@ -7,6 +7,11 @@
 #include <unistd.h>
 #include "glue.h"
 #include "via.h"
+#include "vdp.h"
+#include "uart.h"
+#include "opl2.h"
+
+
 #include "memory.h"
 #include "video.h"
 
@@ -37,17 +42,46 @@ read6502(uint16_t address) {
 uint8_t
 real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 {
-	if (address < 0x0200) { // RAM
+
+	if (address < 0x0200)
+	{ // RAM
 		return RAM[address];
-	} else if (address < 0x0300) { // I/O
+	}
+	else if (address < 0x0280) { // I/O
 		// TODO I/O map?
-		if (address < 0x0310) {
+		if (address  < 0x210) // UART at $0200
+		{
+			return uart_read(address & 0xf);
+		}
+		else if (address < 0x0220) // VIA at $0210
+		{
 			return via1_read(address & 0xf);
-		} else {
+		}
+		else if (address < 0x0230) // VDP at $0220
+		{
+			return vdp_read(address & 0xf);
+		}
+		else if (address < 0x0240) // latch at $0x0230
+		{
+			return rom_bank;
+		}
+		else if (address < 0x0250) // OPL2 at $0240
+		{
+			return opl2_read(address & 0xf);
+		}
+		else
+		{
 			return emu_read(address & 0xf);
 		}
 	} else if (address < 0xe000) { // RAM
-		return RAM[address];
+		if (rom_bank & 1)
+		{
+			return RAM[address];
+		}
+		else
+		{
+			return ROM[address];
+		}
 	} else { // ROM
 		return ROM[address - 0xe000];
 	}
@@ -58,13 +92,38 @@ write6502(uint16_t address, uint8_t value)
 {
 	if (address < 0x0200) { // RAM
 		RAM[address] = value;
-	} else if (address < 0x0300) { // I/O
+	} else if (address < 0x0280) { // I/O
+		if (address  < 0x210) // UART at $0200
+		{
+			return uart_write(address & 0xf, value);
+		}
+		else if (address < 0x0220) // VIA at $0210
+		{
+			return via1_write(address & 0xf, value);
+		}
+		else if (address < 0x0230) // VDP at $0220
+		{
+			return vdp_write(address & 0xf, value);
+		}
+		else if (address < 0x0240) // latch at $0x0230
+		{
+			rom_bank = value;
+		}
+		else if (address < 0x0250) // OPL2 at $0240
+		{
+			return opl2_write(address & 0xf, value);
+		}
+
+
+
 		// TODO I/O map?
+/*
 		if (address < 0x0310) {
 			via1_write(address & 0xf, value);
 		} else {
 			emu_write(address & 0xf, value);
 		}
+*/
 	} else if (address < 0xe000) { // RAM
 		RAM[address] = value;
 	} else { // ROM
