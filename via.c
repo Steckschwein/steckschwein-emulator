@@ -12,6 +12,7 @@
 #include "glue.h"
 
 static uint8_t via1registers[16];
+static uint8_t via1pb_in;
 
 void
 via1_init()
@@ -42,66 +43,22 @@ via1_write(uint8_t reg, uint8_t value)
 	// TODO
 }
 
-//
-// VIA#2
-//
-// PA0 PS/2 DAT
-// PA1 PS/2 CLK
-// PA2 LCD backlight
-// PA3 NESJOY latch (for both joysticks)
-// PA4 NESJOY joy1 data
-// PA5 NESJOY joy1 CLK
-// PA6 NESJOY joy2 data
-// PA7 NESJOY joy2 CLK
 
-static uint8_t via2registers[16];
-static uint8_t via2pb_in;
-
-void
-via2_init()
-{
-}
 
 uint8_t
-via2_read(uint8_t reg)
+via1_pb_get_out()
 {
-	if (reg == 0) {
-		// PB
-		// 0 input  -> take input bit
-		// 1 output -> take output bit
-		return (via2pb_in & (via2registers[2] ^ 0xff)) |
-			(via2registers[0] & via2registers[2]);
-	} else {
-		return via2registers[reg];
-	}
+	return via1registers[2] /* DDR  */ & via1registers[0]; /* PB */
 }
 
 void
-via2_write(uint8_t reg, uint8_t value)
+via1_pb_set_in(uint8_t value)
 {
-	via2registers[reg] = value;
-
-	if (reg == 0) {
-		// PB
-	} else if (reg == 2) {
-		// PB DDRB
-	}
-}
-
-uint8_t
-via2_pb_get_out()
-{
-	return via2registers[2] /* DDR  */ & via2registers[0]; /* PB */
+	via1pb_in = value;
 }
 
 void
-via2_pb_set_in(uint8_t value)
+via1_sr_set(uint8_t value)
 {
-	via2pb_in = value;
-}
-
-void
-via2_sr_set(uint8_t value)
-{
-	via2registers[10] = value;
+	via1registers[10] = value;
 }

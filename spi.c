@@ -34,7 +34,7 @@ spi_step()
 		return;
 	}
 
-	uint8_t port = via2_pb_get_out();
+	uint8_t port = via1_pb_get_out();
 	bool clk = port & 1;
 	bool ss = !((port >> 1) & 1);
 	bool mosi = port >> 7;
@@ -96,5 +96,5 @@ spi_step()
 	}
 
 	// send byte
-	via2_sr_set(outbyte);
+	via1_sr_set(outbyte);
 }
