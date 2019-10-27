@@ -27,6 +27,8 @@ void
 memory_init()
 {
 	RAM = malloc(RAM_SIZE);
+	rom_bank = 0;
+	ram_bank = 0;
 }
 
 //
