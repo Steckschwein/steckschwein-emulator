@@ -1,4 +1,4 @@
-// Commander X16 Emulator
+// Steckschwein Emulator based on Commander X16 Emulator
 // Copyright (c) 2019 Michael Steil
 // All rights reserved. License: 2-clause BSD
 
@@ -16,6 +16,9 @@
 #include "memory.h"
 #include "video.h"
 #include "via.h"
+#include "vdp.h"
+#include "opl2.h"
+#include "uart.h"
 #include "spi.h"
 #include "sdcard.h"
 #include "glue.h"
@@ -143,8 +146,10 @@ void
 machine_reset()
 {
 	spi_init();
+	uart_init();
 	via1_init();
-	via2_init();
+	vdp_init();
+	opl2_init();
 	video_reset();
 	reset6502();
 }
@@ -161,9 +166,9 @@ machine_paste(char *s)
 static void
 usage()
 {
-	printf("\nCommander X16 Emulator  (C)2019 Michael Steil\n");
+	printf("\nSteckschwein Emulator  (C)2019 Michael Steil, Thomas Woinke\n");
 	printf("All rights reserved. License: 2-clause BSD\n\n");
-	printf("Usage: x16emu [option] ...\n\n");
+	printf("Usage: steckschwein-emu [option] ...\n\n");
 	printf("-rom <rom.bin>\n");
 	printf("\tOverride KERNAL/BASIC/* ROM file.\n");
 	printf("-ram <ramsize>\n");
@@ -635,10 +640,10 @@ emulator_loop(void *param)
 				int perf = frameCount / 3;
 
 				if (perf < 100) {
-					sprintf(window_title, "Commander X16 (%d%%)", perf);
+					sprintf(window_title, "Steckschwein (%d%%)", perf);
 					video_update_title(window_title);
 				} else {
-					video_update_title("Commander X16");
+					video_update_title("Steckschwein");
 				}
 
 				perf_frame_count = frames;

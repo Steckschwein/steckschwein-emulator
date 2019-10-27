@@ -57,7 +57,7 @@ video_init(int window_scale, char *quality)
 									SDL_TEXTUREACCESS_STREAMING,
 									SCREEN_WIDTH, SCREEN_HEIGHT);
 
-	SDL_SetWindowTitle(window, "Commander X16");
+	SDL_SetWindowTitle(window, "Steckschwein");
 
 	if (record_gif != RECORD_GIF_DISABLED) {
 		if (!strcmp(gif_path+strlen(gif_path)-5, ",wait")) {
@@ -470,4 +470,3 @@ video_update_title(const char* window_title)
 {
 	SDL_SetWindowTitle(window, window_title);
 }
-
