@@ -16,7 +16,7 @@
 #include "video.h"
 
 uint8_t ram_bank;
-uint8_t rom_bank;
+uint8_t ctrl_port;
 
 uint8_t *RAM;
 uint8_t ROM[ROM_SIZE];
@@ -27,7 +27,7 @@ void
 memory_init()
 {
 	RAM = malloc(RAM_SIZE);
-	rom_bank = 0;
+	ctrl_port = 0;
 	ram_bank = 0;
 }
 
@@ -44,6 +44,7 @@ read6502(uint16_t address) {
 uint8_t
 real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 {
+//	printf("read6502 %x %x\n", address, bank);
 
 	if (address < 0x0200)
 	{ // RAM
@@ -65,7 +66,7 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 		}
 		else if (address < 0x0240) // latch at $0x0230
 		{
-			return rom_bank;
+			return ctrl_port;
 		}
 		else if (address < 0x0250) // OPL2 at $0240
 		{
@@ -76,15 +77,13 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 			return emu_read(address & 0xf);
 		}
 	} else if (address < 0xe000) { // RAM
-		if (rom_bank & 1)
+			return RAM[address];	
+	} else { 
+		if (ctrl_port & 1)
 		{
 			return RAM[address];
 		}
-		else
-		{
-			return ROM[address];
-		}
-	} else { // ROM
+//		printf("rom %x\n", address - 0xe000);
 		return ROM[address - 0xe000];
 	}
 }
@@ -92,6 +91,7 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 void
 write6502(uint16_t address, uint8_t value)
 {
+	printf("write6502 %x %x\n", address, value);
 	if (address < 0x0200) { // RAM
 		RAM[address] = value;
 	} else if (address < 0x0280) { // I/O
@@ -109,7 +109,7 @@ write6502(uint16_t address, uint8_t value)
 		}
 		else if (address < 0x0240) // latch at $0x0230
 		{
-			rom_bank = value;
+			ctrl_port = value;
 		}
 		else if (address < 0x0250) // OPL2 at $0240
 		{
@@ -129,6 +129,7 @@ write6502(uint16_t address, uint8_t value)
 	} else if (address < 0xe000) { // RAM
 		RAM[address] = value;
 	} else { // ROM
+		printf("ctrl_port %x\n", ctrl_port);
 		// ignore
 	}
 }
