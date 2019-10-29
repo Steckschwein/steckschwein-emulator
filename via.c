@@ -23,24 +23,38 @@ via1_init()
 uint8_t
 via1_read(uint8_t reg)
 {
-	switch (reg) {
-		case 4:
-		case 5:
-		case 8:
-		case 9:
-			// timer A and B: return random numbers for RND(0)
-			// XXX TODO: these should be real timers :)
-			return rand() & 0xff;
-		default:
-			return via1registers[reg];
-	}
+	if (reg == 0) {
+		// PB
+		// 0 input  -> take input bit
+		// 1 output -> take output bit
+		return (via1pb_in & (via1registers[2] ^ 0xff)) |
+		  (via1registers[0] & via1registers[2]);
+		} else {
+		  switch (reg) {
+			case 4:
+			case 5:
+			case 8:
+			case 9:
+				// timer A and B: return random numbers for RND(0)
+				// XXX TODO: these should be real timers :)
+				return rand() & 0xff;
+			default:
+				return via1registers[reg];
+		  }
 }
+}
+
+
 
 void
 via1_write(uint8_t reg, uint8_t value)
 {
 	via1registers[reg] = value;
-	// TODO
+	if (reg == 0) {
+		// PB
+	} else if (reg == 2) {
+		// PB DDRB
+	}
 }
 
 
