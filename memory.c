@@ -58,7 +58,7 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 		}
 		else if (address < 0x0220) // VIA at $0210
 		{
-			return via1_read(address & 0xf);
+			return via2_read(address & 0xf);
 		}
 		else if (address < 0x0230) // VDP at $0220
 		{
@@ -77,8 +77,8 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 			return emu_read(address & 0xf);
 		}
 	} else if (address < 0xe000) { // RAM
-			return RAM[address];	
-	} else { 
+			return RAM[address];
+	} else {
 		if (ctrl_port & 1)
 		{
 			return RAM[address];
@@ -101,7 +101,7 @@ write6502(uint16_t address, uint8_t value)
 		}
 		else if (address < 0x0220) // VIA at $0210
 		{
-			return via1_write(address & 0xf, value);
+			return via2_write(address & 0xf, value);
 		}
 		else if (address < 0x0230) // VDP at $0220
 		{
