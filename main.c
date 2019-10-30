@@ -148,9 +148,8 @@ machine_reset()
 	spi_init();
 	uart_init();
 	via1_init();
-	vdp_init();
+	vdp_reset();
 	opl2_init();
-	video_reset();
 	reset6502();
 }
 
@@ -539,7 +538,7 @@ main(int argc, char **argv)
 
 
 	memory_init();
-	video_init(window_scale, scale_quality);
+	vdp_init(window_scale, scale_quality);
 
 	machine_reset();
 
@@ -617,13 +616,13 @@ emulator_loop(void *param)
 		bool new_frame = false;
 		for (uint8_t i = 0; i < clocks; i++) {
 			spi_step();
-			new_frame |= video_step(MHZ);
+			new_frame |= vdp_step(MHZ);
 		}
 
 		instruction_counter++;
 
 		if (new_frame) {
-			if (!video_update()) {
+			if (!vdp_update()) {
 				break;
 			}
 
@@ -641,9 +640,9 @@ emulator_loop(void *param)
 
 				if (perf < 100) {
 					sprintf(window_title, "Steckschwein (%d%%)", perf);
-					video_update_title(window_title);
+					//video_update_title(window_title);
 				} else {
-					video_update_title("Steckschwein");
+					//video_update_title("Steckschwein");
 				}
 
 				perf_frame_count = frames;
