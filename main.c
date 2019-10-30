@@ -533,8 +533,7 @@ main(int argc, char **argv)
 		fclose(bas_file);
 	}
 
-	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER
-		);
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
 
 
 	memory_init();
