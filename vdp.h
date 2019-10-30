@@ -19,6 +19,9 @@ void vdp_write(uint8_t reg, uint8_t value);
 
 bool vdp_step(float mhz); 
 
+
 bool vdp_update();
+
+void vdp_end();
 
 #endif

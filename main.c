@@ -549,7 +549,7 @@ main(int argc, char **argv)
 	emulator_loop(NULL);
 #endif
 
-	video_end();
+	vdp_end();
 	SDL_Quit();
 	return 0;
 }
@@ -564,6 +564,11 @@ void*
 emulator_loop(void *param)
 {
 	for (;;) {
+			SDL_Event event;
+			SDL_PollEvent(&event);
+			if (event.type == SDL_QUIT) {
+				break;
+			}
 
 		if (debugger_enabled) {
 			int dbgCmd = DEBUGGetCurrentStatus();
@@ -664,11 +669,12 @@ emulator_loop(void *param)
 #endif
 		}
 
-		if (video_get_irq_out()) {
+/*		if (video_get_irq_out()) {
 			if (!(status & 4)) {
 				irq6502();
 			}
 		}
+*/
 
 #if 0
 		if (clockticks6502 >= 5 * MHZ * 1000 * 1000) {
@@ -683,7 +689,7 @@ emulator_loop(void *param)
 			break;
 		}
 
-		if (echo_mode != ECHO_MODE_NONE && pc == 0xffb3) {
+		if (echo_mode != ECHO_MODE_NONE && pc == 0xf49f) { //bios f49f, kernel $ffb3
 			uint8_t c = a;
 			if (echo_mode == ECHO_MODE_COOKED) {
 				if (c == 0x0d) {

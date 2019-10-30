@@ -23,7 +23,7 @@ static uint8_t vdpregisters[16];
 bool
 vdp_step(float mhz)
 {
-	return true; // new_frame
+	return false; // true - new_frame
 }
 
 bool 
