@@ -689,7 +689,7 @@ emulator_loop(void *param)
 			break;
 		}
 
-		if (echo_mode != ECHO_MODE_NONE && (pc == 0xf49f || pc == 0xffb3)) { //bios f49f, kernel $ffb3
+		if (echo_mode != ECHO_MODE_NONE && (pc == 0xfff0 || pc == 0xffb3)) { //bios f49f, kernel $ffb3
 			uint8_t c = a;
 			if (echo_mode == ECHO_MODE_COOKED) {
 				if (c == 0x0d) {

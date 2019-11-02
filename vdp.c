@@ -18,7 +18,8 @@ static SDL_Texture *sdlTexture;
 
 static uint8_t framebuffer[SCREEN_WIDTH * SCREEN_HEIGHT * 4];
 
-static uint8_t vdpregisters[16];
+static uint8_t vdp_v_reg[47];
+static uint8_t vdp_s_reg[10];
 
 bool
 vdp_step(float mhz)
@@ -94,14 +95,23 @@ vdp_init(int window_scale, char *quality)
 uint8_t
 vdp_read(uint8_t reg)
 {
-
-	return vdpregisters[reg];
+	if (reg > 9)
+	{
+		fprintf(stderr, "attempted to read non-existent status register R#%d\n", reg);
+		return -1;
+	}
+	return vdp_s_reg[reg];
 }
 
 void
 vdp_write(uint8_t reg, uint8_t value)
 {
-	vdpregisters[reg] = value;
+	if (reg > 46)
+	{
+		fprintf(stderr, "attempted to write to non-existent R#%d\n", reg);
+		return;
+	}
+	vdp_v_reg[reg] = value;
 	// TODO
 }
 
