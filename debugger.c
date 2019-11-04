@@ -16,7 +16,6 @@
 #include "glue.h"
 #include "disasm.h"
 #include "memory.h"
-#include "video.h"
 #include "cpu/fake6502.h"
 #include "debugger.h"
 #include "rendertext.h"
@@ -156,7 +155,7 @@ int  DEBUGGetCurrentStatus(void) {
 
 	showDebugOnRender = (currentMode != DMODE_RUN);				// Do we draw it - only in RUN mode.
 	if (currentMode == DMODE_STOP) { 							// We're in charge.
-		video_update();
+		//video_update();
 		return 1;
 	}
 
@@ -472,12 +471,12 @@ static int DEBUGRenderRegisters(void) {
 
 	DEBUGNumber(DBG_DATX, yc++, breakPoint & 0xFFFF, 4, col_data);
 	yc++;
-
+/*
 	DEBUGNumber(DBG_DATX, yc++, video_read(0, true) | (video_read(1, true)<<8) | (video_read(2, true)<<16), 2, col_data);
 	DEBUGNumber(DBG_DATX, yc++, video_read(3, true), 2, col_data);
 	DEBUGNumber(DBG_DATX, yc++, video_read(4, true), 2, col_data);
 	DEBUGNumber(DBG_DATX, yc++, video_read(5, true), 2, col_data);
-
+*/
 	return n; 													// Number of code display lines
 }
 

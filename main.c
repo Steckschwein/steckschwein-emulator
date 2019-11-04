@@ -135,7 +135,7 @@ machine_dump()
 	memory_save(f, dump_ram, dump_bank);
 
 	if (dump_vram) {
-		video_save(f);
+		//video_save(f);
 	}
 
 	fclose(f);

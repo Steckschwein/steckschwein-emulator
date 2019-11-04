@@ -34,9 +34,9 @@ ifdef EMSCRIPTEN
 	OUTPUT=steckschwein-emu.html
 endif
 
-OBJS = cpu/fake6502.o memory.o disasm.o video.o via.o uart.o vdp.o opl2.o spi.o sdcard.o main.o debugger.o javascript_interface.o rendertext.o # v9938.o
+OBJS = cpu/fake6502.o memory.o disasm.o via.o uart.o vdp.o opl2.o spi.o sdcard.o main.o debugger.o javascript_interface.o rendertext.o # v9938.o
 
-HEADERS = disasm.h cpu/fake6502.h glue.h memory.h video.h via.h
+HEADERS = disasm.h cpu/fake6502.h glue.h memory.h vdp.h via.h
 
 ifneq ("$(wildcard ./rom_labels.h)","")
 HEADERS+=rom_labels.h

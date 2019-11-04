@@ -15,7 +15,6 @@
 #include "memory.h"
 #include "video.h"
 
-uint8_t ram_bank;
 uint8_t ctrl_port;
 
 uint8_t *RAM;
@@ -28,7 +27,6 @@ memory_init()
 {
 	RAM = malloc(RAM_SIZE);
 	ctrl_port = 0;
-	ram_bank = 0;
 }
 
 //
@@ -76,18 +74,19 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 		{
 			return emu_read(address & 0xf);
 		}
-	} else if (address < 0xe000) { // RAM
-			return RAM[address];
 	} else {
-		if (ctrl_port & 1)
-		{
-			return RAM[address];
+		if (address < 0xe000 || ctrl_port & 1){
+			return RAM[address];// RAM
 		}
-		else
-		{
-			// printf("rom %x\n", address - 0xe000);
-			return ROM[address - 0xe000];
-		}
+		/* bank select upon ctrl_port - see steckos/asminc/system.inc
+			BANK_SEL0 = 0010
+			BANK_SEL1 = 0100 
+			BANK0 = 0000
+			BANK1 = 0010
+			BANK2 = 0100
+			BANK3 = 0110
+		*/
+		return ROM[(address & 0x1fff) | ((ctrl_port & 0x06)<<12)];
 	}
 }
 
@@ -113,15 +112,13 @@ write6502(uint16_t address, uint8_t value)
 		else if (address < 0x0240) // latch at $0x0230
 		{
 			ctrl_port = value;
-            if (value == 1)
-			    printf("ctrl_port %x\n", ctrl_port);
+			if (value == 1)
+				printf("ctrl_port %x\n", ctrl_port);
 		}
 		else if (address < 0x0250) // OPL2 at $0240
 		{
 			return opl2_write(address & 0xf, value);
 		}
-
-
 
 		// TODO I/O map?
 /*
@@ -136,7 +133,6 @@ write6502(uint16_t address, uint8_t value)
 	} else { // Writes go to ram, regardless if ROM active or not
 		// ignore
 		RAM[address] = value;
-
 	}
 }
 

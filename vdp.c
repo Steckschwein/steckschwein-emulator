@@ -35,13 +35,7 @@ vdp_update(){
 	SDL_RenderClear(renderer);
 	SDL_RenderCopy(renderer, sdlTexture, NULL, NULL);
 	SDL_RenderPresent(renderer);
-	SDL_Event event;
-	while (SDL_PollEvent(&event)) {
-		if (event.type == SDL_QUIT) {
-			return false;
-			printf("vdp_update()\n %x", event.type);
-		}
-	}	
+	
 	return true;
 }
 
@@ -69,22 +63,7 @@ vdp_init(int window_scale, char *quality)
 									SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	SDL_SetWindowTitle(window, "Steckschwein");
-/*
-	if (record_gif != RECORD_GIF_DISABLED) {
-		if (!strcmp(gif_path+strlen(gif_path)-5, ",wait")) {
-			// wait for POKE
-			record_gif = RECORD_GIF_PAUSED;
-			// move the string terminator to remove the ",wait"
-			gif_path[strlen(gif_path)-5] = 0;
-		} else {
-			// start now
-			record_gif = RECORD_GIF_ACTIVE;
-		}
-		if (!GifBegin(&gif_writer, gif_path, SCREEN_WIDTH, SCREEN_HEIGHT, 1, 8, false)) {
-			record_gif = RECORD_GIF_DISABLED;
-		}
-	}
-*/
+	
 	if (debugger_enabled) {
 	//	DEBUGInitUI(renderer);
 	}
