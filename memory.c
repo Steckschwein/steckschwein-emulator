@@ -83,8 +83,11 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 		{
 			return RAM[address];
 		}
-//		printf("rom %x\n", address - 0xe000);
-		return ROM[address - 0xe000];
+		else
+		{
+			// printf("rom %x\n", address - 0xe000);
+			return ROM[address - 0xe000];
+		}
 	}
 }
 
@@ -110,6 +113,8 @@ write6502(uint16_t address, uint8_t value)
 		else if (address < 0x0240) // latch at $0x0230
 		{
 			ctrl_port = value;
+            if (value == 1)
+			    printf("ctrl_port %x\n", ctrl_port);
 		}
 		else if (address < 0x0250) // OPL2 at $0240
 		{
@@ -126,11 +131,12 @@ write6502(uint16_t address, uint8_t value)
 			emu_write(address & 0xf, value);
 		}
 */
-	} else if (address < 0xe000) { // RAM
-		RAM[address] = value;
-	} else { // ROM
-		printf("ctrl_port %x\n", ctrl_port);
+	// } else if (address < 0xe000) { // RAM
+		// RAM[address] = value;
+	} else { // Writes go to ram, regardless if ROM active or not
 		// ignore
+		RAM[address] = value;
+
 	}
 }
 
