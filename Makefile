@@ -1,17 +1,23 @@
 
-# the mingw32 path on macOS installed through homebrew
-MINGW32=/usr/local/Cellar/mingw-w64/6.0.0_2/toolchain-i686/i686-w64-mingw32
-# the Windows SDL2 path on macOS installed through ./configure --prefix=... && make && make install
-WIN_SDL2=~/tmp/sdl2-win32
+ifndef (MINGW32)
+	# the mingw32 path on macOS installed through homebrew
+	MINGW32=/usr/local/Cellar/mingw-w64/6.0.0_2/toolchain-i686/i686-w64-mingw32
+endif
 
-ifeq ($(CROSS_COMPILE_WINDOWS),1)
-	SDL2CONFIG=$(WIN_SDL2)/bin/sdl2-config
-else
-	SDL2CONFIG=sdl2-config
+# the Windows SDL2 path on macOS installed through ./configure --prefix=... && make && make install
+ifndef WIN_SDL2
+	WIN_SDL2=~/tmp/sdl2-win32
 endif
 
 CFLAGS=-std=c99 -O3 -Wall -Werror -g $(shell $(SDL2CONFIG) --cflags) -Iextern/include -Iextern/src
 LDFLAGS=$(shell $(SDL2CONFIG) --libs) -lm
+
+ifeq ($(CROSS_COMPILE_WINDOWS),1)
+	CFLAGS=-O3 -Wall -Werror -Wno-error=deprecated-declarations -g $(shell $(SDL2CONFIG) --cflags) -D_REENTRANT -Iextern/include -Iextern/src
+	SDL2CONFIG=$(WIN_SDL2)/bin/sdl2-config --prefix=$(WIN_SDL2)
+else
+	SDL2CONFIG=sdl2-config
+endif
 
 OUTPUT=steckschwein-emu
 
@@ -23,7 +29,7 @@ ifeq ($(CROSS_COMPILE_WINDOWS),1)
 	LDFLAGS+=-L$(MINGW32)/lib
 	# this enables printf() to show, but also forces a console window
 	LDFLAGS+=-Wl,--subsystem,console
-	CC=i686-w64-mingw32-gcc
+	#CC=i686-w64-mingw32-gcc
 endif
 
 ifdef EMSCRIPTEN

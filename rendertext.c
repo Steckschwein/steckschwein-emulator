@@ -1,4 +1,3 @@
-#include <SDL.h>
 #include "rendertext.h"
 
 // Text Area origin => debug area

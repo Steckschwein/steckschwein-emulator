@@ -9,8 +9,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <limits.h>
+
 #include "cpu/fake6502.h"
 #include "disasm.h"
 #include "memory.h"
@@ -54,6 +56,7 @@ char *keymaps[] = {
 };
 
 bool debugger_enabled = false;
+bool headless = false;
 char *paste_text = NULL;
 char paste_text_data[65536];
 bool pasting_bas = false;
@@ -217,6 +220,8 @@ usage()
 	printf("\tChoose what type of joystick to use, e.g. -joy1 SNES\n");
 	printf("-joy2 {NES | SNES}\n");
 	printf("\tChoose what type of joystick to use, e.g. -joy2 SNES\n");
+	printf("-headless\n");
+	printf("\tdisable video emulation\n");
 #ifdef TRACE
 	printf("-trace [<address>]\n");
 	printf("\tPrint instruction trace. Optionally, a trigger address\n");
@@ -241,7 +246,6 @@ main(int argc, char **argv)
 {
 	char *rom_filename = "rom.bin";
 	char rom_path_data[PATH_MAX];
-
 	char *rom_path = rom_path_data;
 	char *prg_path = NULL;
 	char *bas_path = NULL;
@@ -438,6 +442,8 @@ main(int argc, char **argv)
 				trace_address = 0;
 			}
 #endif
+		} else if (!strcmp(argv[0], "-headless")) {
+			headless=true;
 		} else if (!strcmp(argv[0], "-scale")) {
 			argc--;
 			argv++;
@@ -533,12 +539,12 @@ main(int argc, char **argv)
 		fclose(bas_file);
 	}
 
-	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
-
+	if(!headless){
+		SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
+		vdp_init(window_scale, scale_quality);
+	}
 
 	memory_init();
-	vdp_init(window_scale, scale_quality);
-
 	machine_reset();
 
 	instruction_counter = 0;
@@ -564,11 +570,13 @@ void*
 emulator_loop(void *param)
 {
 	for (;;) {
+		if(!headless){
 			SDL_Event event;
 			SDL_PollEvent(&event);
 			if (event.type == SDL_QUIT) {
 				break;
 			}
+		}
 
 		if (debugger_enabled) {
 			int dbgCmd = DEBUGGetCurrentStatus();
@@ -620,13 +628,14 @@ emulator_loop(void *param)
 		bool new_frame = false;
 		for (uint8_t i = 0; i < clocks; i++) {
 			spi_step();
-			new_frame |= vdp_step(MHZ);
+			if(!headless)
+				new_frame |= vdp_step(MHZ);
 		}
 
 		instruction_counter++;
 
 		if (new_frame) {
-			if (!vdp_update()) {
+			if (!headless && !vdp_update()) {
 				break;
 			}
 
@@ -669,7 +678,7 @@ emulator_loop(void *param)
 #endif
 		}
 
-/*		if (video_get_irq_out()) {
+/*		if (vdp_get_irq_out()) {
 			if (!(status & 4)) {
 				irq6502();
 			}
@@ -689,7 +698,7 @@ emulator_loop(void *param)
 			break;
 		}
 
-		if (echo_mode != ECHO_MODE_NONE && (pc == 0xfff0 || pc == 0xffb3)) { //bios f49f, kernel $ffb3
+		if (echo_mode != ECHO_MODE_NONE && (pc == 0xfff0 || pc == 0xffb3)) { //@see jumptables, bios fff0, kernel $ffb3
 			uint8_t c = a;
 			if (echo_mode == ECHO_MODE_COOKED) {
 				if (c == 0x0d) {

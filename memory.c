@@ -11,7 +11,6 @@
 #include "uart.h"
 #include "opl2.h"
 
-
 #include "memory.h"
 #include "video.h"
 

@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define ROM_SIZE (32*1024)
 #define RAM_SIZE (64*1024)

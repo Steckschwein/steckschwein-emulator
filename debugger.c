@@ -11,8 +11,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <inttypes.h>
 #include <SDL.h>
+
 #include "glue.h"
 #include "disasm.h"
 #include "memory.h"

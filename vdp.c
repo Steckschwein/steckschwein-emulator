@@ -8,9 +8,7 @@
 #include <stdlib.h>
 #include "vdp.h"
 #include "memory.h"
-//XXX
 #include "glue.h"
-
 
 static SDL_Window *window;
 static SDL_Renderer *renderer;
@@ -29,8 +27,7 @@ vdp_step(float mhz)
 
 bool 
 vdp_update(){
-//	printf("vdp_update()\n");
-			
+	//printf("vdp_update()\n");			
 	SDL_UpdateTexture(sdlTexture, NULL, framebuffer, SCREEN_WIDTH * 4);
 	SDL_RenderClear(renderer);
 	SDL_RenderCopy(renderer, sdlTexture, NULL, NULL);
@@ -42,6 +39,7 @@ vdp_update(){
 void
 vdp_reset()
 {
+	
 }
 
 bool
