@@ -2,8 +2,8 @@
 // Copyright (c) 2019 Michael Steil
 // All rights reserved. License: 2-clause BSD
 
-#ifndef _VDP_H_
-#define _VDP_H_
+#ifndef _VDP_ADAPTER_H_
+#define _VDP_ADAPTER_H_
 
 #include <stdint.h>
 #include <SDL.h>

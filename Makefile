@@ -1,22 +1,28 @@
-
+#
+# windows 10 build
+#   CROSS_COMPILE_WINDOWS=1 WIN_SDL2=<sdl2 home> CC=<gcc home>/mingw32-gcc make clean all
+#
 ifndef (MINGW32)
 	# the mingw32 path on macOS installed through homebrew
 	MINGW32=/usr/local/Cellar/mingw-w64/6.0.0_2/toolchain-i686/i686-w64-mingw32
 endif
 
 # the Windows SDL2 path on macOS installed through ./configure --prefix=... && make && make install
-ifndef WIN_SDL2
-	WIN_SDL2=~/tmp/sdl2-win32
+ifndef WIN_SDL
+	WIN_SDL=~/tmp/sdl2-win32
 endif
 
-CFLAGS=-std=c99 -O3 -Wall -Werror -g $(shell $(SDL2CONFIG) --cflags) -Iextern/include -Iextern/src
-LDFLAGS=$(shell $(SDL2CONFIG) --libs) -lm
+CFLAGS=-O3 -Wall -Werror -g $(shell sdl-config --prefix=$(WIN_SDL) --cflags) -Iextern/include -Iextern/src
+LDFLAGS=$(shell sdl-config --prefix=$(WIN_SDL) --libs) -lm
 
 ifeq ($(CROSS_COMPILE_WINDOWS),1)
-	CFLAGS=-O3 -Wall -Werror -Wno-error=deprecated-declarations -g $(shell $(SDL2CONFIG) --cflags) -D_REENTRANT -Iextern/include -Iextern/src
-	SDL2CONFIG=$(WIN_SDL2)/bin/sdl2-config --prefix=$(WIN_SDL2)
+	CFLAGS+=-Wno-error=deprecated-declarations
+#	CFLAGS+=-Wno-error=incompatible-pointer-types
+	CFLAGS+=-Wno-error=maybe-uninitialized
+#	CFLAGS+=-DENABLE_VRAM_DECAY \
+	CFLAGS+=-D_REENTRAN
 else
-	SDL2CONFIG=sdl2-config
+	CFLAGS+=-std=c99
 endif
 
 OUTPUT=steckschwein-emu
@@ -28,8 +34,7 @@ endif
 ifeq ($(CROSS_COMPILE_WINDOWS),1)
 	LDFLAGS+=-L$(MINGW32)/lib
 	# this enables printf() to show, but also forces a console window
-	LDFLAGS+=-Wl,--subsystem,console
-	#CC=i686-w64-mingw32-gcc
+	LDFLAGS+=-mconsole -Wl,--subsystem,console
 endif
 
 ifdef EMSCRIPTEN
@@ -40,9 +45,9 @@ ifdef EMSCRIPTEN
 	OUTPUT=steckschwein-emu.html
 endif
 
-OBJS = cpu/fake6502.o memory.o disasm.o via.o uart.o vdp.o opl2.o spi.o sdcard.o main.o debugger.o javascript_interface.o rendertext.o # v9938.o
+OBJS = cpu/fake6502.o memory.o disasm.o via.o uart.o vdp_adapter.o opl2.o spi.o sdcard.o main.o javascript_interface.o # rendertext.o debugger.o 
 
-HEADERS = disasm.h cpu/fake6502.h glue.h memory.h vdp.h via.h
+HEADERS = disasm.h cpu/fake6502.h glue.h memory.h vdp_adapter.h via.h
 
 ifneq ("$(wildcard ./rom_labels.h)","")
 HEADERS+=rom_labels.h

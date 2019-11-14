@@ -118,5 +118,5 @@ static void trb() {
 // *******************************************************************************************
 
 static void dbg() {
-    DEBUGBreakToDebugger();                          // Invoke debugger.
+//    DEBUGBreakToDebugger();                          // Invoke debugger.
 }

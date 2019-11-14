@@ -18,13 +18,13 @@
 #include "memory.h"
 #include "video.h"
 #include "via.h"
-#include "vdp.h"
+#include "vdp_adapter.h"
 #include "opl2.h"
 #include "uart.h"
 #include "spi.h"
 #include "sdcard.h"
 #include "glue.h"
-#include "debugger.h"
+//#include "debugger.h"
 
 #define AUDIO_SAMPLES 4096
 #define SAMPLERATE 22050
@@ -250,16 +250,19 @@ main(int argc, char **argv)
 	char *prg_path = NULL;
 	char *bas_path = NULL;
 	char *sdcard_path = NULL;
-
+	
 	run_after_load = false;
 
-	char *base_path = SDL_GetBasePath();
-
+	rom_path = getcwd(rom_path_data, PATH_MAX);
+	if(rom_path == NULL){
+		return 1;
+	}	
 	// This causes the emulator to load ROM data from the executable's directory when
 	// no ROM file is specified on the command line.
-	memcpy(rom_path, base_path, strlen(base_path) + 1);
 	strncpy(rom_path + strlen(rom_path), rom_filename, PATH_MAX - strlen(rom_path));
-
+	
+	printf("\nrom path: %s\n", rom_path);
+	
 	argc--;
 	argv++;
 
@@ -424,7 +427,7 @@ main(int argc, char **argv)
 			argv++;
 			debugger_enabled = true;
 			if (argc && argv[0][0] != '-') {
-				DEBUGSetBreakPoint((uint16_t)strtol(argv[0], NULL, 16));
+				//DEBUGSetBreakPoint((uint16_t)strtol(argv[0], NULL, 16));
 				argc--;
 				argv++;
 			}
@@ -540,7 +543,9 @@ main(int argc, char **argv)
 	}
 
 	if(!headless){
-		SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
+		//SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
+		freopen( "CON", "w", stdout );//http://sdl.beuc.net/sdl.wiki/FAQ_Console
+		freopen( "CON", "w", stderr );
 		vdp_init(window_scale, scale_quality);
 	}
 
@@ -556,7 +561,7 @@ main(int argc, char **argv)
 #endif
 
 	vdp_end();
-	SDL_Quit();
+	//SDL_Quit();
 	return 0;
 }
 
@@ -571,15 +576,17 @@ emulator_loop(void *param)
 {
 	for (;;) {
 		if(!headless){
+			/*
 			SDL_Event event;
 			SDL_PollEvent(&event);
 			if (event.type == SDL_QUIT) {
 				break;
 			}
+			*/
 		}
 
 		if (debugger_enabled) {
-			int dbgCmd = DEBUGGetCurrentStatus();
+			int dbgCmd = 1;//DEBUGGetCurrentStatus();
 			if (dbgCmd > 0) continue;
 			if (dbgCmd < 0) break;
 		}
@@ -641,7 +648,7 @@ emulator_loop(void *param)
 
 			static int frames = 0;
 			frames++;
-			int32_t sdlTicks = SDL_GetTicks();
+			int32_t sdlTicks = 0;//SDL_GetTicks();
 			int32_t diff_time = 1000 * frames / 60 - sdlTicks;
 			if (diff_time > 0) {
 				usleep(1000 * diff_time);

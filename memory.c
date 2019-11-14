@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include "glue.h"
 #include "via.h"
-#include "vdp.h"
+#include "vdp_adapter.h"
 #include "uart.h"
 #include "opl2.h"
 
