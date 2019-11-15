@@ -1106,6 +1106,9 @@ int main(int argc, char **argv)
         return 0;
     }
     
+	 UInt32 systemTime = 1;
+	 boardInit(&systemTime);
+
     video = videoCreate();
     videoSetColors(video, properties->video.saturation, properties->video.brightness, 
                   properties->video.contrast, properties->video.gamma);
@@ -1117,9 +1120,6 @@ int main(int argc, char **argv)
         return 0;
     }
 	 
-	 UInt32 systemTime = 1;
-	 
-	 boardInit(&systemTime);
 /*
     dpyUpdateAckEvent = archEventCreate(0);
     keyboardInit();

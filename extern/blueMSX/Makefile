@@ -52,10 +52,8 @@ OUTPUT_OBJS = $(addprefix $(OUTPUT_DIR)/, $(OBJS))
 #
 SDL_PREFIX=
 ifdef WIN_SDL
-	SDL_PREFIX=--prefix=$(WIN_SDL) 
+	SDL_PREFIX=--prefix=$(WIN_SDL)
 endif
-
---prefix=$(WIN_SDL) 
 SDL_CFLAGS := $(shell sdl-config $(SDL_PREFIX) --cflags)
 SDL_LDFLAGS := $(shell sdl-config $(SDL_PREFIX) --libs)
 CFLAGS += $(SDL_CFLAGS)
@@ -384,6 +382,7 @@ SOURCE_FILES += StrcmpNoCase.c
 SOURCE_FILES += Board.c 
 #SOURCE_FILES += Machine.c 
 #SOURCE_FILES += MSX.c 
+#SOURCE_FILES += Steckschwein.c 
 #SOURCE_FILES += SVI.c 
 #SOURCE_FILES += Adam.c 
 #SOURCE_FILES += Coleco.c 

@@ -69,6 +69,7 @@ static BoardTimer* syncTimer;
 static BoardTimer* stateTimer;
 static BoardTimer* breakpointTimer;
 
+static BoardInfo boardInfo;
 static UInt32 boardRamSize;
 static UInt32 boardVramSize;
 static int boardRunning = 1;//1 - run
@@ -380,7 +381,7 @@ static void onBreakpointSync(void* ref, UInt32 time) {
     skipSync = 0;
     doSync(time, 1);
 }
-
+/*
 int boardRewindOne() {
     UInt32 rewindTime;
     if (stateFrequency <= 0) {
@@ -394,7 +395,7 @@ int boardRewindOne() {
     skipSync = 1;
     return 1;
 }
-
+*/
 
 void boardSetFrequency(int frequency)
 {
@@ -622,7 +623,9 @@ UInt64 boardSystemTime64() {
 void boardInit(UInt32* systemTime)
 {
     static BoardTimer dummy_timer;
-    boardSysTime = systemTime;
+    
+	 boardSysTime = systemTime;
+	 
     oldTime = *systemTime;
     boardSysTime64 = oldTime * HIRES_CYCLES_PER_LORES_CYCLE;
 
@@ -645,8 +648,8 @@ int boardRun(char* stateFile,
              int (*syncCallback)(int, int))
 {
     int loadState = 0;
-    int success = 0;
-
+    int success = 1;
+	 
     syncToRealClock = syncCallback;
 
     videoManagerReset();
@@ -661,15 +664,10 @@ int boardRun(char* stateFile,
     boardSetFrequency(frequency);
 
     memset(&boardInfo, 0, sizeof(boardInfo));
-
-    boardRunning = 1;
+	 boardRunning = 1;
+//	 success = steckSchweinCreate(machine, deviceInfo->video.vdpSyncMode, &boardInfo);
     
     boardCaptureInit();
-
-    if (success && loadState) {
-        boardInfo.loadState();
-        boardCaptureLoadState();
-    }
 
     if (success) {
         syncTimer = boardTimerCreate(onSync, NULL);
@@ -680,7 +678,6 @@ int boardRun(char* stateFile,
         if (stateFrequency > 0) {
             ramStateCur  = 0;
             ramMaxStates = reverseBufferCnt;
-            memZipFileSystemCreate(ramMaxStates);
             stateTimer = boardTimerCreate(onStateSync, NULL);
             breakpointTimer = boardTimerCreate(onBreakpointSync, NULL); 
             boardTimerAdd(stateTimer, boardSystemTime() + stateFrequency);
@@ -700,16 +697,19 @@ int boardRun(char* stateFile,
             syncToRealClock(0, 0);
         }
 
-        boardInfo.run(boardInfo.cpuRef);
+        //boardInfo.run(boardInfo.cpuRef);
+		  for(;;){
+			  printf(".");
+		  }
 
         if (periodicTimer != NULL) {
             boardTimerDestroy(periodicTimer);
             periodicTimer = NULL;
         }
 
-        boardCaptureDestroy();
+        //boardCaptureDestroy();
 
-        boardInfo.destroy();
+       // boardInfo.destroy();
 
         boardTimerDestroy(fdcTimer);
         boardTimerDestroy(syncTimer);
@@ -718,7 +718,6 @@ int boardRun(char* stateFile,
         }
         if (stateTimer != NULL) {
             boardTimerDestroy(stateTimer);
-            memZipFileSystemDestroy();
         }
     }
 
