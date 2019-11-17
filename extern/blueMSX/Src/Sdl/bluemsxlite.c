@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,7 +25,7 @@
 **
 ******************************************************************************
 */
-#ifndef __APPLE__ _WIN32 _WIN64
+#ifndef __APPLE__ || _WIN32 || _WIN64
 //#define ENABLE_OPENGL
 #endif
 
@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <SDL.h>
 
+#include "Adapter.h"
 //#include "CommandLine.h"
 #include "Properties.h"
 //#include "ArchFile.h"
@@ -44,7 +45,7 @@
 //#include "MidiIO.h"
 //#include "Machine.h"
 #include "Board.h"
-#include "Emulator.h"
+//#include "Emulator.h"
 //#include "FileHistory.h"
 //#include "Actions.h"
 //#include "Language.h"
@@ -57,49 +58,48 @@
 //#include "JoystickPort.h"
 //#include "SdlShortcuts.h"
 //#include "SdlMouse.h"
+
+#include "VideoRender.h"
+#include "VideoManager.h"
+
 #ifdef ENABLE_OPENGL
 #include <SDL_opengl.h>
 #endif
 
-static volatile EmuState emuState = EMU_STOPPED;
-static volatile int      emuSuspendFlag;
-static volatile int      emuSingleStep = 0; 
 
-static int emulationStartFailure = 0; 
-
-static int    emuExitFlag;
-static UInt32 emuSysTime = 0;
-static UInt32 emuFrequency = 3579545;
-int           emuMaxSpeed = 0;
-int           emuPlayReverse = 0; 
-int           emuMaxEmuSpeed = 0; // Max speed issued by emulation 
-static char   emuStateName[512];
-static UInt32 emuUsageCurrent   = 0; 
-static UInt32 emuTimeIdle       = 0;
-static UInt32 emuTimeTotal      = 1; 
-static UInt32 emuTimeOverflow   = 0; 
-
-static int    enableSynchronousUpdate = 1;
-
-static void*  emuThread;
-#ifndef WII
-static void*  emuSyncEvent;
-#endif
-static void*  emuStartEvent;
-#ifndef WII
-static void*  emuTimer;
-#endif 
-
-void keyboardSetDirectory(char* directory);
-void keyboardInit();
-void keyboardSetFocus(int handle, int focus);
-void keyboardUpdate();
-int keyboardGetModifiers();
+UInt32* boardSysTime;
+static BoardTimer* timerList = NULL;
 static void handleEvent(SDL_Event* event);
 
 static Properties* properties;
 static Video* video;
-//static Shortcuts* shortcuts;
+
+static void*  emuSyncEvent;
+static void*  emuStartEvent;
+static void*  emuTimer;
+static void*  emuThread;
+
+static int    emuExitFlag;
+static UInt32 emuSysTime = 0;
+static UInt32 emuFrequency = 3579545;
+
+static volatile int      emuSuspendFlag;
+static volatile EmuState emuState = EMU_STOPPED;
+static volatile int      emuSingleStep = 0;
+
+static int enableSynchronousUpdate = 1;
+static int           emuMaxSpeed = 0;
+static int           emuMaxEmuSpeed = 0; // Max speed issued by emulation
+static int           emuPlayReverse = 0;
+
+static int emulationStartFailure = 0;
+static UInt32 emuTimeIdle       = 0;
+static UInt32 emuTimeTotal      = 1;
+static UInt32 emuTimeOverflow   = 0;
+static UInt32 emuUsageCurrent   = 0;
+static UInt32 emuCpuSpeed       = 0;
+static UInt32 emuCpuUsage       = 0;
+
 static int doQuit = 0;
 
 static int skipSync;
@@ -118,6 +118,8 @@ static GLfloat texCoordX;
 static GLfloat texCoordY;
 static GLuint textureId;
 #endif
+
+static UInt32 boardFreq = boardFrequency();
 
 #define WIDTH  320
 #define HEIGHT 240
@@ -190,7 +192,7 @@ void createSdlGlSurface(int width, int height, int fullscreen)
 	if (bitDepth == 16) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texW, texH, 0,
 			            GL_RGB, GL_UNSIGNED_SHORT_5_6_5, displayData[0]);
-	} 
+	}
     else {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texW, texH, 0,
 			            GL_RGBA, GL_UNSIGNED_BYTE, displayData[0]);
@@ -267,7 +269,16 @@ static int isLineDirty(int y, int lines) {
     return cmp;
 }
 
-int updateEmuDisplay(int updateAll) 
+void ioPortUnregister(int port){
+}
+
+static void emulatorPause(void)
+{
+    emulatorSetState(EMU_PAUSED);
+    debuggerNotifyEmulatorPause();
+}
+
+int updateEmuDisplay(int updateAll)
 {
     FrameBuffer* frameBuffer;
     int bytesPerPixel = bitDepth / 8;
@@ -288,8 +299,8 @@ int updateEmuDisplay(int updateAll)
         const int linesPerBlock = 4;
         GLfloat coordX = texCoordX;
         GLfloat coordY = texCoordY;
-        int y; 
-        int isDirty = 0; 
+        int y;
+        int isDirty = 0;
 
         if (properties->video.horizontalStretch) {
             coordX = texCoordX * (width - 2 * borderWidth) / width;
@@ -324,7 +335,7 @@ int updateEmuDisplay(int updateAll)
                 if (bitDepth == 16) {
 		            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, width, linesPerBlock,
 		                            GL_RGB, GL_UNSIGNED_SHORT_5_6_5, displayData[curDisplayData] + y * displayPitch);
-	            } 
+	            }
                 else {
 		            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, y, width, linesPerBlock,
 		                            GL_RGBA, GL_UNSIGNED_BYTE, displayData[curDisplayData] + y * displayPitch);
@@ -333,14 +344,14 @@ int updateEmuDisplay(int updateAll)
         }
 
         if (isDirty) {
-            glBegin(GL_QUADS);
+           glBegin(GL_QUADS);
 	        glTexCoord2f(0,      coordY); glVertex2i(0,     height);
 	        glTexCoord2f(coordX, coordY); glVertex2i(width, height);
 	        glTexCoord2f(coordX, 0     ); glVertex2i(width, 0     );
 	        glTexCoord2f(0,      0     ); glVertex2i(0,     0     );
 	        glEnd();
             glDisable(GL_TEXTURE_2D);
-            
+
 	        SDL_GL_SwapBuffers();
         }
 
@@ -350,7 +361,7 @@ int updateEmuDisplay(int updateAll)
     }
 #endif
 
-    videoRender(video, frameBuffer, bitDepth, zoom, 
+    videoRender(video, frameBuffer, bitDepth, zoom,
                 dpyData + borderWidth * bytesPerPixel, 0, displayPitch, -1);
 
     if (borderWidth > 0) {
@@ -369,7 +380,7 @@ int updateEmuDisplay(int updateAll)
     SDL_UpdateRect(surface, 0, 0, width, height);
     if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
 
-    return 0; 
+    return 0;
 }
 
 char* langDbgMemVram()              { return "VRAM"; }
@@ -377,7 +388,7 @@ char* langDbgRegs()                 { return "Registers"; }
 char* langDbgDevTms9929A()          { return "TMS9929A"; }
 char* langDbgDevTms99x8A()          { return "TMS99x8A"; }
 char* langDbgDevV9938()             { return "V9938"; }
-char* langDbgDevV9958()             { return "V9958"; } 
+char* langDbgDevV9958()             { return "V9958"; }
 
 void archVideoOutputChange() {}
 
@@ -388,7 +399,7 @@ int emulatorGetSyncPeriod() {
     return properties->emulation.syncMethod == P_EMU_SYNCAUTO ||
            properties->emulation.syncMethod == P_EMU_SYNCNONE ? 2 : 1;
 #endif
-} 
+}
 
 static int emuUseSynchronousUpdate()
 {
@@ -403,11 +414,11 @@ static int emuUseSynchronousUpdate()
         return properties->emulation.syncMethod;
     }
     return P_EMU_SYNCAUTO;
-} 
+}
 
 #ifndef WII
 static int timerCallback(void* timer) {
-	
+
     if (properties == NULL) {
         return 1;
     }
@@ -430,13 +441,13 @@ static int timerCallback(void* timer) {
         frameCount += refreshRate * diffTime;
         if (frameCount >= framePeriod) {
             frameCount %= framePeriod;
-            if (emuState == EMU_RUNNING) {
-                refreshRate = boardGetRefreshRate();
+            //if (emuState == EMU_RUNNING) {
+                //refreshRate = boardGetRefreshRate();
 
                 if (syncMethod == P_EMU_SYNCAUTO || syncMethod == P_EMU_SYNCNONE) {
                     archUpdateEmuDisplay(0);
                 }
-            }
+            //}
         }
 
         if (syncMethod == P_EMU_SYNCTOVBLANKASYNC) {
@@ -448,7 +459,7 @@ static int timerCallback(void* timer) {
 
     return 1;
 }
-#endif 
+#endif
 
 void emulatorSetFrequency(int logFrequency, int* frequency) {
     emuFrequency = (int)(3579545 * pow(2.0, (logFrequency - 50) / 15.0515));
@@ -458,7 +469,7 @@ void emulatorSetFrequency(int logFrequency, int* frequency) {
     }
 
     boardSetFrequency(emuFrequency);
-} 
+}
 
 int emulatorGetCpuOverflow() {
     int overflow = emuTimeOverflow;
@@ -707,10 +718,10 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
 }
 
 #endif
- 
+
 static void emulatorThread() {
     int frequency;
-    int success = 0;
+    int success = 1;
     int reversePeriod = 0;
     int reverseBufferCnt = 0;
 
@@ -720,12 +731,14 @@ static void emulatorThread() {
         reversePeriod = 50;
         reverseBufferCnt = properties->emulation.reverseMaxTime * 1000 / reversePeriod;
     }
+/*
     success = boardRun(*emuStateName ? emuStateName : NULL,
-                       frequency, 
+                       frequency,
                        reversePeriod,
                        reverseBufferCnt,
                        WaitForSync);
-
+*/
+      //the emu loop
     //ledSetAll(0);
     emuState = EMU_STOPPED;
 
@@ -747,14 +760,12 @@ void emulatorResume() {
         emuState = EMU_RUNNING;
         archUpdateEmuDisplay(0);
     }
-} 
+}
 
 void emulatorStart(const char* stateName) {
-	
+
     dbgEnable();
 
-    archEmulationStartNotification();
-	 
     emulatorResume();
 
     emuExitFlag = 0;
@@ -778,7 +789,7 @@ void emulatorStart(const char* stateName) {
 
     emuState = EMU_PAUSED;
     emulationStartFailure = 0;
-    strcpy(emuStateName, stateName ? stateName : "");
+    //strcpy(emuStateName, stateName ? stateName : "");
 
     //clearlog();
 
@@ -816,20 +827,11 @@ void emulatorStart(const char* stateName) {
         emuState = EMU_RUNNING;
     }
 #endif
-} 
+}
 
 
 EmuState emulatorGetState(){
-	
-}
-void emulatorSetState(EmuState state){
-	
-}
-
-void actionEmuStep() {
-    if (emulatorGetState() == EMU_PAUSED) {
-        emulatorSetState(EMU_STEP);
-    }
+   return emuState;
 }
 
 void actionEmuStepBack() {
@@ -838,20 +840,47 @@ void actionEmuStepBack() {
     }
 }
 
-void actionEmuTogglePause() {
-    if (emulatorGetState() == EMU_STOPPED) {
-        emulatorStart(NULL);
+void actionEmuTogglePause(){
+   if (emulatorGetState() == EMU_STOPPED) {
+      emulatorStart(NULL);
+   }
+   else if (emulatorGetState() == EMU_PAUSED) {
+      emulatorSetState(EMU_RUNNING);
+      debuggerNotifyEmulatorResume();
+   }
+   else {
+      emulatorSetState(EMU_PAUSED);
+      debuggerNotifyEmulatorPause();
+   }
+   //archUpdateMenu(0);
+}
+
+void emulatorSetState(EmuState state){
+   if (state == EMU_RUNNING) {
+//      archSoundResume();
+   }
+   else {
+//      archSoundSuspend();
+   }
+   if (state == EMU_STEP) {
+      state = EMU_RUNNING;
+      emuSingleStep = 1;
+   }
+   if (state == EMU_STEP_BACK) {
+      EmuState oldState = state;
+      state = EMU_RUNNING;
+      if (!boardRewindOne()) {
+         state = oldState;
+      }
+   }
+   emuState = state;
+}
+
+void actionEmuStep() {
+    if (emulatorGetState() == EMU_PAUSED) {
+        emulatorSetState(EMU_STEP);
     }
-    else if (emulatorGetState() == EMU_PAUSED) {
-        emulatorSetState(EMU_RUNNING);
-        debuggerNotifyEmulatorResume();
-    }
-    else {  
-        emulatorSetState(EMU_PAUSED);
-        debuggerNotifyEmulatorPause();
-    }
-    //archUpdateMenu(0);
-} 
+}
 
 void emulatorStop() {
     if (emuState == EMU_STOPPED) {
@@ -878,8 +907,8 @@ void emulatorStop() {
     dbgPrint();
 //    savelog();
 }
- 
-int archUpdateEmuDisplay(int syncMode) 
+
+int archUpdateEmuDisplay(int syncMode)
 {
     SDL_Event event;
 
@@ -903,7 +932,7 @@ int archUpdateEmuDisplay(int syncMode)
     return 1;
 }
 
-void archUpdateWindow() 
+void archUpdateWindow()
 {
     SDL_Event event;
 
@@ -931,11 +960,7 @@ int archPollEvent()
 }
 #endif
 
-void archEmulationStartNotification() 
-{
-}
-
-void archEmulationStopNotification() 
+void archEmulationStopNotification()
 {
 	 printf("archEmulationStopNotification\n");
 #ifdef RUN_EMU_ONCE_ONLY
@@ -943,7 +968,7 @@ void archEmulationStopNotification()
 #endif
 }
 
-void archEmulationStartFailure() 
+void archEmulationStartFailure()
 {
 	 printf("archEmulationStartFailure\n");
 #ifdef RUN_EMU_ONCE_ONLY
@@ -955,47 +980,7 @@ void archTrap(UInt8 value)
 {
 }
 
-void setDefaultPaths(const char* rootDir)
-{   
-    char buffer[512];  
-
-//    propertiesSetDirectory(rootDir, rootDir);
-/*
-    sprintf(buffer, "%s/Audio Capture", rootDir);
-    archCreateDirectory(buffer);
-    actionSetAudioCaptureSetDirectory(buffer, "");
-
-    sprintf(buffer, "%s/Video Capture", rootDir);
-    archCreateDirectory(buffer);
-    actionSetAudioCaptureSetDirectory(buffer, "");
-
-    sprintf(buffer, "%s/QuickSave", rootDir);
-    archCreateDirectory(buffer);
-    actionSetQuickSaveSetDirectory(buffer, "");
-
-    sprintf(buffer, "%s/SRAM", rootDir);
-    archCreateDirectory(buffer);
-    boardSetDirectory(buffer);
-
-    sprintf(buffer, "%s/Casinfo", rootDir);
-    archCreateDirectory(buffer);
-    tapeSetDirectory(buffer, "");
-
-    sprintf(buffer, "%s/Databases", rootDir);
-    archCreateDirectory(buffer);
-    mediaDbLoad(buffer);
-    
-    sprintf(buffer, "%s/Keyboard Config", rootDir);
-    archCreateDirectory(buffer);
-    keyboardSetDirectory(buffer);
-
-    sprintf(buffer, "%s/Shortcut Profiles", rootDir);
-    archCreateDirectory(buffer);
-    shortcutsSetDirectory(buffer);
-*/
-}
-
-static void handleEvent(SDL_Event* event) 
+static void handleEvent(SDL_Event* event)
 {
     switch (event->type) {
     case SDL_USEREVENT:
@@ -1012,7 +997,7 @@ static void handleEvent(SDL_Event* event)
             break;
         }
         break;
-/*		  
+/*
     case SDL_ACTIVEEVENT:
         if (event->active.state & SDL_APPINPUTFOCUS) {
             keyboardSetFocus(1, event->active.gain);
@@ -1039,7 +1024,7 @@ static void handleEvent(SDL_Event* event)
         break;
 */
     }
-	 
+
 }
 
 void RefreshScreen(int screenMode) {
@@ -1063,7 +1048,7 @@ int emulatorSyncScreen()
         }
     }
     return rv;
-} 
+}
 
 int main(int argc, char **argv)
 {
@@ -1074,8 +1059,10 @@ int main(int argc, char **argv)
     int i;
 
     SDL_Init( SDL_INIT_EVERYTHING );
+#ifdef WIN_SDL
 	 freopen( "CON", "w", stdout );//http://sdl.beuc.net/sdl.wiki/FAQ_Console
 	 freopen( "CON", "w", stderr );
+#endif
 
     for (i = 1; i < argc; i++) {
         if (strchr(argv[i], ' ') != NULL && argv[i][0] != '\"') {
@@ -1088,7 +1075,6 @@ int main(int argc, char **argv)
         }
         strcat(szLine, " ");
     }
-
     //setDefaultPaths(archGetCurrentDirectory());
 
 //    resetProperties = emuCheckResetArgument(szLine);
@@ -1097,38 +1083,37 @@ int main(int argc, char **argv)
     strcat(path, DIR_SEPARATOR "bluemsx.ini");
 */
     properties = propCreate(resetProperties, 0, /* P_KBD_EUROPEAN,*/ 0, "");
-    
-    properties->emulation.syncMethod = P_EMU_SYNCFRAMES;    
+
+    properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
 //    properties->emulation.syncMethod = P_EMU_SYNCTOVBLANKASYNC;
 
     if (resetProperties == 2) {
         propDestroy(properties);
         return 0;
     }
-    
 	 UInt32 systemTime = 1;
 	 boardInit(&systemTime);
 
     video = videoCreate();
-    videoSetColors(video, properties->video.saturation, properties->video.brightness, 
+    videoSetColors(video, properties->video.saturation, properties->video.brightness,
                   properties->video.contrast, properties->video.gamma);
     videoSetScanLines(video, properties->video.scanlinesEnable, properties->video.scanlinesPct);
     videoSetColorSaturation(video, properties->video.colorSaturationEnable, properties->video.colorSaturationWidth);
-    
+
     bitDepth = 32;
     if (!createSdlWindow()) {
         return 0;
     }
-	 
+
 /*
     dpyUpdateAckEvent = archEventCreate(0);
     keyboardInit();
 
     langInit();
     langSetLanguage(properties->language);
-*/    
+*/
     videoUpdateAll(video, properties);
-    
+
     //shortcuts = shortcutsCreate();
 
     //mediaDbSetDefaultRomType(properties->cartridge.defaultType);
@@ -1162,11 +1147,11 @@ int main(int argc, char **argv)
 	// For stop threads before destroy.
 	// Clean up.
 	if (SDL_WasInit(SDL_INIT_EVERYTHING)) {
-		SDL_Quit(); 
+		SDL_Quit();
 	}
 
     videoDestroy(video);
     propDestroy(properties);
-    
+
     return 0;
 }

@@ -23,7 +23,7 @@ X11_LIBDIR= /usr/X11R6/lib
 #
 CC    = $(SILENT)gcc
 CXX   = $(SILENT)g++
-LD    = $(SILENT)g++ 
+LD    = $(SILENT)g++
 RM    = $(SILENT)-rm -f
 RMDIR = $(SILENT)-rm -rf
 MKDIR = $(SILENT)-mkdir
@@ -34,12 +34,12 @@ ECHO  = @echo
 #
 #CFLAGS   = -w -O3 -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL
 #CPPFLAGS = -O3 -DNO_ASM
-CFLAGS   = -g -w -O2 -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
-
+#CFLAGS   = -g -w -O2 -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
+CFLAGS   = -g -w -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
 CFLAGS   += -DSINGLE_THREADED
 
 CPPFLAGS = -g -DNO_ASM
-LDFLAGS  = 
+LDFLAGS  =
 LIBS     = -lSDL #-lz -lGL
 TARGET   = blueMSXlite
 
@@ -53,6 +53,9 @@ OUTPUT_OBJS = $(addprefix $(OUTPUT_DIR)/, $(OBJS))
 SDL_PREFIX=
 ifdef WIN_SDL
 	SDL_PREFIX=--prefix=$(WIN_SDL)
+	#LDFLAGS+=-L$(MINGW32)/lib
+	# this enables printf() to show, but also forces a console window
+	LDFLAGS+=-mconsole -Wl,--subsystem,console
 endif
 SDL_CFLAGS := $(shell sdl-config $(SDL_PREFIX) --cflags)
 SDL_LDFLAGS := $(shell sdl-config $(SDL_PREFIX) --libs)
@@ -60,14 +63,10 @@ CFLAGS += $(SDL_CFLAGS)
 CPPFLAGS += $(SDL_CFLAGS)
 LDFLAGS += $(SDL_LDFLAGS)
 
-#LDFLAGS+=-L$(MINGW32)/lib
-# this enables printf() to show, but also forces a console window
-LDFLAGS+=-mconsole -Wl,--subsystem,console
-
 #
 # Include paths
 #
-INCLUDE = 
+INCLUDE =
 INCLUDE += -I$(ROOT_DIR)/Src/Arch
 #INCLUDE += -I$(ROOT_DIR)/Src/Bios
 INCLUDE += -I$(ROOT_DIR)/Src/Board
@@ -78,14 +77,14 @@ INCLUDE += -I$(ROOT_DIR)/Src/Emulator
 #INCLUDE += -I$(ROOT_DIR)/Src/IoDevice
 #INCLUDE += -I$(ROOT_DIR)/Src/Input
 #INCLUDE += -I$(ROOT_DIR)/Src/Language
-INCLUDE += -I$(ROOT_DIR)/Src/Media
-INCLUDE += -I$(ROOT_DIR)/Src/Memory
+#INCLUDE += -I$(ROOT_DIR)/Src/Media
+#INCLUDE += -I$(ROOT_DIR)/Src/Memory
 #INCLUDE += -I$(ROOT_DIR)/Src/Resources
 #INCLUDE += -I$(ROOT_DIR)/Src/SoundChips
 #INCLUDE += -I$(ROOT_DIR)/Src/Theme
 #INCLUDE += -I$(ROOT_DIR)/Src/TinyXML
 #INCLUDE += -I$(ROOT_DIR)/Src/Unzip
-INCLUDE += -I$(ROOT_DIR)/Src/Utils
+#INCLUDE += -I$(ROOT_DIR)/Src/Utils
 INCLUDE += -I$(ROOT_DIR)/Src/VideoChips
 INCLUDE += -I$(ROOT_DIR)/Src/VideoRender
 INCLUDE += -I$(ROOT_DIR)/Src/Sdl
@@ -100,13 +99,13 @@ vpath % $(ROOT_DIR)/Src/Emulator
 #vpath % $(ROOT_DIR)/Src/IoDevice
 #vpath % $(ROOT_DIR)/Src/Input
 #vpath % $(ROOT_DIR)/Src/Language
-vpath % $(ROOT_DIR)/Src/Media
+#vpath % $(ROOT_DIR)/Src/Media
 #vpath % $(ROOT_DIR)/Src/Memory
 #vpath % $(ROOT_DIR)/Src/Resources
 #vpath % $(ROOT_DIR)/Src/SoundChips
 #vpath % $(ROOT_DIR)/Src/TinyXML
 #vpath % $(ROOT_DIR)/Src/Unzip
-vpath % $(ROOT_DIR)/Src/Utils
+#vpath % $(ROOT_DIR)/Src/Utils
 vpath % $(ROOT_DIR)/Src/VideoChips
 vpath % $(ROOT_DIR)/Src/VideoRender
 vpath % $(ROOT_DIR)/Src/Sdl
@@ -137,9 +136,9 @@ SOURCE_FILES += SdlVideoIn.c
 #SOURCE_FILES += SdlMouse.c
 #SOURCE_FILES += SdlCdrom.c
 
-#SOURCE_FILES += Patch.c 
+#SOURCE_FILES += Patch.c
 
-#SOURCE_FILES += ziphelper.c 
+#SOURCE_FILES += ziphelper.c
 #SOURCE_FILES += ZipFromMem.c
 
 #SOURCE_FILES += adler32.c
@@ -280,27 +279,27 @@ SOURCE_FILES += SdlVideoIn.c
 
 #SOURCE_FILES += Crc32Calc.c
 #SOURCE_FILES += MediaDb.cpp
-#SOURCE_FILES += Sha1.cpp 
+#SOURCE_FILES += Sha1.cpp
 
-#SOURCE_FILES += CRTC6845.c 
-SOURCE_FILES += FrameBuffer.c 
+#SOURCE_FILES += CRTC6845.c
+SOURCE_FILES += FrameBuffer.c
 SOURCE_FILES += VDP.c
 SOURCE_FILES += V9938.c
 SOURCE_FILES += VideoManager.c
 
-SOURCE_FILES += hq2x.c 
-SOURCE_FILES += hq3x.c 
-SOURCE_FILES += Scalebit.c 
+SOURCE_FILES += hq2x.c
+SOURCE_FILES += hq3x.c
+SOURCE_FILES += Scalebit.c
 SOURCE_FILES += VideoRender.c
 
-#SOURCE_FILES += R800.c 
+#SOURCE_FILES += R800.c
 #SOURCE_FILES += R800Debug.c
-#SOURCE_FILES += R800Dasm.c 
-#SOURCE_FILES += R800SaveState.c 
+#SOURCE_FILES += R800Dasm.c
+#SOURCE_FILES += R800SaveState.c
 
-#SOURCE_FILES += Casette.c 
-#SOURCE_FILES += DirAsDisk.c 
-#SOURCE_FILES += Disk.c 
+#SOURCE_FILES += Casette.c
+#SOURCE_FILES += DirAsDisk.c
+#SOURCE_FILES += Disk.c
 #SOURCE_FILES += FdcAudio.c
 #SOURCE_FILES += GameReader.c
 #SOURCE_FILES += HarddiskIDE.c
@@ -309,23 +308,23 @@ SOURCE_FILES += VideoRender.c
 #SOURCE_FILES += I8254.c
 #SOURCE_FILES += I8255.c
 #SOURCE_FILES += sl811hs.c
-#SOURCE_FILES += Led.c 
+#SOURCE_FILES += Led.c
 #SOURCE_FILES += Microwire93Cx6.c
 #SOURCE_FILES += Microchip24x00.c
-#SOURCE_FILES += MidiIO.c 
-#SOURCE_FILES += MSXMidi.c 
-#SOURCE_FILES += MsxPPI.c 
-#SOURCE_FILES += NEC765.c 
-#SOURCE_FILES += PrinterIO.c 
-#SOURCE_FILES += RTC.c 
+#SOURCE_FILES += MidiIO.c
+#SOURCE_FILES += MSXMidi.c
+#SOURCE_FILES += MsxPPI.c
+#SOURCE_FILES += NEC765.c
+#SOURCE_FILES += PrinterIO.c
+#SOURCE_FILES += RTC.c
 #SOURCE_FILES += rtl8019.c
-#SOURCE_FILES += SunriseIDE.c 
-#SOURCE_FILES += SviPPI.c 
-#SOURCE_FILES += Sc3000PPI.c 
-#SOURCE_FILES += Sf7000PPI.c 
-#SOURCE_FILES += Switches.c 
-#SOURCE_FILES += TC8566AF.c 
-#SOURCE_FILES += TurboRIO.c 
+#SOURCE_FILES += SunriseIDE.c
+#SOURCE_FILES += SviPPI.c
+#SOURCE_FILES += Sc3000PPI.c
+#SOURCE_FILES += Sf7000PPI.c
+#SOURCE_FILES += Switches.c
+#SOURCE_FILES += TC8566AF.c
+#SOURCE_FILES += TurboRIO.c
 #SOURCE_FILES += UartIO.c
 #SOURCE_FILES += WD2793.c
 #SOURCE_FILES += wd33c93.c
@@ -337,77 +336,77 @@ SOURCE_FILES += VideoRender.c
 
 #SOURCE_FILES += LanguageMinimal.c
 
-#SOURCE_FILES += tinystr.cpp 
-#SOURCE_FILES += tinyxml.cpp 
-#SOURCE_FILES += tinyxmlerror.cpp 
-#SOURCE_FILES += tinyxmlparser.cpp 
- 
+#SOURCE_FILES += tinystr.cpp
+#SOURCE_FILES += tinyxml.cpp
+#SOURCE_FILES += tinyxmlerror.cpp
+#SOURCE_FILES += tinyxmlparser.cpp
+
 #SOURCE_FILES += AudioMixer.c
 #SOURCE_FILES += AY8910.c
-#SOURCE_FILES += DAC.c 
-#SOURCE_FILES += Fmopl.c 
-#SOURCE_FILES += KeyClick.c 
-#SOURCE_FILES += MameVLM5030.c 
-#SOURCE_FILES += MameYM2151.c 
-#SOURCE_FILES += Moonsound.c 
+#SOURCE_FILES += DAC.c
+#SOURCE_FILES += Fmopl.c
+#SOURCE_FILES += KeyClick.c
+#SOURCE_FILES += MameVLM5030.c
+#SOURCE_FILES += MameYM2151.c
+#SOURCE_FILES += Moonsound.c
 #SOURCE_FILES += MsxPsg.c
-#SOURCE_FILES += OpenMsxYM2413.cpp 
-#SOURCE_FILES += OpenMsxYM2413_2.cpp 
-#SOURCE_FILES += OpenMsxYMF262.cpp 
-#SOURCE_FILES += OpenMsxYMF278.cpp 
+#SOURCE_FILES += OpenMsxYM2413.cpp
+#SOURCE_FILES += OpenMsxYM2413_2.cpp
+#SOURCE_FILES += OpenMsxYMF262.cpp
+#SOURCE_FILES += OpenMsxYMF278.cpp
 #SOURCE_FILES += SamplePlayer.c
-#SOURCE_FILES += SCC.c 
-#SOURCE_FILES += SN76489.c 
-#SOURCE_FILES += VLM5030.c 
-#SOURCE_FILES += Y8950.c 
+#SOURCE_FILES += SCC.c
+#SOURCE_FILES += SN76489.c
+#SOURCE_FILES += VLM5030.c
+#SOURCE_FILES += Y8950.c
 #SOURCE_FILES += ym2151.c
-#SOURCE_FILES += YM2413.cpp 
-#SOURCE_FILES += Ymdeltat.c 
+#SOURCE_FILES += YM2413.cpp
+#SOURCE_FILES += Ymdeltat.c
 
-#SOURCE_FILES += Actions.c 
-#SOURCE_FILES += CommandLine.c 
-#SOURCE_FILES += Emulator.c 
-#SOURCE_FILES += FileHistory.c 
-#SOURCE_FILES += LaunchFile.c 
-SOURCE_FILES += Properties.c 
-#SOURCE_FILES += AppConfig.c 
+#SOURCE_FILES += Actions.c
+#SOURCE_FILES += CommandLine.c
+#SOURCE_FILES += Emulator.c
+#SOURCE_FILES += FileHistory.c
+#SOURCE_FILES += LaunchFile.c
+SOURCE_FILES += Properties.c
+#SOURCE_FILES += AppConfig.c
 
-#SOURCE_FILES += IsFileExtension.c 
-#SOURCE_FILES += SaveState.c 
-SOURCE_FILES += StrcmpNoCase.c 
-#SOURCE_FILES += TokenExtract.c 
-#SOURCE_FILES += IniFileParser.c 
-#SOURCE_FILES += ArrayList.c 
+#SOURCE_FILES += IsFileExtension.c
+#SOURCE_FILES += SaveState.c
+#SOURCE_FILES += StrcmpNoCase.c
+#SOURCE_FILES += TokenExtract.c
+#SOURCE_FILES += IniFileParser.c
+#SOURCE_FILES += ArrayList.c
 
-SOURCE_FILES += Board.c 
-#SOURCE_FILES += Machine.c 
-#SOURCE_FILES += MSX.c 
-#SOURCE_FILES += Steckschwein.c 
-#SOURCE_FILES += SVI.c 
-#SOURCE_FILES += Adam.c 
-#SOURCE_FILES += Coleco.c 
-#SOURCE_FILES += SG1000.c 
+SOURCE_FILES += Board.c
+#SOURCE_FILES += Machine.c
+#SOURCE_FILES += MSX.c
+#SOURCE_FILES += Steckschwein.c
+#SOURCE_FILES += SVI.c
+#SOURCE_FILES += Adam.c
+#SOURCE_FILES += Coleco.c
+#SOURCE_FILES += SG1000.c
 
-#SOURCE_FILES += ColecoJoystick.c 
-#SOURCE_FILES += ColecoSteeringWheel.c 
-#SOURCE_FILES += ColecoSuperAction.c 
-#SOURCE_FILES += InputEvent.c 
-#SOURCE_FILES += JoystickPort.c 
-#SOURCE_FILES += MagicKeyDongle.c 
-#SOURCE_FILES += MsxAsciiLaser.c 
-#SOURCE_FILES += MsxGunstick.c 
-#SOURCE_FILES += MsxJoystick.c 
-#SOURCE_FILES += MsxMouse.c 
-#SOURCE_FILES += MsxArkanoidPad.c 
-#SOURCE_FILES += MsxTetrisDongle.c 
-#SOURCE_FILES += Sg1000Joystick.c 
+#SOURCE_FILES += ColecoJoystick.c
+#SOURCE_FILES += ColecoSteeringWheel.c
+#SOURCE_FILES += ColecoSuperAction.c
+#SOURCE_FILES += InputEvent.c
+#SOURCE_FILES += JoystickPort.c
+#SOURCE_FILES += MagicKeyDongle.c
+#SOURCE_FILES += MsxAsciiLaser.c
+#SOURCE_FILES += MsxGunstick.c
+#SOURCE_FILES += MsxJoystick.c
+#SOURCE_FILES += MsxMouse.c
+#SOURCE_FILES += MsxArkanoidPad.c
+#SOURCE_FILES += MsxTetrisDongle.c
+#SOURCE_FILES += Sg1000Joystick.c
 #SOURCE_FILES += SviJoystick.c
-#SOURCE_FILES += SviJoyIo.c 
-#SOURCE_FILES += Sg1000JoyIo.c 
+#SOURCE_FILES += SviJoyIo.c
+#SOURCE_FILES += Sg1000JoyIo.c
 #SOURCE_FILES += CoinDevice.c
 
 SOURCE_FILES += DebugDeviceManager.c
-SOURCE_FILES += Debugger.c 
+SOURCE_FILES += Debugger.c
 
 HEADER_FILES  =
 
@@ -417,7 +416,7 @@ HEADER_FILES  =
 #
 all: $(OUTPUT_DIR) $(TARGET)
 
-clean: clean_$(TARGET)	
+clean: clean_$(TARGET)
 
 
 $(TARGET): $(OUTPUT_OBJS)
@@ -452,4 +451,3 @@ $(OUTPUT_DIR)/%.o: %.cxx  $(HEADER_FILES)
 $(OUTPUT_DIR)/%.res: %.rc $(HEADER_FILES)
 	$(ECHO) Compiling $<...
 	$(RC) $(CPPFLAGS) $(INCLUDE) -o $@ -i $<
-

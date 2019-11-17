@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -41,6 +41,7 @@
 #include "ArchNotifications.h"
 */
 #include "VideoManager.h"
+#include "VideoRender.h"
 #include "DebugDeviceManager.h"
 /*
 #include "MegaromCartridge.h"
@@ -58,7 +59,9 @@ static int skipSync;
 static int pendingInt;
 static int boardType;
 static int (*syncToRealClock)(int, int) = NULL;
+
 UInt32* boardSysTime;
+
 static UInt64 boardSysTime64;
 static UInt32 oldTime;
 static UInt32 boardFreq = boardFrequency();
@@ -74,7 +77,7 @@ static UInt32 boardRamSize;
 static UInt32 boardVramSize;
 static int boardRunning = 1;//1 - run
 
- 
+
 static int     ramMaxStates;
 static int     ramStateCur;
 static int     ramStateCount;
@@ -173,7 +176,7 @@ static void rleEncStartDecode(void* encodedData, int encodedSize)
     rleIdx = 0;
     rleDataSize = encodedSize;
     rleData = (RleData*)encodedData;
-    
+
     memset(rleCache, 0, sizeof(rleCache));
 
     rleCache[rleData[rleIdx].index] = rleData[rleIdx].value;
@@ -198,7 +201,7 @@ static int rleEncEof()
 }
 
 
-typedef enum 
+typedef enum
 {
     CAPTURE_IDLE = 0,
     CAPTURE_REC  = 1,
@@ -267,7 +270,7 @@ static void boardTimerCb(void* dummy, UInt32 time)
             cap.state = CAPTURE_IDLE;
         }
     }
-    
+
     if (cap.state == CAPTURE_REC) {
         cap.state = CAPTURE_IDLE;
 //        boardCaptureStart(cap.filename);
@@ -351,7 +354,7 @@ static void doSync(UInt32 time, int breakpointHit)
 }
 
 static void onStateSync(void* ref, UInt32 time)
-{    
+{
     if (enableSnapshots) {
         char memFilename[8];
         ramStateCur = (ramStateCur + 1) % ramMaxStates;
@@ -360,8 +363,8 @@ static void onStateSync(void* ref, UInt32 time)
         }
 
         sprintf(memFilename, "mem%d", ramStateCur);
-        
-        boardSaveState(memFilename, 0);
+
+        //boardSaveState(memFilename, 0);
     }
 
     boardTimerAdd(stateTimer, boardSystemTime() + stateFrequency);
@@ -381,7 +384,7 @@ static void onBreakpointSync(void* ref, UInt32 time) {
     skipSync = 0;
     doSync(time, 1);
 }
-/*
+
 int boardRewindOne() {
     UInt32 rewindTime;
     if (stateFrequency <= 0) {
@@ -395,12 +398,47 @@ int boardRewindOne() {
     skipSync = 1;
     return 1;
 }
-*/
+
+int boardRewind()
+{
+    char stateFile[8];
+
+    if (ramStateCount < 2) {
+        return 0;
+    }
+
+    ramStateCount--;
+    sprintf(stateFile, "mem%d", ramStateCur);
+    ramStateCur = (ramStateCur + ramMaxStates - 1) % ramMaxStates;
+
+    boardTimerCleanup();
+
+    //saveStateCreateForRead(stateFile);
+
+//    boardType = boardLoadState();
+//    machineLoadState(boardMachine);
+
+    boardInfo.loadState();
+    //boardCaptureLoadState();
+
+#if 1
+    if (stateFrequency > 0) {
+        boardTimerAdd(stateTimer, boardSystemTime() + stateFrequency);
+    }
+    //boardTimerAdd(syncTimer, boardSystemTime() + 1);
+//    boardTimerAdd(mixerTimer, boardSystemTime() + boardFrequency() / 50);
+
+    if (boardPeriodicCallback != NULL) {
+        boardTimerAdd(periodicTimer, boardSystemTime() + periodicInterval);
+    }
+#endif
+    return 1;
+}
 
 void boardSetFrequency(int frequency)
 {
    boardFreq = frequency * (boardFrequency() / 3579545);
-    
+
    //mixerSetBoardFrequency(frequency);
 }
 
@@ -535,7 +573,7 @@ void boardTimerAdd(BoardTimer* timer, UInt32 timeout)
     if (timeout - timeAnchor - TEST_TIME < currentTime - timeAnchor - TEST_TIME) {
         timer->next = timer;
         timer->prev = timer;
-        
+
         // Time has already expired
         return;
     }
@@ -608,7 +646,7 @@ void boardTimerCheckTimeout(void* dummy)
         timer->callback(timer->ref, timer->timeout);
     }
 
-    timeAnchor = boardSystemTime();    
+    timeAnchor = boardSystemTime();
 
     boardInfo.setCpuTimeout(boardInfo.cpuRef, timerList->next->timeout);
 }
@@ -623,11 +661,11 @@ UInt64 boardSystemTime64() {
 void boardInit(UInt32* systemTime)
 {
     static BoardTimer dummy_timer;
-    
 	 boardSysTime = systemTime;
-	 
     oldTime = *systemTime;
     boardSysTime64 = oldTime * HIRES_CYCLES_PER_LORES_CYCLE;
+
+    printf("boardInit %p\n", boardSysTime);
 
     timeAnchor = *systemTime;
 
@@ -649,7 +687,7 @@ int boardRun(char* stateFile,
 {
     int loadState = 0;
     int success = 1;
-	 
+
     syncToRealClock = syncCallback;
 
     videoManagerReset();
@@ -666,20 +704,20 @@ int boardRun(char* stateFile,
     memset(&boardInfo, 0, sizeof(boardInfo));
 	 boardRunning = 1;
 //	 success = steckSchweinCreate(machine, deviceInfo->video.vdpSyncMode, &boardInfo);
-    
+
     boardCaptureInit();
 
     if (success) {
         syncTimer = boardTimerCreate(onSync, NULL);
         fdcTimer = boardTimerCreate(onFdcDone, NULL);
-        
+
         stateFrequency = boardFrequency() / 1000 * reversePeriod;
 
         if (stateFrequency > 0) {
             ramStateCur  = 0;
             ramMaxStates = reverseBufferCnt;
             stateTimer = boardTimerCreate(onStateSync, NULL);
-            breakpointTimer = boardTimerCreate(onBreakpointSync, NULL); 
+            breakpointTimer = boardTimerCreate(onBreakpointSync, NULL);
             boardTimerAdd(stateTimer, boardSystemTime() + stateFrequency);
         }
         else {
@@ -687,7 +725,7 @@ int boardRun(char* stateFile,
         }
 
         boardTimerAdd(syncTimer, boardSystemTime() + 1);
-        
+
         if (boardPeriodicCallback != NULL) {
             periodicTimer = boardTimerCreate(boardPeriodicCallback, periodicRef);
             boardTimerAdd(periodicTimer, boardSystemTime() + periodicInterval);

@@ -543,7 +543,9 @@ main(int argc, char **argv)
 	}
 
 	if(!headless){
-		//SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
+		if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0){
+			return 1;
+		}
 		freopen( "CON", "w", stdout );//http://sdl.beuc.net/sdl.wiki/FAQ_Console
 		freopen( "CON", "w", stderr );
 		vdp_init(window_scale, scale_quality);

@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -26,7 +26,7 @@
 ******************************************************************************
 */
 #include "DebugDeviceManager.h"
-#include "Board.h"
+//#include "Board.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -48,7 +48,7 @@ typedef struct {
 
 static DebugDeviceManager devManager;
 
-void debugDeviceManagerReset() 
+void debugDeviceManagerReset()
 {
     devManager.count = 0;
 //    devManager.lastHandle = 0;
@@ -204,7 +204,7 @@ DbgMemoryBlock* dbgDeviceAddMemoryBlock(DbgDevice* dbgDevice,
 
 DbgCallstack* dbgDeviceAddCallstack(DbgDevice* dbgDevice,
                                     const char* name,
-                                    UInt16* callstack, 
+                                    UInt16* callstack,
                                     int size)
 {
     DbgCallstack* stack;
@@ -298,8 +298,8 @@ void dbgIoPortsAddPort(DbgIoPorts* ioPorts,
                        UInt8 value)
 {
     if (index >= 0 && (UInt32)index < ioPorts->count) {
-        ioPorts->port[index].port       = port;  
-        ioPorts->port[index].direction  = direction;    
+        ioPorts->port[index].port       = port;
+        ioPorts->port[index].direction  = direction;
         ioPorts->port[index].value      = value;
     }
 }

@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -35,7 +35,7 @@
 //#include "Machine.h"
 //#include "Language.h"
 //#include "JoystickPort.h"
-#include "Board.h"
+//#include "Board.h"
 //#include "AppConfig.h"
 
 // PacketFileSystem.h Need to be included after all other includes
@@ -152,7 +152,7 @@ char* enumToString(ValueNamePair* pair, int value) {
     }
     return "unknown";
 }
-
+/*
 int stringToEnum(ValueNamePair* pair, const char* name)
 {
     while (pair->value >= 0) {
@@ -163,12 +163,13 @@ int stringToEnum(ValueNamePair* pair, const char* name)
     }
     return -1;
 }
+*/
 
 /* Default property settings */
-void propInitDefaults(Properties* properties, int langType, int syncMode, const char* themeName) 
+void propInitDefaults(Properties* properties, int langType, int syncMode, const char* themeName)
 {
     int i;
-/*    
+/*
     properties->language                      = langType;
     strcpy(properties->settings.language, langToName(properties->language, 0));
 
@@ -176,7 +177,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->settings.usePngScreenshots    = 1;
     properties->settings.disableScreensaver   = 0;
     properties->settings.portable             = 0;
-    
+
     strcpy(properties->settings.themeName, themeName);
 
     memset(properties->settings.windowPos, 0, sizeof(properties->settings.windowPos));
@@ -184,7 +185,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->emulation.statsDefDir[0]     = 0;
     properties->emulation.shortcutProfile[0] = 0;
     strcpy(properties->emulation.machineName, "MSX2");
-    properties->emulation.speed             = 50;
+    properties->emulation.speed             = 50;//fps
     properties->emulation.syncMethod        = syncMode ? P_EMU_SYNCTOVBLANK : P_EMU_SYNCAUTO;
     properties->emulation.syncMethodGdi     = P_EMU_SYNCAUTO;
     properties->emulation.syncMethodD3D     = properties->emulation.syncMethod;
@@ -201,7 +202,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->emulation.priorityBoost     = 0;
     properties->emulation.reverseEnable     = 1;
     properties->emulation.reverseMaxTime    = 15;
-	 
+
     properties->video.monitorColor          = P_VIDEO_COLOR;
     properties->video.monitorType           = P_VIDEO_PALMON;
     properties->video.windowSize            = P_VIDEO_SIZEX2;
@@ -230,7 +231,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->video.detectActiveMonitor   = 1;
     properties->video.captureFps            = 60;
     properties->video.captureSize           = 1;
-    
+
     properties->video.d3d.aspectRatioType   = P_D3D_AR_NTSC;
     properties->video.d3d.cropType          = P_D3D_CROP_SIZE_MSX2_PLUS_8;
     properties->video.d3d.extendBorderColor = 1;
@@ -249,7 +250,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->sound.driver                = P_SOUND_DRVDIRECTX;
     properties->sound.bufSize               = 100;
     properties->sound.stabilizeDSoundTiming = 1;
-    
+
     properties->sound.stereo = 1;
     properties->sound.masterVolume = 75;
     properties->sound.masterEnable = 1;
@@ -257,7 +258,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->sound.chip.enableY8950 = 1;
     properties->sound.chip.enableMoonsound = 1;
     properties->sound.chip.moonsoundSRAMSize = 640;
-    
+
     properties->sound.chip.ym2413Oversampling = 1;
     properties->sound.chip.y8950Oversampling = 1;
     properties->sound.chip.moonsoundOversampling = 1;
@@ -301,7 +302,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->sound.mixerChannel[MIXER_CHANNEL_KEYBOARD].enable = 1;
     properties->sound.mixerChannel[MIXER_CHANNEL_KEYBOARD].pan = 55;
     properties->sound.mixerChannel[MIXER_CHANNEL_KEYBOARD].volume = 65;
-    
+
     properties->sound.YkIn.type               = P_MIDI_NONE;
     properties->sound.YkIn.name[0]            = 0;
     strcpy(properties->sound.YkIn.fileName, "midiin.dat");
@@ -316,15 +317,15 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     strcpy(properties->sound.MidiOut.fileName, "midiout.dat");
     properties->sound.MidiOut.desc[0]         = 0;
     properties->sound.MidiOut.mt32ToGm        = 0;
-    
+
     properties->joystick.POV0isAxes    = 0;
-    
+
 #ifdef WII
     // Use joystick by default
     strcpy(properties->joy1.type, "joystick");
     properties->joy1.typeId            = JOYSTICK_PORT_JOYSTICK;
     properties->joy1.autofire          = 0;
-    
+
     strcpy(properties->joy2.type, "joystick");
     properties->joy2.typeId            = JOYSTICK_PORT_JOYSTICK;
     properties->joy2.autofire          = 0;
@@ -332,7 +333,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     strcpy(properties->joy1.type, "none");
     properties->joy1.typeId            = 0;
     properties->joy1.autofire          = 0;
-    
+
     strcpy(properties->joy2.type, "none");
     properties->joy2.typeId            = 0;
     properties->joy2.autofire          = 0;
@@ -374,7 +375,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
         properties->media.tapes[i].extensionFilter = 0;
         properties->media.tapes[i].type = 0;
     }
-    
+
     properties->cartridge.defDir[0]    = 0;
     properties->cartridge.defDirSEGA[0]   = 0;
     properties->cartridge.defDirCOLECO[0] = 0;
@@ -400,7 +401,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->ports.Lpt.name[0]        = 0;
     strcpy(properties->ports.Lpt.fileName, "printer.dat");
     properties->ports.Lpt.portName[0]    = 0;
-    
+
     properties->ports.Com.type           = P_COM_NONE;
     properties->ports.Com.name[0]        = 0;
     strcpy(properties->ports.Com.fileName, "uart.dat");
@@ -435,7 +436,7 @@ Properties* propGetGlobalProperties()
     return globalProperties;
 }
 
-Properties* propCreate(int useDefault, int langType, int syncMode, const char* themeName) 
+Properties* propCreate(int useDefault, int langType, int syncMode, const char* themeName)
 {
     Properties* properties;
 
@@ -457,7 +458,7 @@ Properties* propCreate(int useDefault, int langType, int syncMode, const char* t
         int foundMachine = 0;
 		ArrayListIterator *iterator;
         ArrayList *machineList;
-		
+
 		machineList = arrayListCreate();
       machineFillAvailable(machineList, 1);
         iterator = arrayListCreateIterator(machineList);
@@ -476,7 +477,7 @@ Properties* propCreate(int useDefault, int langType, int syncMode, const char* t
         {
             if (arrayListGetSize(machineList) > 0)
                 strcpy(properties->emulation.machineName, (char *)arrayListGetObject(machineList, 0));
-            
+
             iterator = arrayListCreateIterator(machineList);
             while (arrayListCanIterate(iterator))
             {
@@ -486,7 +487,7 @@ Properties* propCreate(int useDefault, int langType, int syncMode, const char* t
                     strcpy(properties->emulation.machineName, machineName);
                     foundMachine = 1;
                 }
-                
+
                 if (!foundMachine && strncmp(machineName, "MSX2", 4))
                 {
                     strcpy(properties->emulation.machineName, machineName);
@@ -495,7 +496,7 @@ Properties* propCreate(int useDefault, int langType, int syncMode, const char* t
             }
             arrayListDestroyIterator(iterator);
         }
-        
+
         arrayListDestroy(machineList);
     }
 #endif

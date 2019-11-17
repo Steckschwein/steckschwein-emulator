@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -26,11 +26,12 @@
 ******************************************************************************
 */
 
+#include "Adapter.h"
 #include "Debugger.h"
 #include "DebugDeviceManager.h"
-#include "Emulator.h"
+//#include "Emulator.h"
 //#include "Actions.h"
-#include "Board.h"
+//#include "Board.h"
 #include <stdlib.h>
 
 struct BlueDebugger {
@@ -119,7 +120,7 @@ int debuggerCheckVramAccess(void)
 void debuggerNotifyEmulatorStart()
 {
     int i;
-    
+
     dbgState = DBG_RUNNING;
 
     for (i = 0; i < MAX_DEBUGGERS; i++) {
@@ -145,7 +146,7 @@ void debuggerNotifyEmulatorStop()
 void debuggerNotifyEmulatorPause()
 {
     int i;
-    
+
     dbgState = DBG_PAUSED;
 
     for (i = 0; i < MAX_DEBUGGERS; i++) {
@@ -158,7 +159,7 @@ void debuggerNotifyEmulatorPause()
 void debuggerNotifyEmulatorResume()
 {
     int i;
-    
+
     dbgState = DBG_RUNNING;
 
     for (i = 0; i < MAX_DEBUGGERS; i++) {
@@ -171,7 +172,7 @@ void debuggerNotifyEmulatorResume()
 void debuggerNotifyEmulatorReset()
 {
     int i;
-    
+
     dbgState = DBG_RUNNING;
 
     for (i = 0; i < MAX_DEBUGGERS; i++) {
@@ -203,10 +204,10 @@ void debuggerSetBreakpoint(UInt16 slot, UInt16 page, UInt16 address)
     }
 }
 
-DbgSnapshot* dbgSnapshotCreate() 
+DbgSnapshot* dbgSnapshotCreate()
 {
     DbgSnapshot* dbgSnapshot;
-    
+
     if (dbgState != DBG_PAUSED) {
         return NULL;
     }
@@ -378,7 +379,7 @@ void dbgEnableVramAccessCheck(int enable)
     else {
         debuggerVramAccessEnable--;
     }
-}    
+}
 
 void dbgSetWatchpoint(DbgDeviceType devType, int address, DbgWatchpointCondition condition, UInt32 referenceValue, int size)
 {
