@@ -1020,7 +1020,7 @@ int main(int argc, char **argv)
     int i;
 
     SDL_Init( SDL_INIT_EVERYTHING );
-#ifdef WIN_SDL
+#if defined(_WIN32)
 	 freopen( "CON", "w", stdout );//http://sdl.beuc.net/sdl.wiki/FAQ_Console
 	 freopen( "CON", "w", stderr );
 #endif
