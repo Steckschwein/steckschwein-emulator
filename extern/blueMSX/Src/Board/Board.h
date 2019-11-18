@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -27,7 +27,7 @@
 */
 #ifndef BOARD_H
 #define BOARD_H
- 
+
 #include "MsxTypes.h"
 //#include "MediaDb.h"
 //#include "Machine.h"
@@ -36,35 +36,43 @@
 #include <stdio.h>
 
 typedef struct {
+   /*
     int  cartridgeCount;
     int  diskdriveCount;
     int  casetteCount;
-
+    */
     void* cpuRef;
-
+    
     void   (*destroy)();
+    /*
     void   (*softReset)();
     void   (*loadState)();
     void   (*saveState)();
+*/
     int    (*getRefreshRate)();
     UInt8* (*getRamPage)(int);
+/*
     void   (*setDataBus)(void*, UInt8, UInt8, int);
 
+    */
     void   (*run)(void*);
     void   (*stop)(void*);
+
     void   (*setInt)(void*);
     void   (*clearInt)(void*);
     void   (*setCpuTimeout)(void*, UInt32);
+
     void   (*setBreakpoint)(void*, UInt16);
     void   (*clearBreakpoint)(void*, UInt16);
-
+/*
     void   (*changeCartridge)(void*, int, int);
-
+*/
     UInt32   (*getTimeTrace)(int);
+
 } BoardInfo;
- 
+
 static BoardInfo boardInfo;
- 
+
 void boardInit(UInt32* systemTime);
 
 UInt64 boardSystemTime64();
@@ -125,4 +133,3 @@ int  boardGetVideoAutodetect();
 void boardSetPeriodicCallback(BoardTimerCb cb, void* reference, UInt32 frequency);
 
 #endif /* BOARD_H */
-

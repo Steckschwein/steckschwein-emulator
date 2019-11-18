@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -45,16 +45,16 @@ typedef struct {
     int   state;
 } Event;
 
-void* archEventCreate(int initState) 
-{ 
+void* archEventCreate(int initState)
+{
     Event* e = calloc(1, sizeof(Event));
     e->state = initState ? 1 : 0;
     e->lockSem  = archSemaphoreCreate(1);
     e->eventSem  = archSemaphoreCreate(e->state);
-    return e; 
+    return e;
 }
 
-void archEventDestroy(void* event) 
+void archEventDestroy(void* event)
 {
     Event* e = (Event*)event;
     archSemaphoreDestroy(e->lockSem);
@@ -62,7 +62,7 @@ void archEventDestroy(void* event)
     free(e);
 }
 
-void archEventSet(void* event) 
+void archEventSet(void* event)
 {
     Event* e = (Event*)event;
     if (e->state == 0) {
@@ -71,7 +71,7 @@ void archEventSet(void* event)
     }
 }
 
-void archEventWait(void* event, int timeout) 
+void archEventWait(void* event, int timeout)
 {
     Event* e = (Event*)event;
     archSemaphoreWait(e->eventSem, timeout);
@@ -85,33 +85,36 @@ typedef struct {
     SDL_sem* semaphore;
 } Semaphore;
 
-void* archSemaphoreCreate(int initCount) 
-{ 
+void* archSemaphoreCreate(int initCount)
+{
     Semaphore* s = (Semaphore*)malloc(sizeof(Semaphore));
 
     s->semaphore = SDL_CreateSemaphore(initCount);
 
+    printf("sem %p %p\n", s, s->semaphore);
     return s;
 }
 
-void archSemaphoreDestroy(void* semaphore) 
+void archSemaphoreDestroy(void* semaphore)
 {
     Semaphore* s = (Semaphore*)semaphore;
 
+    printf("destroy %p %p\n", s, s->semaphore);
+    
     SDL_DestroySemaphore(s->semaphore);
     free(s);
+
 }
 
-void archSemaphoreSignal(void* semaphore) 
+void archSemaphoreSignal(void* semaphore)
 {
     Semaphore* s = (Semaphore*)semaphore;
 
     SDL_SemPost(s->semaphore);
 }
 
-void archSemaphoreWait(void* semaphore, int timeout) 
-{
-    Semaphore* s = (Semaphore*)semaphore;
+void archSemaphoreWait(void* semaphore, int timeout){
 
-    while (-1 == SDL_SemWait(s->semaphore));
+   Semaphore* s = (Semaphore*)semaphore;
+   while (-1 == SDL_SemWait(s->semaphore));
 }

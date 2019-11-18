@@ -66,7 +66,6 @@
 #include <SDL_opengl.h>
 #endif
 
-
 UInt32* boardSysTime;
 static BoardTimer* timerList = NULL;
 static void handleEvent(SDL_Event* event);
@@ -419,6 +418,8 @@ static int emuUseSynchronousUpdate()
 #ifndef WII
 static int timerCallback(void* timer) {
 
+    printf("timerCallback\n");
+
     if (properties == NULL) {
         return 1;
     }
@@ -478,42 +479,6 @@ int emulatorGetCpuOverflow() {
 }
 
 #ifndef NO_TIMERS
-
-#ifdef WII
-
-static int WaitForSync(int maxSpeed, int breakpointHit)
-{
-    UInt32 diffTime;
-
-    emuMaxEmuSpeed = maxSpeed;
-
-    emuSuspendFlag = 1;
-
-    //archPollInput();
-
-    if (emuState != EMU_RUNNING) {
-        archEventSet(emuStartEvent);
-        archThreadSleep(100);
-        emuSuspendFlag = 0;
-        return emuExitFlag ? -1 : 0;
-    }
-
-    emuSuspendFlag = 0;
-
-    if (emuSingleStep) {
-        diffTime = 0;
-    }else{
-        diffTime = 20;
-    }
-
-    if (emuMaxSpeed || emuMaxEmuSpeed) {
-        diffTime *= 10;
-    }
-
-    return emuExitFlag ? -1 : diffTime;
-}
-
-#else
 
 int WaitReverse()
 {
@@ -650,7 +615,6 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
 
     return emuExitFlag ? -99 : diffTime;
 }
-#endif
 
 #else
 #include <windows.h>
@@ -731,13 +695,10 @@ static void emulatorThread() {
         reversePeriod = 50;
         reverseBufferCnt = properties->emulation.reverseMaxTime * 1000 / reversePeriod;
     }
-/*
-    success = boardRun(*emuStateName ? emuStateName : NULL,
-                       frequency,
+    success = boardRun(frequency,
                        reversePeriod,
                        reverseBufferCnt,
                        WaitForSync);
-*/
       //the emu loop
     //ledSetAll(0);
     emuState = EMU_STOPPED;
@@ -1091,7 +1052,7 @@ int main(int argc, char **argv)
         propDestroy(properties);
         return 0;
     }
-	 UInt32 systemTime = 1;
+	 UInt32 systemTime = 0;
 	 boardInit(&systemTime);
 
     video = videoCreate();

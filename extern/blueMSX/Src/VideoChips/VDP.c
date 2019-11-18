@@ -2318,7 +2318,7 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
         break;
     }
 
-    vdp->debugHandle = debugDeviceRegister(DBGTYPE_VIDEO, vdpVersionString, &dbgCallbacks, vdp);
+    //vdp->debugHandle = debugDeviceRegister(DBGTYPE_VIDEO, vdpVersionString, &dbgCallbacks, vdp);
 	/*
     switch (vdp->vdpConnector) {
     case VDP_STECKSCHWEIN:

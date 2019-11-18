@@ -72,7 +72,7 @@ static BoardTimer* syncTimer;
 static BoardTimer* stateTimer;
 static BoardTimer* breakpointTimer;
 
-static BoardInfo boardInfo;
+//static BoardInfo boardInfo;
 static UInt32 boardRamSize;
 static UInt32 boardVramSize;
 static int boardRunning = 1;//1 - run
@@ -96,6 +96,8 @@ static UInt32       periodicInterval;
 static BoardTimer*  periodicTimer;
 
 void boardTimerCleanup();
+
+//extern void PatchReset(BoardType boardType);
 
 #define HIRES_CYCLES_PER_LORES_CYCLE (UInt64)100000
 #define boardFrequency64() (HIRES_CYCLES_PER_LORES_CYCLE * boardFrequency())
@@ -418,7 +420,7 @@ int boardRewind()
 //    boardType = boardLoadState();
 //    machineLoadState(boardMachine);
 
-    boardInfo.loadState();
+//    boardInfo.loadState();
     //boardCaptureLoadState();
 
 #if 1
@@ -679,8 +681,7 @@ void boardInit(UInt32* systemTime)
     }
 }
 
-int boardRun(char* stateFile,
-             int frequency,
+int boardRun(int frequency,
              int reversePeriod,
              int reverseBufferCnt,
              int (*syncCallback)(int, int))
@@ -693,17 +694,18 @@ int boardRun(char* stateFile,
     videoManagerReset();
     debugDeviceManagerReset();
 
-/*
-    boardType = machine->board.type;
-    PatchReset(boardType);
-*/
+
+//    boardType = machine->board.type;
+   // PatchReset(boardType);
+
     pendingInt = 0;
 
     boardSetFrequency(frequency);
 
-    memset(&boardInfo, 0, sizeof(boardInfo));
 	 boardRunning = 1;
-//	 success = steckSchweinCreate(machine, deviceInfo->video.vdpSyncMode, &boardInfo);
+    memset(&boardInfo, 0, sizeof(boardInfo));
+    VdpSyncMode vdpSyncMode = VDP_SYNC_50HZ;
+	 success = steckSchweinCreate(vdpSyncMode, &boardInfo);
 
     boardCaptureInit();
 
@@ -735,10 +737,7 @@ int boardRun(char* stateFile,
             syncToRealClock(0, 0);
         }
 
-        //boardInfo.run(boardInfo.cpuRef);
-		  for(;;){
-			  printf(".");
-		  }
+        boardInfo.run(boardInfo.cpuRef);
 
         if (periodicTimer != NULL) {
             boardTimerDestroy(periodicTimer);
@@ -747,7 +746,7 @@ int boardRun(char* stateFile,
 
         //boardCaptureDestroy();
 
-       // boardInfo.destroy();
+        boardInfo.destroy();
 
         boardTimerDestroy(fdcTimer);
         boardTimerDestroy(syncTimer);
