@@ -1,6 +1,9 @@
 #include "Steckschwein.h"
 #include "Adapter.h"
 
+//test
+#include "VDP.h"
+
 UInt8* steckschweinRam;
 static UInt32          steckschweinRamSize;
 static UInt32          steckschweinRamStart;
@@ -39,22 +42,39 @@ static UInt8* getRamPage(int page) {
 }
 
 void mos6502SetInt(MOS6502* mos6502) {
-
+	printf("mos6502SetInt %p\n", mos6502);
 }
 
 void mos6502Execute(MOS6502* mos6502) {
-
+    static SystemTime lastRefreshTime = 0;
+    int i=0;
+    while (!mos6502->terminate) {
+    	if(i % 16 == 0){
+    		int v = 0x87;
+    		testWriteVdpRegister(v);
+//        	printf("write %x\n", v);
+    	}else if(i % 16 == 8){
+    		int v = 0xff;
+    		testWriteVdpRegister(i & v);
+  //      	printf("write %x\n", v);
+    	}
+    	i++;
+    	continue;
+    }
 }
 
 void mos6502ClearInt(MOS6502* mos6502) {
+	//printf("mos6502ClearInt %p\n", mos6502);
 //    mos6502->intState = INT_HIGH;
 }
 
 void mos6502SetTimeoutAt(MOS6502* mos6502, SystemTime time){
+	printf("mos6502SetTimeoutAt %p\n", mos6502);
     //r800->timeout = time;
 }
 
 void mos6502SetBreakpoint(MOS6502* mos6502, UInt16 address){
+	printf("mos6502SetBreakpoint %p\n", mos6502);
    /*
 #ifdef ENABLE_BREAKPOINTS
     if (r800->breakpoints[address] == 0) {
@@ -77,16 +97,25 @@ void mos6502ClearBreakpoint(MOS6502* mos6502, UInt16 address)
 }
 
 void mos6502StopExecution(MOS6502* mos6502) {
-//    mos6502->terminate = 1;
+    mos6502->terminate = 1;
 }
 
 static UInt32 mos6502GetTimeTrace(MOS6502* mos6502, int offset){
-   return mos6502->systemTime;
+	return mos6502->systemTime;
 }
 
 static UInt32 getTimeTrace(int offset) {
     return mos6502GetTimeTrace(mos6502, offset);
 }
+
+MOS6502* mos6502create(){
+	MOS6502* mos6502 = malloc(sizeof(MOS6502));
+	mos6502->systemTime = 0;
+	mos6502->terminate = 0;
+
+	return mos6502;
+}
+
 
 int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
@@ -96,9 +125,9 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
      steckschweinRam = NULL;
 
      //r800 = r800Create(cpuFlags, slotRead, slotWrite, ioPortRead, ioPortWrite, PatchZ80, boardTimerCheckTimeout, NULL, NULL, NULL, NULL, NULL, NULL);
-     mos6502 = malloc(sizeof(MOS6502));
+     mos6502 = mos6502create();
 
-     boardInfo->cpuRef           = NULL;//r800;
+     boardInfo->cpuRef           = mos6502;//r800;
 
      boardInfo->destroy          = destroy;
      boardInfo->getRefreshRate   = getRefreshRate;
@@ -123,7 +152,7 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
      //ioPortReset();
      //ramMapperIoCreate();
 
-     //r800Reset(mos6502, 0);
+//     mos6502Reset(mos6502, 0);
      //mixerReset(boardGetMixer());
 
      //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);

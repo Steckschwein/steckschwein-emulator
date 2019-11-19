@@ -26,8 +26,8 @@
 ******************************************************************************
 */
 #include "FrameBuffer.h"
-//#include "ArchEvent.h"
-//#include "ArchVideoIn.h"
+#include "ArchEvent.h"
+#include "ArchVideoIn.h"
 #include <stdlib.h>
 #include <string.h>
 

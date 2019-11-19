@@ -113,8 +113,8 @@ void archSemaphoreSignal(void* semaphore)
     SDL_SemPost(s->semaphore);
 }
 
-void archSemaphoreWait(void* semaphore, int timeout){
+void archSemaphoreWait(void* sem, int timeout){
 
-   Semaphore* s = (Semaphore*)semaphore;
+   Semaphore* s = (Semaphore*)sem;
    while (-1 == SDL_SemWait(s->semaphore));
 }

@@ -1398,6 +1398,10 @@ static void writeRegister(VDP* vdp, UInt16 ioPort, UInt8 value)
     }
 }
 
+void testWriteVdpRegister(int value){
+	writeRegister(theVdp, NULL, value);
+}
+
 void vdpForceSync()
 {
     if (theVdp != NULL) {
@@ -2319,7 +2323,8 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
     }
 
     //vdp->debugHandle = debugDeviceRegister(DBGTYPE_VIDEO, vdpVersionString, &dbgCallbacks, vdp);
-	/*
+
+    /*
     switch (vdp->vdpConnector) {
     case VDP_STECKSCHWEIN:
         ioPortRegister(0x220, read,       write,      vdp);

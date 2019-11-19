@@ -418,8 +418,6 @@ static int emuUseSynchronousUpdate()
 #ifndef WII
 static int timerCallback(void* timer) {
 
-    printf("timerCallback\n");
-
     if (properties == NULL) {
         return 1;
     }
@@ -1052,8 +1050,6 @@ int main(int argc, char **argv)
         propDestroy(properties);
         return 0;
     }
-	 UInt32 systemTime = 0;
-	 boardInit(&systemTime);
 
     video = videoCreate();
     videoSetColors(video, properties->video.saturation, properties->video.brightness,

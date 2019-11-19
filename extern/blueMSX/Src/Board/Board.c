@@ -57,7 +57,6 @@
 
 static int skipSync;
 static int pendingInt;
-static int boardType;
 static int (*syncToRealClock)(int, int) = NULL;
 
 UInt32* boardSysTime;

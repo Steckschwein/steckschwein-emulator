@@ -27,9 +27,7 @@
 */
 #include "VideoRender.h"
 #include "FrameBuffer.h"
-//#include "ArchTimer.h"
 #include "Properties.h"
-#include "Emulator.h"
 #include "Scalebit.h"
 #include "hq2x.h"
 #include "hq3x.h"
