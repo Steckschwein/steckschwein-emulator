@@ -628,7 +628,7 @@ void boardTimerCleanup()
     timeoutCheckBreak = 1;
 }
 
-void boardTimerCheckTimeout(void* dummy)
+void boardTimerCheckTimeout(void* usrDefinedCb)
 {
     UInt32 currentTime = boardSystemTime();
     timerList->timeout = currentTime + MAX_TIME;

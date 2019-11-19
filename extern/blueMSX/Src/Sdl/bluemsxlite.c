@@ -67,7 +67,6 @@
 #endif
 
 UInt32* boardSysTime;
-static BoardTimer* timerList = NULL;
 static void handleEvent(SDL_Event* event);
 
 static Properties* properties;
@@ -201,7 +200,7 @@ void createSdlGlSurface(int width, int height, int fullscreen)
 
 int createSdlWindow()
 {
-    const char *title = "blueMSXlite";
+    const char *title = "Steckschwein - blueMSXlite";
     int fullscreen = properties->video.windowSize == P_VIDEO_SIZEFULLSCREEN;
     int width;
     int height;

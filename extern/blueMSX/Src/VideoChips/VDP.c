@@ -601,8 +601,6 @@ int getScreenCompletePercent()
 
 static void onDisplay(VDP* vdp, UInt32 time)
 {
-	printf("onDisplay() %x\n", time);
-
     int isPal = vdpIsVideoPal(vdp);
 
     sync(vdp, time);
@@ -837,7 +835,7 @@ static void vdpUpdateRegisters(VDP* vdp, UInt8 reg, UInt8 value)
 //    if (reg == 0 || reg == 1 || reg == 5 || reg == 6 || reg == 8 || reg == 9 || reg == 11 || reg == 23)
 //        printf("W %.2x: 0x%.2x\t%d\n", reg, value, boardSystemTime());
 
-#if 0
+#ifdef DEBUG_ENABLED
     if (reg == 0 || reg == 8 || reg == 9)
         printf("W %.2x: 0x%.2x\n", reg, value);
 #endif
@@ -2124,11 +2122,14 @@ static void reset(VDP* vdp)
     vdp->vdpStatus[1] = vdp->vdpVersion == VDP_V9958 ? 0x04 : 0;
     vdp->vdpStatus[2] = 0x6c;
 
-    vdp->vdpRegs[1]  = 0x10;
+    vdp->vdpRegs[1]  = 0x50;//0x10;
     vdp->vdpRegs[2]  = 0xff;
     vdp->vdpRegs[3]  = 0xff;
     vdp->vdpRegs[4]  = 0xff;
     vdp->vdpRegs[5]  = 0xff;
+
+    vdp->vdpRegs[7]  = 0x57;//test
+
     vdp->vdpRegs[8]  = 0x08;
     vdp->vdpRegs[9]  = (0x02 & vdp->palMask) | vdp->palValue;
     vdp->vdpRegs[21] = 0x3b;
@@ -2150,8 +2151,6 @@ static void reset(VDP* vdp)
     onScrModeChange(vdp, boardSystemTime());
 
     onDisplay(vdp, boardSystemTime());
-
-	 printf("reset()\n");
 }
 
 static void destroy(VDP* vdp)

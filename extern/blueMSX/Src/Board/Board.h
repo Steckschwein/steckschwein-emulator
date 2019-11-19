@@ -122,7 +122,7 @@ BoardTimer* boardTimerCreate(BoardTimerCb callback, void* ref);
 void boardTimerDestroy(BoardTimer* timer);
 void boardTimerAdd(BoardTimer* timer, UInt32 timeout);
 void boardTimerRemove(BoardTimer* timer);
-void boardTimerCheckTimeout(void* dummy);
+void boardTimerCheckTimeout(void* usrDefinedCb);
 UInt32 boardCalcRelativeTimeout(UInt32 timerFrequency, UInt32 nextTimeout);
 
 void   boardOnBreakpoint(UInt16 pc);

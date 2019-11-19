@@ -49,17 +49,26 @@ void mos6502Execute(MOS6502* mos6502) {
     static SystemTime lastRefreshTime = 0;
     int i=0;
     while (!mos6502->terminate) {
-    	if(i % 16 == 0){
-    		int v = 0xff;
-    		testVdpWriteLatch(i & v);
+
+//		.byte v_reg1_16k|v_reg1_display_on|v_reg1_spr_size|v_reg1_int
+
+    	if(i % 2 == 0){
+    		testVdpWriteLatch(mos6502->systemTime>>4);
 //        	printf("write %x\n", v);
-    	}else if(i % 16 == 8){
+    	}else if(i % 2 == 1){
     		int v = 0x87;
     		testVdpWriteLatch(v);
   //      	printf("write %x\n", v);
     	}
     	i++;
-        mos6502->systemTime += 1;
+
+        if ((Int32)(mos6502->timeout - mos6502->systemTime) <= 0) {
+            if (mos6502->timerCb != NULL) {
+            	mos6502->timerCb(NULL);
+            }
+        }
+
+        mos6502->systemTime += 3;
     }
 }
 
@@ -69,8 +78,8 @@ void mos6502ClearInt(MOS6502* mos6502) {
 }
 
 void mos6502SetTimeoutAt(MOS6502* mos6502, SystemTime time){
-	printf("mos6502SetTimeoutAt %p\n", mos6502);
-    //r800->timeout = time;
+//	printf("mos6502SetTimeoutAt %p\n", mos6502);
+    mos6502->timeout = time;
 }
 
 void mos6502SetBreakpoint(MOS6502* mos6502, UInt16 address){
@@ -108,10 +117,13 @@ static UInt32 getTimeTrace(int offset) {
     return mos6502GetTimeTrace(mos6502, offset);
 }
 
-MOS6502* mos6502create(){
+
+
+MOS6502* mos6502create(MOS6502TimerCb timerCb){
 	MOS6502* mos6502 = malloc(sizeof(MOS6502));
 	mos6502->systemTime = 0;
 	mos6502->terminate = 0;
+	mos6502->timerCb = timerCb;
 
 	return mos6502;
 }
@@ -125,7 +137,7 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
      steckschweinRam = NULL;
 
      //r800 = r800Create(cpuFlags, slotRead, slotWrite, ioPortRead, ioPortWrite, PatchZ80, boardTimerCheckTimeout, NULL, NULL, NULL, NULL, NULL, NULL);
-     mos6502 = mos6502create();
+     mos6502 = mos6502create(boardTimerCheckTimeout);
 
      boardInfo->cpuRef           = mos6502;//r800;
 
