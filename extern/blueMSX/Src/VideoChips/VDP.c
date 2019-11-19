@@ -601,7 +601,7 @@ int getScreenCompletePercent()
 
 static void onDisplay(VDP* vdp, UInt32 time)
 {
-	 printf("onDisplay() %x\n",time);
+	printf("onDisplay() %x\n", time);
 
     int isPal = vdpIsVideoPal(vdp);
 
@@ -1398,8 +1398,12 @@ static void writeRegister(VDP* vdp, UInt16 ioPort, UInt8 value)
     }
 }
 
-void testWriteVdpRegister(int value){
+void testVdpWriteRegister(int value){
 	writeRegister(theVdp, NULL, value);
+}
+
+void testVdpWriteLatch(int value){
+	writeLatch(theVdp, NULL, value);
 }
 
 void vdpForceSync()

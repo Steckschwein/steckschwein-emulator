@@ -50,16 +50,16 @@ void mos6502Execute(MOS6502* mos6502) {
     int i=0;
     while (!mos6502->terminate) {
     	if(i % 16 == 0){
-    		int v = 0x87;
-    		testWriteVdpRegister(v);
+    		int v = 0xff;
+    		testVdpWriteLatch(i & v);
 //        	printf("write %x\n", v);
     	}else if(i % 16 == 8){
-    		int v = 0xff;
-    		testWriteVdpRegister(i & v);
+    		int v = 0x87;
+    		testVdpWriteLatch(v);
   //      	printf("write %x\n", v);
     	}
     	i++;
-    	continue;
+        mos6502->systemTime += 1;
     }
 }
 

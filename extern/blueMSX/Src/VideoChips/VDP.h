@@ -61,6 +61,7 @@ typedef struct {
     UInt8 (*daRead)(void*, int, int, int, Pixel*, int);
 } VdpDaCallbacks;
 
+void testVdpWriteLatch(int value);
 void testWriteVdpRegister(int value);
 
 int vdpRegisterDaConverter(VdpDaCallbacks* callbacks, void* ref, VideoMode videoModeMask);
