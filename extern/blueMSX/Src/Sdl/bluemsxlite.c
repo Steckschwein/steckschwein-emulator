@@ -390,6 +390,7 @@ char* langDbgDevV9958()             { return "V9958"; }
 
 void archVideoOutputChange() {}
 
+
 int emulatorGetSyncPeriod() {
 #ifdef NO_HIRES_TIMERS
     return 10;
@@ -458,16 +459,6 @@ static int timerCallback(void* timer) {
     return 1;
 }
 #endif
-
-void emulatorSetFrequency(int logFrequency, int* frequency) {
-    emuFrequency = (int)(3579545 * pow(2.0, (logFrequency - 50) / 15.0515));
-
-    if (frequency != NULL) {
-        *frequency  = emuFrequency;
-    }
-
-    boardSetFrequency(emuFrequency);
-}
 
 int emulatorGetCpuOverflow() {
     int overflow = emuTimeOverflow;

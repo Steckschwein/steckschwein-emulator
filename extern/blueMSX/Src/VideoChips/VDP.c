@@ -2327,7 +2327,6 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
 
     //vdp->debugHandle = debugDeviceRegister(DBGTYPE_VIDEO, vdpVersionString, &dbgCallbacks, vdp);
 
-    /*
     switch (vdp->vdpConnector) {
     case VDP_STECKSCHWEIN:
         ioPortRegister(0x220, read,       write,      vdp);
@@ -2366,5 +2365,4 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
         ioPortRegister(0xbf, readStatus, writeLatch, vdp);
         break;
     }
-	 */
 }

@@ -8,7 +8,7 @@
 #
 # Comment out if verbose comilation is wanted
 #
-SILENT = @
+#SILENT = @
 
 #
 # Directories

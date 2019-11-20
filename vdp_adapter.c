@@ -11,6 +11,7 @@ static uint8_t framebuffer[SCREEN_WIDTH * SCREEN_HEIGHT * 4];
 static uint8_t vdp_ctrl_reg[47];
 static uint8_t vdp_stat_reg[10];
 
+
 bool
 vdp_step(float mhz)
 {
