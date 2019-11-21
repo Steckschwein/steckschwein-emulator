@@ -107,12 +107,14 @@ EXTERN_BLUEMSX_DIR=$(ROOT_DIR)/extern/blueMSX
 # Include paths
 #
 INCLUDE =
+INCLUDE += -I$(ROOT_DIR)
 INCLUDE += -I$(ROOT_DIR)/extern/include
 INCLUDE += -I$(ROOT_DIR)/extern/src
 # blue msx include stuff
 INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Arch
 INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Board
 INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Common
+INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Cpu
 INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Debugger
 INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Emulator
 INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Memory
@@ -126,6 +128,7 @@ vpath % $(ROOT_DIR)/cpu
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Arch
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Board
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Common
+vpath % $(EXTERN_BLUEMSX_DIR)/Src/Cpu
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Debugger
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Emulator
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Memory
@@ -168,6 +171,7 @@ SOURCE_FILES += Properties.c
 SOURCE_FILES += Board.c
 SOURCE_FILES += IoPort.c
 SOURCE_FILES += Steckschwein.c
+SOURCE_FILES += MOS6502.c
 SOURCE_FILES += DebugDeviceManager.c
 SOURCE_FILES += Debugger.c
 

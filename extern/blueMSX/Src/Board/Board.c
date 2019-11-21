@@ -451,13 +451,13 @@ int boardGetRefreshRate()
     return 0;
 }
 
-void  boardSetInt(UInt32 irq)
+void boardSetInt(UInt32 irq)
 {
     pendingInt |= irq;
     boardInfo.setInt(boardInfo.cpuRef);
 }
 
-void   boardClearInt(UInt32 irq)
+void boardClearInt(UInt32 irq)
 {
     pendingInt &= ~irq;
     if (pendingInt == 0) {
@@ -693,7 +693,6 @@ int boardRun(int frequency,
     videoManagerReset();
     debugDeviceManagerReset();
 
-
 //    boardType = machine->board.type;
    // PatchReset(boardType);
 
@@ -701,10 +700,10 @@ int boardRun(int frequency,
 
     boardSetFrequency(frequency);
 
-	 boardRunning = 1;
+	boardRunning = 1;
     memset(&boardInfo, 0, sizeof(boardInfo));
     VdpSyncMode vdpSyncMode = VDP_SYNC_50HZ;
-	 success = steckSchweinCreate(vdpSyncMode, &boardInfo);
+    success = steckSchweinCreate(vdpSyncMode, &boardInfo);
 
     boardCaptureInit();
 

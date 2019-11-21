@@ -921,6 +921,25 @@ int emulatorSyncScreen()
     return rv;
 }
 
+void chrout_hooks(){
+	if (echo_mode != ECHO_MODE_NONE && (pc == 0xfff0 || pc == 0xffb3)) { //@see jumptables, bios fff0, kernel $ffb3
+		uint8_t c = a;
+		if (echo_mode == ECHO_MODE_COOKED) {
+			if (c == 0x0d) {
+				printf("\n");
+			} else if (c == 0x0a) {
+				// skip
+			} else if (c < 0x20 || c >= 0x80) {
+				printf("\\X%02X", c);
+			} else {
+				printf("%c", c);
+			}
+		} else {
+			printf("%c", c);
+		}
+		fflush(stdout);
+	}
+}
 
 int
 main(int argc, char **argv)
@@ -940,8 +959,6 @@ main(int argc, char **argv)
 	// This causes the emulator to load ROM data from the executable's directory when
 	// no ROM file is specified on the command line.
 	strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
-	
-	printf("\nrom path: %s\n", rom_path);
 	
 	argc--;
 	argv++;
@@ -1230,22 +1247,51 @@ main(int argc, char **argv)
 		freopen( "CON", "w", stdout );//http://sdl.beuc.net/sdl.wiki/FAQ_Console
 		freopen( "CON", "w", stderr );
 #endif
-		vdp_init(window_scale, scale_quality);
 	}
+
+
+	//register cpu hook
+	hookexternal((void *)chrout_hooks);
 
 	memory_init();
 	machine_reset();
 
 	instruction_counter = 0;
 
-#ifdef __EMSCRIPTEN__
-	emscripten_set_main_loop(emscripten_main_loop, 0, 1);
-#else
-	emulator_loop(NULL);
-#endif
+    properties = propCreate(0, 0, /* P_KBD_EUROPEAN,*/ 0, "");
 
-	vdp_end();
-	//SDL_Quit();
+    properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
+//    properties->emulation.syncMethod = P_EMU_SYNCTOVBLANKASYNC;
+
+    video = videoCreate();
+    videoSetColors(video, properties->video.saturation, properties->video.brightness,
+                  properties->video.contrast, properties->video.gamma);
+    videoSetScanLines(video, properties->video.scanlinesEnable, properties->video.scanlinesPct);
+    videoSetColorSaturation(video, properties->video.colorSaturationEnable, properties->video.colorSaturationWidth);
+
+    bitDepth = 32;
+    if (!createSdlWindow()) {
+        return 0;
+    }
+    videoUpdateAll(video, properties);
+
+
+	emulatorStart("Start");
+
+//#ifdef __EMSCRIPTEN__
+//	emscripten_set_main_loop(emscripten_main_loop, 0, 1);
+//#else
+//	emulator_loop(NULL);
+//#endif
+
+	// For stop threads before destroy.
+	// Clean up.
+	if (SDL_WasInit(SDL_INIT_EVERYTHING)) {
+		SDL_Quit();
+	}
+    videoDestroy(video);
+    propDestroy(properties);
+
 	return 0;
 }
 
@@ -1254,19 +1300,16 @@ emscripten_main_loop(void) {
 	emulator_loop(NULL);
 }
 
-
 void*
 emulator_loop(void *param)
 {
-	for (;;) {
+	while(!doQuit) {
 		if(!headless){
-			/*
 			SDL_Event event;
 			SDL_PollEvent(&event);
 			if (event.type == SDL_QUIT) {
 				break;
 			}
-			*/
 		}
 
 		if (debugger_enabled) {
@@ -1360,7 +1403,6 @@ emulator_loop(void *param)
 
 				if ((int)frames_behind > 0) {
 					printf("Rendering is behind %d frames.\n", -(int)frames_behind);
-				} else {
 				}
 			}
 #ifdef __EMSCRIPTEN__
@@ -1368,13 +1410,6 @@ emulator_loop(void *param)
 			return 0;
 #endif
 		}
-
-/*		if (vdp_get_irq_out()) {
-			if (!(status & 4)) {
-				irq6502();
-			}
-		}
-*/
 
 #if 0
 		if (clockticks6502 >= 5 * MHZ * 1000 * 1000) {
@@ -1388,25 +1423,6 @@ emulator_loop(void *param)
 			}
 			break;
 		}
-
-		if (echo_mode != ECHO_MODE_NONE && (pc == 0xfff0 || pc == 0xffb3)) { //@see jumptables, bios fff0, kernel $ffb3
-			uint8_t c = a;
-			if (echo_mode == ECHO_MODE_COOKED) {
-				if (c == 0x0d) {
-					printf("\n");
-				} else if (c == 0x0a) {
-					// skip
-				} else if (c < 0x20 || c >= 0x80) {
-					printf("\\X%02X", c);
-				} else {
-					printf("%c", c);
-				}
-			} else {
-				printf("%c", c);
-			}
-			fflush(stdout);
-		}
-
 	}
 
 	return 0;

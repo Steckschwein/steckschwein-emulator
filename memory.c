@@ -74,7 +74,7 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 			return emu_read(address & 0xf);
 		}
 	} else {
-		if (address < 0xe000 || ctrl_port & 1){
+		if (address < 0xe000 || (ctrl_port & 1)){
 			return RAM[address];// RAM
 		}
 		/* bank select upon ctrl_port - see steckos/asminc/system.inc

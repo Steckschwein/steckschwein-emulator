@@ -13,4 +13,6 @@ extern void exec6502(uint32_t tickcount);
 extern void irq6502();
 extern uint32_t clockticks6502;
 
+void hookexternal(void *funcptr);
+
 #endif
