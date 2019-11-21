@@ -168,6 +168,13 @@ static void putvalue(uint16_t saveval) {
 #include "65c02.h"
 #include "tables.h"
 
+uint32_t mos6502clockticks(){
+	return clockticks6502;
+}
+uint32_t mos6502instructions(){
+	return instructions;
+}
+
 void nmi6502() {
     push16(pc);
     push8(status);
@@ -220,6 +227,10 @@ void step6502() {
     clockgoal6502 = clockticks6502;
 
     instructions++;
+
+    if(instructions == 0xFFFFFFFF){
+    	printf("ins cnt overflow\n");
+    }
 
     if (callexternal) (*loopexternal)();
 }

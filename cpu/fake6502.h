@@ -13,6 +13,9 @@ extern void exec6502(uint32_t tickcount);
 extern void irq6502();
 extern uint32_t clockticks6502;
 
+extern uint32_t mos6502clockticks();
+extern uint32_t mos6502instructions();
+
 void hookexternal(void *funcptr);
 
 #endif

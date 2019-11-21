@@ -25,7 +25,6 @@ void mos6502SetInt(MOS6502* mos6502) {
 
 void mos6502Execute(MOS6502* mos6502) {
 
-    static SystemTime lastRefreshTime = 0;
     int i=0;
     while (!mos6502->terminate) {
 
@@ -43,6 +42,7 @@ void mos6502Execute(MOS6502* mos6502) {
             	mos6502->timerCb(NULL);
             }
         }
+
     	step6502();
         mos6502->systemTime = clockticks6502;
     }

@@ -87,7 +87,6 @@ bool trace_mode = false;
 uint16_t trace_address = 0;
 #endif
 
-int instruction_counter;
 FILE *prg_file ;
 int prg_override_start = -1;
 bool run_after_load = false;
@@ -1254,8 +1253,6 @@ main(int argc, char **argv)
 	memory_init();
 	machine_reset();
 
-	instruction_counter = 0;
-
     properties = propCreate(0, 0, /* P_KBD_EUROPEAN,*/ 0, "");
 
     properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
@@ -1321,7 +1318,7 @@ emulator_loop(void *param)
 			trace_mode = true;
 		}
 		if (trace_mode) {
-			printf("\t\t\t\t[%6d] ", instruction_counter);
+			printf("\t\t\t\t[%6d] ", mos6502instructions());
 
 			char *label = label_for_address(pc);
 			int label_len = label ? strlen(label) : 0;
@@ -1361,8 +1358,6 @@ emulator_loop(void *param)
 			spi_step();
 //			new_frame |= vdp_step(MHZ);
 		}
-
-		instruction_counter++;
 
 		if (new_frame) {
 			static int frames = 0;
