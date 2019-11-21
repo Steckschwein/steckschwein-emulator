@@ -20,7 +20,7 @@ void mos6502Reset(MOS6502* mos6502, UInt32 cpuTime){
 void mos6502SetInt(MOS6502* mos6502) {
     mos6502->intState = INT_HIGH;
 	irq6502();
-	printf("mos6502SetInt %p\n", mos6502);
+//	printf("mos6502SetInt %p\n", mos6502);
 }
 
 void mos6502Execute(MOS6502* mos6502) {

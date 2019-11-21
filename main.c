@@ -1355,7 +1355,6 @@ emulator_loop(void *param)
 			printf("\n");
 		}
 #endif
-
 		uint32_t old_clockticks6502 = clockticks6502;
 		step6502();
 		uint8_t clocks = clockticks6502 - old_clockticks6502;

@@ -106,7 +106,10 @@ write6502(uint16_t address, uint8_t value)
 		}
 		else if (address < 0x0230) // VDP at $0220
 		{
-			return vdp_write(address & 0xf, value);
+			//return vdp_write(address & 0xf, value);
+			ioPortWrite(NULL,address,value);
+
+			return;
 		}
 		else if (address < 0x0240) // latch at $0x0230
 		{

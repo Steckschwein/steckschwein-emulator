@@ -96,7 +96,7 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
      VdpVersion vdpVersion = VDP_V9958;
      int vramSize = 0x20000;
-     vdpCreate(VDP_MSX, vdpVersion, vdpSyncMode, vramSize / 0x4000);
+     vdpCreate(VDP_STECKSCHWEIN, vdpVersion, vdpSyncMode, vramSize / 0x4000);
 
      success = 1;//machineInitialize(machine, &msxRam, &msxRamSize, &msxRamStart);
 

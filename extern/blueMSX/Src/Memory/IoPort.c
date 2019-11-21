@@ -55,21 +55,25 @@ void* ioPortGetRef(int port)
 	return ioTable[port].ref;
 }
 
-void ioPortRegister(int port, IoPortRead read, IoPortWrite write, void* ref)
-{
-    if (ioTable[port].read  == NULL && 
-        ioTable[port].write == NULL && 
-        ioTable[port].ref   == NULL)
-    {
-        ioTable[port].read  = read;
-        ioTable[port].write = write;
-        ioTable[port].ref   = ref;
+void ioPortRegister(int port, IoPortRead read, IoPortWrite write, void* ref){
+
+    int ix = port & 0xff;
+
+    if (ioTable[ix].read  == NULL &&
+        ioTable[ix].write == NULL &&
+        ioTable[ix].ref   == NULL)    {
+        ioTable[ix].read  = read;
+        ioTable[ix].write = write;
+        ioTable[ix].ref   = ref;
+    }else{
+    	sprintf(stderr, "Error conflicting port %x in table %x\n", port, ix);
     }
 }
 
 
-void ioPortUnregister(int port)
-{
+void ioPortUnregister(int port){
+    port &= 0xff;
+
     ioTable[port].read  = NULL;
     ioTable[port].write = NULL;
     ioTable[port].ref   = NULL;
