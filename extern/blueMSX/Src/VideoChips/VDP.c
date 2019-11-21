@@ -27,7 +27,6 @@
 */
 #include "VDP.h"
 #include "V9938.h"
-#include "Adapter.h"
 #include "Board.h"
 //#include "IoPort.h"
 //#include "SaveState.h"

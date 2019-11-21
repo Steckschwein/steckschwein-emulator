@@ -7,7 +7,6 @@
 #include <unistd.h>
 #include "glue.h"
 #include "via.h"
-#include "vdp_adapter.h"
 #include "uart.h"
 #include "opl2.h"
 
@@ -59,7 +58,7 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 		}
 		else if (address < 0x0230) // VDP at $0220
 		{
-			return vdp_read(address & 0xf);
+			return ioPortRead(NULL,address);
 		}
 		else if (address < 0x0240) // latch at $0x0230
 		{
@@ -106,7 +105,6 @@ write6502(uint16_t address, uint8_t value)
 		}
 		else if (address < 0x0230) // VDP at $0220
 		{
-			//return vdp_write(address & 0xf, value);
 			ioPortWrite(NULL,address,value);
 
 			return;

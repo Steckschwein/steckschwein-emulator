@@ -18,7 +18,6 @@
 #include "memory.h"
 #include "video.h"
 #include "via.h"
-#include "vdp_adapter.h"
 #include "opl2.h"
 #include "uart.h"
 #include "spi.h"
@@ -201,7 +200,6 @@ machine_reset()
 	spi_init();
 	uart_init();
 	via1_init();
-	vdp_reset();
 	opl2_init();
 	reset6502();
 }
@@ -1361,17 +1359,12 @@ emulator_loop(void *param)
 		bool new_frame = false;
 		for (uint8_t i = 0; i < clocks; i++) {
 			spi_step();
-			if(!headless)
-				new_frame |= vdp_step(MHZ);
+//			new_frame |= vdp_step(MHZ);
 		}
 
 		instruction_counter++;
 
 		if (new_frame) {
-			if (!headless && !vdp_update()) {
-				break;
-			}
-
 			static int frames = 0;
 			frames++;
 			int32_t sdlTicks = 0;//SDL_GetTicks();

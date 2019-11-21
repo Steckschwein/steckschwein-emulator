@@ -26,10 +26,9 @@
 ******************************************************************************
 */
 
-#include "Adapter.h"
 #include "Debugger.h"
 #include "DebugDeviceManager.h"
-//#include "Emulator.h"
+#include "Adapter.h"
 //#include "Actions.h"
 //#include "Board.h"
 #include <stdlib.h>

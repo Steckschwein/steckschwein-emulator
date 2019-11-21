@@ -92,14 +92,10 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
      //sprintf(cmosName, "%s" DIR_SEPARATOR "%s.cmos", boardGetBaseDirectory(), machine->name);
      //rtc = rtcCreate(machine->cmos.enable, machine->cmos.batteryBacked ? cmosName : 0);
 
-     //msxRam = NULL;
-
-     VdpVersion vdpVersion = VDP_V9958;
      int vramSize = 0x20000;
-     vdpCreate(VDP_STECKSCHWEIN, vdpVersion, vdpSyncMode, vramSize / 0x4000);
+     vdpCreate(VDP_STECKSCHWEIN, VDP_V9958, vdpSyncMode, vramSize / 0x4000);
 
      success = 1;//machineInitialize(machine, &msxRam, &msxRamSize, &msxRamStart);
-
      if (success) {
 //         success = boardInsertExternalDevices();
      }

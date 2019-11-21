@@ -5,7 +5,7 @@ SILENT = @
 
 #
 # windows 10 build
-#   CROSS_COMPILE_WINDOWS=1 WIN_SDL2=<sdl2 home> CC=<gcc home>/mingw32-gcc make clean all
+#   CROSS_COMPILE_WINDOWS=1 WIN_SDL=<sdl home> CC=<gcc home>/mingw32-gcc make clean all
 #
 ifndef (MINGW32)
 	# the mingw32 path on macOS installed through homebrew
@@ -147,7 +147,6 @@ SOURCE_FILES += opl2.c
 SOURCE_FILES += sdcard.c
 SOURCE_FILES += spi.c
 SOURCE_FILES += uart.c
-SOURCE_FILES += vdp_adapter.c
 SOURCE_FILES += via.c
 
 # cpu 65x02
