@@ -2163,6 +2163,12 @@ static void destroy(VDP* vdp)
     videoManagerUnregister(vdp->videoHandle);
 
     switch (vdp->vdpConnector) {
+    case VDP_STECKSCHWEIN:
+        ioPortUnregister(0x220);
+        ioPortUnregister(0x221);
+        ioPortUnregister(0x222);
+        ioPortUnregister(0x223);
+        break;
     case VDP_MSX:
         ioPortUnregister(0x98);
         ioPortUnregister(0x99);
@@ -2216,8 +2222,8 @@ static void videoDisable(VDP* vdp)
     vdp->videoEnabled = 0;
 }
 
-void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int vramPages)
-{
+void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int vramPages){
+
     //DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
 
     DebugCallbacks dbgCallbacks = { getDebugInfo, dbgWriteMemory, dbgWriteRegister, NULL };

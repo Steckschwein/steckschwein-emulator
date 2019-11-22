@@ -918,7 +918,52 @@ int emulatorSyncScreen()
     return rv;
 }
 
-void chrout_hooks(){
+void trace(){
+#ifdef TRACE
+		if (pc == trace_address && trace_address != 0) {
+			trace_mode = true;
+		}
+		if (trace_mode) {
+			printf("\t\t\t\t[%6d] ", mos6502instructions());
+
+			char *label = label_for_address(pc);
+			int label_len = label ? strlen(label) : 0;
+			if (label) {
+				printf("%s", label);
+			}
+			for (int i = 0; i < 10 - label_len; i++) {
+				printf(" ");
+			}
+			printf(" .,%04x ", pc);
+			char disasm_line[15];
+			int len = disasm(pc, RAM, disasm_line, sizeof(disasm_line), false, 0);
+			for (int i = 0; i < len; i++) {
+				printf("%02x ", read6502(pc + i));
+			}
+			for (int i = 0; i < 9 - 3 * len; i++) {
+				printf(" ");
+			}
+			printf("%s", disasm_line);
+			for (int i = 0; i < 15 - strlen(disasm_line); i++) {
+				printf(" ");
+			}
+
+			printf("a=$%02x x=$%02x y=$%02x s=$%02x p=", a, x, y, sp);
+			for (int i = 7; i >= 0; i--) {
+				printf("%c", (status & (1 << i)) ? "czidb.vn"[i] : '-');
+			}
+//			printf(" --- %04x", RAM[0xae]  | RAM[0xaf]  << 8);
+			printf("\n");
+		}
+#endif
+}
+
+void instructionCb(){
+	if(doQuit)
+		return;
+
+	trace();
+
 	if (echo_mode != ECHO_MODE_NONE && (pc == 0xfff0 || pc == 0xffb3)) { //@see jumptables, bios fff0, kernel $ffb3
 		uint8_t c = a;
 		if (echo_mode == ECHO_MODE_COOKED) {
@@ -936,6 +981,14 @@ void chrout_hooks(){
 		}
 		fflush(stdout);
 	}
+
+	if (pc == 0xffff) {
+		if (save_on_exit) {
+			machine_dump();
+			doQuit = 1;
+		}
+	}
+
 }
 
 int
@@ -1248,7 +1301,7 @@ main(int argc, char **argv)
 
 
 	//register cpu hook
-	hookexternal((void *)chrout_hooks);
+	hookexternal(instructionCb);
 
 	memory_init();
 	machine_reset();
@@ -1313,43 +1366,6 @@ emulator_loop(void *param)
 			if (dbgCmd < 0) break;
 		}
 
-#ifdef TRACE
-		if (pc == trace_address && trace_address != 0) {
-			trace_mode = true;
-		}
-		if (trace_mode) {
-			printf("\t\t\t\t[%6d] ", mos6502instructions());
-
-			char *label = label_for_address(pc);
-			int label_len = label ? strlen(label) : 0;
-			if (label) {
-				printf("%s", label);
-			}
-			for (int i = 0; i < 10 - label_len; i++) {
-				printf(" ");
-			}
-			printf(" .,%04x ", pc);
-			char disasm_line[15];
-			int len = disasm(pc, RAM, disasm_line, sizeof(disasm_line), false, 0);
-			for (int i = 0; i < len; i++) {
-				printf("%02x ", read6502(pc + i));
-			}
-			for (int i = 0; i < 9 - 3 * len; i++) {
-				printf(" ");
-			}
-			printf("%s", disasm_line);
-			for (int i = 0; i < 15 - strlen(disasm_line); i++) {
-				printf(" ");
-			}
-
-			printf("a=$%02x x=$%02x y=$%02x s=$%02x p=", a, x, y, sp);
-			for (int i = 7; i >= 0; i--) {
-				printf("%c", (status & (1 << i)) ? "czidb.vn"[i] : '-');
-			}
-//			printf(" --- %04x", RAM[0xae]  | RAM[0xaf]  << 8);
-			printf("\n");
-		}
-#endif
 		uint32_t old_clockticks6502 = clockticks6502;
 		step6502();
 		uint8_t clocks = clockticks6502 - old_clockticks6502;
@@ -1403,13 +1419,6 @@ emulator_loop(void *param)
 			break;
 		}
 #endif
-
-		if (pc == 0xffff) {
-			if (save_on_exit) {
-				machine_dump();
-			}
-			break;
-		}
 	}
 
 	return 0;
