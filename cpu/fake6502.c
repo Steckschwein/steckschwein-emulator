@@ -190,7 +190,8 @@ void irq6502() {
 }
 
 uint8_t callexternal = 0;
-void (*loopexternal)();
+
+void (*loopexternal)(uint32_t cycles);
 
 void exec6502(uint32_t tickcount) {
     clockgoal6502 += tickcount;
@@ -204,12 +205,17 @@ void exec6502(uint32_t tickcount) {
 
         (*addrtable[opcode])();
         (*optable[opcode])();
+
+        uint32_t cycles = clockticks6502;
+
         clockticks6502 += ticktable[opcode];
         if (penaltyop && penaltyaddr) clockticks6502++;
 
         instructions++;
 
-        if (callexternal) (*loopexternal)();
+        cycles = clockticks6502 - cycles;
+
+        if (callexternal) (*loopexternal)(cycles);
     }
 }
 
@@ -222,6 +228,9 @@ void step6502() {
 
     (*addrtable[opcode])();
     (*optable[opcode])();
+
+    uint32_t cycles = clockticks6502;
+
     clockticks6502 += ticktable[opcode];
     if (penaltyop && penaltyaddr) clockticks6502++;
     clockgoal6502 = clockticks6502;
@@ -231,8 +240,9 @@ void step6502() {
     if(instructions == 0xFFFFFFFF){
     	printf("ins cnt overflow\n");
     }
+    cycles = clockticks6502 - cycles;
 
-    if (callexternal) (*loopexternal)();
+    if (callexternal) (*loopexternal)(cycles);
 }
 
 void hookexternal(void *funcptr) {

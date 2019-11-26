@@ -23,8 +23,11 @@ CFLAGS   = -g -w -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_E
 CFLAGS   += -DSINGLE_THREADED
 CFLAGS   += -DDEBUG_ENABLED
 
-
 CPPFLAGS = -g -DNO_ASM
+#
+# ym3812 opl2 sound
+#CPPFLAGS +=-DBUILD_YM3812
+
 LIBS     = -lSDL -lm#-lz -lGL
 TARGET   = steckschwein-emu
 
@@ -124,7 +127,7 @@ INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Sdl
 
 #vpath % $(ROOT_DIR)
 vpath % $(ROOT_DIR)/cpu
-
+vpath % $(ROOT_DIR)/extern/src
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Arch
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Board
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Common
@@ -148,6 +151,10 @@ SOURCE_FILES += sdcard.c
 SOURCE_FILES += spi.c
 SOURCE_FILES += uart.c
 SOURCE_FILES += via.c
+
+# opl sound
+SOURCE_FILES += fmopl.c
+#SOURCE_FILES += 3812intf.cpp
 
 # cpu 65x02
 SOURCE_FILES += fake6502.c

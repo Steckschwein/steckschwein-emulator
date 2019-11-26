@@ -11,7 +11,6 @@
 #include "opl2.h"
 
 #include "memory.h"
-#include "video.h"
 
 uint8_t ctrl_port;
 

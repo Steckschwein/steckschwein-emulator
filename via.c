@@ -16,7 +16,6 @@ static uint8_t via1registers[16];
 void
 via1_init()
 {
-	srand(time(NULL));
 }
 
 uint8_t

@@ -16,7 +16,6 @@
 #include "cpu/fake6502.h"
 #include "disasm.h"
 #include "memory.h"
-#include "video.h"
 #include "via.h"
 #include "opl2.h"
 #include "uart.h"
@@ -26,6 +25,8 @@
 //#include "debugger.h"
 #include "Adapter.h"
 #include "Properties.h"
+
+#include "SDL.h"
 
 #define AUDIO_SAMPLES 4096
 #define SAMPLERATE 22050
@@ -199,6 +200,7 @@ machine_reset()
 	spi_init();
 	uart_init();
 	via1_init();
+	via2_init();
 	opl2_init();
 	reset6502();
 }
@@ -958,9 +960,13 @@ void trace(){
 #endif
 }
 
-void instructionCb(){
+void instructionCb(uint32_t cycles){
 	if(doQuit)
 		return;
+
+	for (uint8_t i = 0; i < cycles; i++) {
+		spi_step();
+	}
 
 	trace();
 
