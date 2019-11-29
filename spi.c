@@ -27,14 +27,12 @@ spi_init()
 	initialized = false;
 }
 
-void
-spi_step()
-{
-	if (!sdcard_file) {
-		return;
-	}
+#define SPI_DESELECT 	0b00011110
+#define SPI_DEV_SDCARD	0b00011100
+#define SPI_DEV_KEYBRD	0b00011010
+#define SPI_DEV_RTC		0b00010110
 
-	uint8_t port = via2_pb_get_out();
+void handle_sdcard(uint8_t port){
 	bool clk = port & 1;
 	bool ss = !((port >> 1) & 1);
 	bool mosi = port >> 7;
@@ -97,4 +95,31 @@ spi_step()
 
 	// send byte
 	via2_sr_set(outbyte);
+}
+
+void
+spi_step()
+{
+	uint8_t port = via2_pb_get_reg(0);//PB
+
+//	printf("spi step %x %x %x %x %x\n", port, (port & SPI_DESELECT), (port & SPI_DEV_RTC),(port & SPI_DEV_SDCARD), (port & SPI_DEV_KEYBRD));
+
+//	if((port & SPI_DESELECT) == SPI_DESELECT){
+////		printf("nothing selected %x %x\n", port, (port & SPI_DESELECT));
+//		return; //nothing selected, return
+//	}
+//	if((port & SPI_DEV_RTC) == SPI_DEV_RTC){
+//		printf("spi step rtc %x %x %x %x %x\n", port, (port & SPI_DESELECT), (port & SPI_DEV_RTC),(port & SPI_DEV_SDCARD), (port & SPI_DEV_KEYBRD));
+////		printf("selected rtc\n");
+////		return;
+//	}
+//	if((port & SPI_DEV_KEYBRD) == SPI_DEV_KEYBRD){
+//		return;
+//	}
+//	if((port & SPI_DEV_SDCARD) == SPI_DEV_SDCARD && sdcard_file != NULL){
+	if(sdcard_file != NULL){
+		port = via2_pb_get_out();//PB
+		handle_sdcard(port);
+	}
+
 }

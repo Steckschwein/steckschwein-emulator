@@ -62,6 +62,12 @@ via2_init()
 }
 
 uint8_t
+via2_pb_get_reg(uint8_t reg)
+{
+	return via2registers[reg];
+}
+
+uint8_t
 via2_read(uint8_t reg)
 {
 	if (reg == 0) {
@@ -79,6 +85,8 @@ void
 via2_write(uint8_t reg, uint8_t value)
 {
 	via2registers[reg] = value;
+
+//	printf("%x %x\n", reg, value);
 
 	if (reg == 0) {
 		// PB
