@@ -103,9 +103,6 @@ OUTPUT_DIR = objs
 
 EXTERN_BLUEMSX_DIR=$(ROOT_DIR)/extern/blueMSX
 
-#OBJS = cpu/fake6502.o memory.o disasm.o via.o uart.o vdp_adapter.o opl2.o spi.o sdcard.o main.o javascript_interface.o # rendertext.o debugger.o
-#HEADERS = disasm.h cpu/fake6502.h glue.h memory.h vdp_adapter.h via.h
-
 #
 # Include paths
 #
@@ -152,9 +149,11 @@ SOURCE_FILES += spi.c
 SOURCE_FILES += uart.c
 SOURCE_FILES += via.c
 
+# rtc sound
+SOURCE_FILES += ds1306.c
+
 # opl sound
 SOURCE_FILES += fmopl.c
-#SOURCE_FILES += 3812intf.cpp
 
 # cpu 65x02
 SOURCE_FILES += fake6502.c

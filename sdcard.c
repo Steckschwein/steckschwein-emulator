@@ -3,6 +3,8 @@
 // All rights reserved. License: 2-clause BSD
 
 #include <stdio.h>
+#include <errno.h>
+
 #include "sdcard.h"
 
 static int cmd_receive_counter;
@@ -37,14 +39,18 @@ sdcard_handle(uint8_t inbyte)
 			read_block_response[0] = 0;
 			read_block_response[1] = 0xfe;
 
-			printf("Reading LBA %d multiblock (%d)\n", lba+mblock, mblock);
+			printf("\nReading LBA %d multiblock (%d)\n", lba+mblock, mblock);
 
 			int bytes_read = fread(&read_block_response[2], 1, 512, sdcard_file);
+			if (!bytes_read) {
+				fprintf(stderr, "read block ($%x): Error fread file: (lba: %x): %s\n", mblock, lba, strerror(errno));
+			}
 			if (bytes_read != 512) {
 				printf("Warning: short read!\n");
 			}
 			response = read_block_response;
 			response_length = 2 + 512 + 2;
+			response_counter = 0;//start over
 			mblock++;
 		}
 		if (response) {
@@ -121,7 +127,7 @@ sdcard_handle(uint8_t inbyte)
 					cmd[2] << 16 |
 					cmd[3] << 8 |
 					cmd[4];
-					int r = fseek(sdcard_file, lba * 512, SEEK_SET);
+					int r = fseek(sdcard_file, lba * 512, SEEK_SET);//do just the seek here, the fread is done above
 					mblock = 0;
 					break;
 				}
@@ -148,8 +154,10 @@ sdcard_handle(uint8_t inbyte)
 		}
 		outbyte = 0xff;
 	}
-//	printf("$%02x ->$%02x \n", inbyte, outbyte);
-	printf("$%02x ", outbyte);
+
+#ifdef TRACE
+	printf("$%02x ->$%02x \n", inbyte, outbyte);
+#endif
 
 	return outbyte;
 }

@@ -7,6 +7,7 @@
 #include "spi.h"
 #include "sdcard.h"
 #include "via.h"
+#include "ds1306.h"
 
 // VIA#2
 // PB0 SPICLK
@@ -58,20 +59,23 @@ void dispatch_device(uint8_t port) {
 	if (!last_sdcard && is_sdcard) {
 		bit_counter = 0;
 		sdcard_select();
-	} else if (is_keyboard) {
-//		bit_counter = 0;
+	} else if (!last_key && is_keyboard) {
+		bit_counter = 0;
 //		printf("keyboard\n");
 	} else if (!last_rtc && is_rtc) {
-//		bit_counter = 0;
-//		printf("rtc\n");
+		bit_counter = 0;
+		spi_rtc_select();
 	}
+
+//	TODO FIXME ugly
 	last_sdcard = is_sdcard;
-//	last_rtc = is_rtc;
+	last_rtc = is_rtc;
+	last_key = is_keyboard;
 
 // For initialization, the client has to pull&release CLK 74 times.
 // The SD card should be deselected, because it's not actual
 // data transmission (we ignore this).
-	if (!initialized) {
+	if (!initialized) {// TODO FIXME move to sdcard.c
 		if (clk == 1) {
 			static int init_counter = 0;
 			init_counter++;
@@ -100,7 +104,7 @@ void dispatch_device(uint8_t port) {
 
 	bit_counter = 0;
 
-	if (initialized && is_sdcard) {// TODO FIXME move to sdcard
+	if (is_sdcard) {
 		outbyte = sdcard_handle(inbyte);
 	} else if (is_keyboard) {
 		static int p = 0;
@@ -108,24 +112,23 @@ void dispatch_device(uint8_t port) {
 //		char shellcmd[] = {'d','i','n','o','s','a','u','r',0xd,0};
 //		char shellcmd[] = {'l','l',' ','p','r','o','g','s',0xd,0};
 //		char shellcmd[] = {'g','f','x','7','l','i','n','e',0xd,0};
-		char shellcmd[] = {'g','f','x','7','s','o','r','t',0xd,0};
+//		char shellcmd[] = {'g','f','x','7','s','o','r','t',0xd,0};
+		char shellcmd[] = { 'd', 'a', 't', 'e', 0xd, 0 };
 //		char shellcmd[] = {'p','o','n','g',0xd,0};
 //		char shellcmd[] = {'u','n','r','c','l','o','c','k',0xd,0};
 
-		if(shellcmd[p] != 0){
+		if (shellcmd[p] != 0) {
 			outbyte = shellcmd[p++];
-		}else
-			outbyte = 0xff;
+		} else
+			outbyte = 0;
 //		printf("key out\n");
 	} else if (is_rtc) {
-		outbyte = 0x11;
-//		printf("rtc out\n");
+		outbyte = spi_rtc_handle(inbyte);
 	}
 
 // send byte
 	via2_sr_set(outbyte);
 }
-
 
 void handle_sdcard(uint8_t port) {
 	bool clk = port & 1;
