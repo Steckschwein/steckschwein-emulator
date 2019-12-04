@@ -9,20 +9,22 @@
 // *******************************************************************************************
 // *******************************************************************************************
 
-#include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <inttypes.h>
-#include <SDL.h>
+#include <SDL_events.h>
+#include <SDL_keyboard.h>
+#include <SDL_keysym.h>
+#include <SDL_video.h>
 
-#include "glue.h"
+#include "cpu/support.h"
 #include "disasm.h"
+#include "EmulatorDebugger.h"
+#include "glue.h"
 #include "memory.h"
-#include "cpu/fake6502.h"
-#include "debugger.h"
 #include "rendertext.h"
 
-static void DEBUGHandleKeyEvent(SDL_Keycode key,int isShift);
+static void DEBUGHandleKeyEvent(SDLKey key,int isShift);
 
 static void DEBUGNumber(int x,int y,int n,int w, SDL_Color colour);
 static void DEBUGAddress(int x, int y, int bank, int addr, SDL_Color colour);
@@ -32,7 +34,7 @@ static int DEBUGRenderRegisters(void);
 static void DEBUGRenderCode(int lines,int initialPC);
 static void DEBUGRenderStack(int bytesCount);
 static void DEBUGRenderCmdLine();
-static bool DEBUGBuildCmdLine(SDL_Keycode key);
+static bool DEBUGBuildCmdLine(SDLKey key);
 static void DEBUGExecCmd();
 
 // *******************************************************************************************
@@ -75,8 +77,8 @@ static void DEBUGExecCmd();
 #define DBGKEY_STEP 	SDLK_F11 								// F11 is step into.
 #define DBGKEY_STEPOVER	SDLK_F10 								// F10 is step over.
 
-#define DBGSCANKEY_BRK 	SDL_SCANCODE_F12 						// F12 is break into running code.
-#define DBGSCANKEY_SHOW	SDL_SCANCODE_TAB 						// Show screen key.
+#define DBGSCANKEY_BRK 	SDLK_F12 						// F12 is break into running code.
+#define DBGSCANKEY_SHOW	SDLK_TAB 						// Show screen key.
 																// *** MUST BE SCAN CODES ***
 
 enum DBG_CMD { CMD_DUMP_MEM='m', CMD_DISASM='d', CMD_SET_REGISTER='r' };
@@ -106,7 +108,7 @@ int currentLineLen= 0;											// command line buffer length
 //		This flag controls
 //
 
-SDL_Renderer *dbgRenderer; 										// Renderer passed in.
+//SDL_Renderer *dbgRenderer; 										// Renderer passed in.
 
 // *******************************************************************************************
 //
@@ -133,14 +135,14 @@ int  DEBUGGetCurrentStatus(void) {
 		stepBreakPoint = -1;									// Clear step breakpoint.
 	}
 
-	if (SDL_GetKeyboardState(NULL)[DBGSCANKEY_BRK]) {			// Stop on break pressed.
+	if (SDL_GetKeyState(NULL)[DBGSCANKEY_BRK]) {			// Stop on break pressed.
 		currentMode = DMODE_STOP;
 		currentPC = pc; 										// Set the PC to what it is.
 	}
 
 	if (currentMode != DMODE_RUN) {								// Not running, we own the keyboard.
 		showFullDisplay = 										// Check showing screen.
-					SDL_GetKeyboardState(NULL)[DBGSCANKEY_SHOW];
+					SDL_GetKeyState(NULL)[DBGSCANKEY_SHOW];
 		while (SDL_PollEvent(&event)) { 						// We now poll events here.
 			switch(event.type) {
 				case SDL_QUIT:									// Time for exit
@@ -169,9 +171,9 @@ int  DEBUGGetCurrentStatus(void) {
 //								Setup fonts and co
 //
 // *******************************************************************************************
-void DEBUGInitUI(SDL_Renderer *pRenderer) {
-		dbgRenderer = pRenderer;				// Save renderer.
-}
+//void DEBUGInitUI(SDL_Renderer *pRenderer) {
+//		dbgRenderer = pRenderer;				// Save renderer.
+//}
 
 // *******************************************************************************************
 //
@@ -208,7 +210,7 @@ void DEBUGBreakToDebugger(void) {
 //
 // *******************************************************************************************
 
-static void DEBUGHandleKeyEvent(SDL_Keycode key,int isShift) {
+static void DEBUGHandleKeyEvent(SDLKey key,int isShift) {
 	int opcode;
 
 	switch(key) {
@@ -266,7 +268,7 @@ static void DEBUGHandleKeyEvent(SDL_Keycode key,int isShift) {
 
 char kNUM_KEYPAD_CHARS[10] = {'1','2','3','4','5','6','7','8','9','0'};
 
-static bool DEBUGBuildCmdLine(SDL_Keycode key) {
+static bool DEBUGBuildCmdLine(SDLKey key) {
 	// right now, let's have a rudimentary input: only backspace to delete last char
 	// later, I want a real input line with delete, backspace, left and right cursor
 	// devs like their comfort ;)
@@ -276,9 +278,9 @@ static bool DEBUGBuildCmdLine(SDL_Keycode key) {
 			||
 			(key >= SDLK_LEFTBRACKET && key <= SDLK_z)
 			||
-			(key >= SDLK_KP_1 && key <= SDLK_KP_0)
+			(key >= SDLK_KP1 && key <= SDLK_KP0)
 			) {
-			cmdLine[currentPosInLine++]= key>=SDLK_KP_1 ? kNUM_KEYPAD_CHARS[key-SDLK_KP_1] : key;
+			cmdLine[currentPosInLine++]= key>=SDLK_KP1 ? kNUM_KEYPAD_CHARS[key-SDLK_KP1] : key;
 			if(currentPosInLine > currentLineLen) {
 				currentLineLen++;
 			}

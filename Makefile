@@ -54,7 +54,7 @@ CFLAGS += $(SDL_CFLAGS)
 CPPFLAGS += $(SDL_CFLAGS)
 LDFLAGS += $(SDL_LDFLAGS)
 
-ifeq ($(CROSS_COMPILE_WINDOWS),1)
+ifdef CROSS_COMPILE_WINDOWS
 	CFLAGS+=-Wno-error=deprecated-declarations
 #	CFLAGS+=-Wno-error=incompatible-pointer-types
 	CFLAGS+=-Wno-error=maybe-uninitialized

@@ -9,6 +9,8 @@
 #include "via.h"
 #include "ds1306.h"
 
+#include <SDL_keysym.h>
+
 // VIA#2
 // PB0 SPICLK
 // PB1 SS1 SDCARD
@@ -33,7 +35,6 @@ void spi_init() {
 #define SPI_DESELECT	(SPI_DEV_SDCARD | SPI_DEV_KEYBRD | SPI_DEV_RTC)
 
 static uint8_t last_keycode = 0;
-#include <SDL/SDL_keysym.h>
 void spi_handle_keyboard(SDLKey key) {
 	last_keycode = key;
 	printf("spi_handle_keyboard() %x\n", last_keycode);
