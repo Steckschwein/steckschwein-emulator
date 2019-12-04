@@ -72,7 +72,7 @@ endif
 ifeq ($(CROSS_COMPILE_WINDOWS),1)
 	LDFLAGS+=-L$(MINGW32)/lib
 	# this enables printf() to show, but also forces a console window
-	LDFLAGS+=-mconsole -Wl,--subsystem,console
+	LDFLAGS+=-static-libgcc -static-libstdc++ -mconsole -Wl,--subsystem,console
 endif
 
 ifdef EMSCRIPTEN

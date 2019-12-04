@@ -181,7 +181,6 @@ void machine_reset() {
 	spi_init();
 	uart_init();
 	via1_init();
-	via2_init();
 	opl2_init();
 	reset6502();
 }
@@ -861,7 +860,7 @@ void emulatorStop() {
 
 	archEmulationStopNotification();
 
-	dbgDisable(); dbgPrint();
+	dbgDisable();dbgPrint();
 //    savelog();
 }
 
@@ -984,19 +983,21 @@ int main(int argc, char **argv) {
 
 	run_after_load = false;
 
-	rom_path = getcwd(rom_path_data, PATH_MAX);
-	if (rom_path == NULL) {
-		return 1;
-	}
-#if defined(_WIN32)
+#if defined(WIN32)
 	freopen("CON", "w", stdout); //http://sdl.beuc.net/sdl.wiki/FAQ_Console
 	freopen("CON", "w", stderr);
 #endif
 
+	rom_path = getcwd(rom_path_data, PATH_MAX);
+	if (rom_path == NULL) {
+		fprintf(stderr, "could not determine current work directory\n");
+		return 1;
+	}
+
 	// This causes the emulator to load ROM data from the executable's directory when
 	// no ROM file is specified on the command line.
 	strncpy(rom_path + strlen(rom_path), "/rom.bin",
-			PATH_MAX - strlen(rom_path));
+	PATH_MAX - strlen(rom_path));
 
 	argc--;
 	argv++;
@@ -1233,7 +1234,6 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	int rom_size = fread(ROM, 1, ROM_SIZE, f);
-	(void) rom_size;
 	fclose(f);
 
 	if (sdcard_path) {
@@ -1277,14 +1277,14 @@ int main(int argc, char **argv) {
 		fclose(bas_file);
 	}
 
+	//register cpu hook
+	hookexternal(instructionCb);
+
 	if (!headless) {
 		if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
 			return 1;
 		}
 	}
-
-	//register cpu hook
-	hookexternal(instructionCb);
 
 	memory_init();
 	machine_reset();

@@ -19,6 +19,9 @@ sdcard_select()
 uint8_t
 sdcard_handle(uint8_t inbyte)
 {
+	if(!sdcard_file)
+		return 0x0;
+
 	static uint8_t cmd[6];
 
 	static const uint8_t *response = NULL;

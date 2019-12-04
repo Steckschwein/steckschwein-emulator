@@ -4,14 +4,14 @@
 #include "glue.h"
 
 static struct tm *timestamp;
-static bool auto_inc = false;
-static uint8_t nvram[96];
+static bool in_burst_mode = false;
+static uint8_t nvram[96] = {0x42, 'L','O','A','D','E','R',' ',' ', 'B','I','N', 0,1,0x2e};
 
 void spi_rtc_select() {
 	time_t ts = time(NULL);
 	timestamp = localtime(&ts); //update timestamp with systime
 	printf("rtc select() %s\n", asctime(timestamp));
-	auto_inc = false;
+	in_burst_mode = false;
 }
 
 uint8_t toBCD(uint8_t v) {
@@ -24,13 +24,13 @@ uint8_t spi_rtc_handle(uint8_t inbyte) {
 
 	static uint8_t addr = 0;
 
-	if (!auto_inc) {
+	if (!in_burst_mode) {
 		addr = inbyte;
-		auto_inc = true;
+		in_burst_mode = true;
 	} else {
 		if (addr & 0x80) { //write
 			if (addr & 0x7f >= 0x20) { //nvram access
-				nvram[addr - 0x20] = inbyte;
+				nvram[addr & 0x7f - 0x20] = inbyte;
 			}
 		} else { //read
 			if (addr >= 0x20) { //nvram access
@@ -63,7 +63,7 @@ uint8_t spi_rtc_handle(uint8_t inbyte) {
 		addr++;
 	}
 
-	printf("rtc %x %x\n", inbyte, outbyte);
+//	printf("rtc %x %x\n", inbyte, outbyte);
 
 	return outbyte;
 }

@@ -44,12 +44,11 @@ void dispatch_device(uint8_t port) {
 	bool clk = port & 1;
 
 	static bool last_clk = false;
-	// only care about rising clock
 	if (clk == last_clk) {
 		return;
 	}
 	last_clk = clk;
-	if (clk == 0) {
+	if (clk == 0) {	// only care about rising clock
 		return;
 	}
 
@@ -84,17 +83,17 @@ void dispatch_device(uint8_t port) {
 // For initialization, the client has to pull&release CLK 74 times.
 // The SD card should be deselected, because it's not actual
 // data transmission (we ignore this).
-	if (!initialized) { // TODO FIXME move to sdcard.c
-		if (clk == 1) {
-			static int init_counter = 0;
-			init_counter++;
-			if (init_counter >= 70) {
-				sdcard_select();
-				initialized = true;
-			}
-		}
-		return;
-	}
+//	if (!initialized) { // TODO FIXME move to sdcard.c
+//		if (clk == 1) {
+//			static int init_counter = 0;
+//			init_counter++;
+//			if (init_counter >= 70) {
+//				sdcard_select();
+//				initialized = true;
+//			}
+//		}
+//		return;
+//	}
 
 // for everything else, a device has to be selected
 	if (!is_sdcard && !is_keyboard && !is_rtc) {
@@ -107,6 +106,9 @@ void dispatch_device(uint8_t port) {
 	inbyte <<= 1;
 	inbyte |= bit;
 	bit_counter++;
+
+//	printf("%d %d \n", bit_counter, bit);
+
 	if (bit_counter != 8) {
 		return;
 	}
@@ -138,12 +140,12 @@ void dispatch_device(uint8_t port) {
 		outbyte = spi_rtc_handle(inbyte);
 	}
 
-// send byte
-	via2_sr_set(outbyte);
+	// send byte
+	via1_sr_set(outbyte);
 }
 
 void spi_step() {
-	uint8_t port = via2_pb_get_reg(0);	//PB
+	uint8_t port = via1_pb_get_out();	//PB
 
 	dispatch_device(port);
 }

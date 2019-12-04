@@ -53,7 +53,7 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 		}
 		else if (address < 0x0220) // VIA at $0210
 		{
-			return via2_read(address & 0xf);
+			return via1_read(address & 0xf);
 		}
 		else if (address < 0x0230) // VDP at $0220
 		{
@@ -100,7 +100,7 @@ write6502(uint16_t address, uint8_t value)
 		}
 		else if (address < 0x0220) // VIA at $0210
 		{
-			return via2_write(address & 0xf, value);
+			return via1_write(address & 0xf, value);
 		}
 		else if (address < 0x0230) // VDP at $0220
 		{
