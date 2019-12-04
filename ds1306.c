@@ -5,7 +5,7 @@
 
 static struct tm *timestamp;
 static bool in_burst_mode = false;
-static uint8_t nvram[96] = {0x42, 'L','O','A','D','E','R',' ',' ', 'B','I','N', 0,1,0x2e};
+static uint8_t nvram[96] = {0x42, 'L','O','A','D','E','R',' ',' ', 'B','I','N', 1,3,0x37};
 
 void spi_rtc_select() {
 	time_t ts = time(NULL);
