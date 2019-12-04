@@ -133,7 +133,7 @@ static void* dpyUpdateAckEvent = NULL;
 
 static SDL_Surface *surface;
 static int   bitDepth;
-static int   zoom = 1;
+static int   zoom = 2;
 static char* displayData[2] = { NULL, NULL };
 static int   curDisplayData = 0;
 static int   displayPitch = 0;
@@ -144,8 +144,6 @@ static UInt32 emuTimeOverflow   = 0;
 static UInt32 emuUsageCurrent   = 0;
 
 static int doQuit = 0;
-
-static UInt32 boardFreq = boardFrequency();
 
 #define WIDTH  320
 #define HEIGHT 240
@@ -433,9 +431,11 @@ int createSdlWindow()
     else {
         if (properties->video.windowSize == P_VIDEO_SIZEX1) {
             zoom = 1;
+        }else if (properties->video.windowSize == P_VIDEO_SIZEX2) {
+            zoom = 2;
         }
         else {
-            zoom = 2;
+            zoom = 4;
         }
         bitDepth = 32;
     }
@@ -468,34 +468,33 @@ static void handleEvent(SDL_Event* event)
             break;
         }
         break;
-/*
     case SDL_ACTIVEEVENT:
         if (event->active.state & SDL_APPINPUTFOCUS) {
-            keyboardSetFocus(1, event->active.gain);
+//            keyboardSetFocus(1, event->active.gain);
         }
         if (event->active.state == SDL_APPMOUSEFOCUS) {
-            sdlMouseSetFocus(event->active.gain);
+//            sdlMouseSetFocus(event->active.gain);
         }
         break;
     case SDL_KEYDOWN:
-        shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
+//        shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
+    	spi_handle_keyboard(event->key.keysym.sym);
         break;
     case SDL_KEYUP:
-        shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
+//        shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
         break;
     case SDL_VIDEOEXPOSE:
         updateEmuDisplay(1);
         break;
     case SDL_MOUSEBUTTONDOWN:
     case SDL_MOUSEBUTTONUP:
-        sdlMouseButton(event->button.button, event->button.state);
+//        sdlMouseButton(event->button.button, event->button.state);
         break;
     case SDL_MOUSEMOTION:
-        sdlMouseMove(event->motion.x, event->motion.y);
+//        sdlMouseMove(event->motion.x, event->motion.y);
         break;
-*/
-    }
 
+    }
 }
 
 #ifdef SINGLE_THREADED

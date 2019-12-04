@@ -32,6 +32,13 @@ void spi_init() {
 #define SPI_DEV_RTC		0b0110
 #define SPI_DESELECT	(SPI_DEV_SDCARD | SPI_DEV_KEYBRD | SPI_DEV_RTC)
 
+static uint8_t last_keycode = 0;
+#include <SDL/SDL_keysym.h>
+void spi_handle_keyboard(SDLKey key) {
+	last_keycode = key;
+	printf("spi_handle_keyboard() %x\n", last_keycode);
+}
+
 void dispatch_device(uint8_t port) {
 	bool clk = port & 1;
 
@@ -62,6 +69,7 @@ void dispatch_device(uint8_t port) {
 	} else if (!last_key && is_keyboard) {
 		bit_counter = 0;
 //		printf("keyboard\n");
+		last_key = 0;
 	} else if (!last_rtc && is_rtc) {
 		bit_counter = 0;
 		spi_rtc_select();
@@ -75,7 +83,7 @@ void dispatch_device(uint8_t port) {
 // For initialization, the client has to pull&release CLK 74 times.
 // The SD card should be deselected, because it's not actual
 // data transmission (we ignore this).
-	if (!initialized) {// TODO FIXME move to sdcard.c
+	if (!initialized) { // TODO FIXME move to sdcard.c
 		if (clk == 1) {
 			static int init_counter = 0;
 			init_counter++;
@@ -107,88 +115,26 @@ void dispatch_device(uint8_t port) {
 	if (is_sdcard) {
 		outbyte = sdcard_handle(inbyte);
 	} else if (is_keyboard) {
-		static int p = 0;
-//		char shellcmd[] = {'p','a','c','m','a','n',0xd,0};
-//		char shellcmd[] = {'d','i','n','o','s','a','u','r',0xd,0};
-//		char shellcmd[] = {'l','l',' ','p','r','o','g','s',0xd,0};
-//		char shellcmd[] = {'g','f','x','7','l','i','n','e',0xd,0};
-//		char shellcmd[] = {'g','f','x','7','s','o','r','t',0xd,0};
-		char shellcmd[] = { 'd', 'a', 't', 'e', 0xd, 0 };
-//		char shellcmd[] = {'p','o','n','g',0xd,0};
-//		char shellcmd[] = {'u','n','r','c','l','o','c','k',0xd,0};
-
-		if (shellcmd[p] != 0) {
-			outbyte = shellcmd[p++];
-		} else
-			outbyte = 0;
+		outbyte = last_keycode;
+		last_keycode = 0;
+//		static int p = 0;
+////		char shellcmd[] = {'p','a','c','m','a','n',0xd,0};
+////		char shellcmd[] = {'d','i','n','o','s','a','u','r',0xd,0};
+//		//		char shellcmd[] = {'l','l',' ','p','r','o','g','s',0xd,0};
+////		char shellcmd[] = {'g','f','x','7','l','i','n','e',0xd,0};
+////		char shellcmd[] = {'g','f','x','7','s','o','r','t',0xd,0};
+////		char shellcmd[] = { 'd', 'a', 't', 'e', 0xd, 0 };
+////		char shellcmd[] = { 'l', 'l', 0xd, 0 };
+//		char shellcmd[] = {'e','d','l','p','l','y',' ','P','J','O','_','G','A','L','W','.','D','0','0',0xd,0};
+////		char shellcmd[] = {'p','o','n','g',0xd,0};
+////		char shellcmd[] = {'u','n','r','c','l','o','c','k',0xd,0};
+//		if (shellcmd[p] != 0) {
+//			outbyte = shellcmd[p++];
+//		} else
+//			outbyte = 0;
 //		printf("key out\n");
 	} else if (is_rtc) {
 		outbyte = spi_rtc_handle(inbyte);
-	}
-
-// send byte
-	via2_sr_set(outbyte);
-}
-
-void handle_sdcard(uint8_t port) {
-	bool clk = port & 1;
-	bool ss = !((port >> 1) & 1);
-	bool mosi = port >> 7;
-
-	static bool last_clk = false;
-	static bool last_ss;
-	static int bit_counter = 0;
-
-// only care about rising clock
-	if (clk == last_clk) {
-		return;
-	}
-	last_clk = clk;
-	if (clk == 0) {
-		return;
-	}
-
-	if (ss && !last_ss) {
-		bit_counter = 0;
-		sdcard_select();
-	}
-	last_ss = ss;
-
-// For initialization, the client has to pull&release CLK 74 times.
-// The SD card should be deselected, because it's not actual
-// data transmission (we ignore this).
-	if (!initialized) {
-		if (clk == 1) {
-			static int init_counter = 0;
-			init_counter++;
-			if (init_counter >= 70) {
-				sdcard_select();
-				initialized = true;
-			}
-		}
-		return;
-	}
-
-// for everything else, the SD card needs to be selected
-	if (!ss) {
-		return;
-	}
-
-// receive byte
-	static uint8_t inbyte, outbyte;
-	bool bit = mosi;
-	inbyte <<= 1;
-	inbyte |= bit;
-//	printf("BIT: %d BYTE =$%02x\n", bit, inbyte);
-	bit_counter++;
-	if (bit_counter != 8) {
-		return;
-	}
-
-	bit_counter = 0;
-
-	if (initialized) {
-		outbyte = sdcard_handle(inbyte);
 	}
 
 // send byte
