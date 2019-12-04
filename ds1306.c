@@ -10,7 +10,7 @@ static uint8_t nvram[96] = {0x42, 'L','O','A','D','E','R',' ',' ', 'B','I','N', 
 void spi_rtc_select() {
 	time_t ts = time(NULL);
 	timestamp = localtime(&ts); //update timestamp with systime
-	printf("rtc select() %s\n", asctime(timestamp));
+//	printf("rtc select() %s\n", asctime(timestamp));
 	in_burst_mode = false;
 }
 
