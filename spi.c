@@ -43,15 +43,6 @@ void spi_handle_keyboard(SDLKey key) {
 void dispatch_device(uint8_t port) {
 	bool clk = port & 1;
 
-	static bool last_clk = false;
-	if (clk == last_clk) {
-		return;
-	}
-	last_clk = clk;
-	if (clk == 0) {	// only care about rising clock
-		return;
-	}
-
 	bool is_sdcard = !((port >> 1) & 1);
 	bool is_keyboard = !((port >> 2) & 1);
 	bool is_rtc = !((port >> 3) & 1);
@@ -74,6 +65,12 @@ void dispatch_device(uint8_t port) {
 		bit_counter = 0;
 		spi_rtc_select();
 	}
+	if (last_rtc && !is_rtc){
+		spi_rtc_deselect();
+	}
+
+//	if(is_rtc)
+//		printf("%d %d %x\n", bit_counter, mosi, port);
 
 //	TODO FIXME ugly
 	last_sdcard = is_sdcard;
@@ -100,14 +97,20 @@ void dispatch_device(uint8_t port) {
 		return;
 	}
 
+	static bool last_clk = false;
+	if (clk == last_clk) {
+		return;
+	}
+	last_clk = clk;
+	if (clk == 0) {	// only care about rising clock
+		return;
+	}
+
 // receive byte
 	static uint8_t inbyte, outbyte;
-	bool bit = mosi;
 	inbyte <<= 1;
-	inbyte |= bit;
+	inbyte |= mosi;
 	bit_counter++;
-
-//	printf("%d %d \n", bit_counter, bit);
 
 	if (bit_counter != 8) {
 		return;

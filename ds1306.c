@@ -4,14 +4,24 @@
 #include "glue.h"
 
 static struct tm *timestamp;
-static bool in_burst_mode = false;
-static uint8_t nvram[96] = {0x42, 'L','O','A','D','E','R',' ',' ', 'B','I','N', 1,3,0x37};
+static bool chip_select = false;
+static uint8_t nvram[96] = { 0x42, 'L', 'O', 'A', 'D', 'E', 'R', ' ', ' ', 'B',
+		'I', 'N', 1, 3, 0x37 };
+
+void spi_rtc_deselect() { // chip select /CE high
+	chip_select = false;
+#ifdef TRACE_RTC
+	printf("rtc deselect()\n");
+#endif
+}
 
 void spi_rtc_select() {
 	time_t ts = time(NULL);
 	timestamp = localtime(&ts); //update timestamp with systime
-//	printf("rtc select() %s\n", asctime(timestamp));
-	in_burst_mode = false;
+#ifdef TRACE_RTC
+	printf("rtc select() %s\n", asctime(timestamp));
+#endif
+	chip_select = false;
 }
 
 uint8_t toBCD(uint8_t v) {
@@ -24,13 +34,16 @@ uint8_t spi_rtc_handle(uint8_t inbyte) {
 
 	static uint8_t addr = 0;
 
-	if (!in_burst_mode) {
+	if (!chip_select) {
 		addr = inbyte;
-		in_burst_mode = true;
+		chip_select = true;
 	} else {
 		if (addr & 0x80) { //write
-			if (addr & 0x7f >= 0x20) { //nvram access
-				nvram[addr & 0x7f - 0x20] = inbyte;
+			if ((addr & 0x7f) >= 0x20) { //nvram access?
+				nvram[(addr & 0x7f) - 0x20] = inbyte;
+#ifdef TRACE_RTC
+				printf("nvram write %x %x\n", (addr & 0x7f) - 0x20, inbyte);
+#endif
 			}
 		} else { //read
 			if (addr >= 0x20) { //nvram access
@@ -60,10 +73,11 @@ uint8_t spi_rtc_handle(uint8_t inbyte) {
 					break;
 				}
 		}
+#ifdef TRACE_RTC
+		printf("rtc %x %x %x %x\n", inbyte, outbyte, addr, chip_select);
+#endif
 		addr++;
 	}
-
-//	printf("rtc %x %x\n", inbyte, outbyte);
 
 	return outbyte;
 }
