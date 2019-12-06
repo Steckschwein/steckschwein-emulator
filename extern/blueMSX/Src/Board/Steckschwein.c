@@ -16,7 +16,7 @@ static void destroy() {
    r800DebugDestroy();
     ioPortUnregister(0x2e);
     deviceManagerDestroy();
-    r800Destroy(r800);
+    mos6502Destroy(mos6502);
     */
 }
 

@@ -23,7 +23,6 @@
 #include "sdcard.h"
 #include "glue.h"
 //#include "debugger.h"
-#include "Adapter.h"
 #include "Properties.h"
 #include "ArchThread.h"
 

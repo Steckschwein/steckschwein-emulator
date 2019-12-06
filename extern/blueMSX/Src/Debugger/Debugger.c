@@ -28,7 +28,7 @@
 
 #include "Debugger.h"
 #include "DebugDeviceManager.h"
-#include "Adapter.h"
+#include "glue.h"
 //#include "Actions.h"
 //#include "Board.h"
 #include <stdlib.h>
