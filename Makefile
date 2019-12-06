@@ -28,7 +28,7 @@ CPPFLAGS = -g -DNO_ASM
 # ym3812 opl2 sound
 #CPPFLAGS +=-DBUILD_YM3812
 
-LIBS     = -lSDL -lm#-lz -lGL
+LIBS     = -lSDL -lSDL_mixer -lm#-lz -lGL
 TARGET   = steckschwein-emu
 
 SRCS        = $(SOURCE_FILES)

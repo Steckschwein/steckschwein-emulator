@@ -123,22 +123,6 @@ void dispatch_device(uint8_t port) {
 	} else if (is_keyboard) {
 		outbyte = last_keycode;
 		last_keycode = 0;
-//		static int p = 0;
-////		char shellcmd[] = {'p','a','c','m','a','n',0xd,0};
-////		char shellcmd[] = {'d','i','n','o','s','a','u','r',0xd,0};
-//		//		char shellcmd[] = {'l','l',' ','p','r','o','g','s',0xd,0};
-////		char shellcmd[] = {'g','f','x','7','l','i','n','e',0xd,0};
-////		char shellcmd[] = {'g','f','x','7','s','o','r','t',0xd,0};
-////		char shellcmd[] = { 'd', 'a', 't', 'e', 0xd, 0 };
-////		char shellcmd[] = { 'l', 'l', 0xd, 0 };
-//		char shellcmd[] = {'e','d','l','p','l','y',' ','P','J','O','_','G','A','L','W','.','D','0','0',0xd,0};
-////		char shellcmd[] = {'p','o','n','g',0xd,0};
-////		char shellcmd[] = {'u','n','r','c','l','o','c','k',0xd,0};
-//		if (shellcmd[p] != 0) {
-//			outbyte = shellcmd[p++];
-//		} else
-//			outbyte = 0;
-//		printf("key out\n");
 	} else if (is_rtc) {
 		outbyte = spi_rtc_handle(inbyte);
 	}
