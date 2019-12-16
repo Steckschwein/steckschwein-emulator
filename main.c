@@ -178,7 +178,7 @@ void machine_dump() {
 
 void machine_reset() {
 	spi_init();
-	uart_init();
+	uart_init(prg_file, prg_override_start);
 	via1_init();
 	opl2_init();
 	reset6502();
@@ -936,17 +936,9 @@ void trace() {
 #endif
 }
 
-void instructionCb(uint32_t cycles) {
-	if (doQuit)
-		return;
-
-	for (uint8_t i = 0; i < cycles; i++) {
-		spi_step();
-	}
-
-	trace();
-
-	if (echo_mode != ECHO_MODE_NONE && (pc == 0xfff0 || pc == 0xffb3)) { //@see jumptables, bios fff0, kernel $ffb3
+void hookCharOut() {
+	if (echo_mode != ECHO_MODE_NONE && (pc == 0xfff0 || pc == 0xffb3)) {
+		//@see jumptables, bios fff0, kernel $ffb3
 		uint8_t c = a;
 		if (echo_mode == ECHO_MODE_COOKED) {
 			if (c == 0x0d) {
@@ -963,6 +955,46 @@ void instructionCb(uint32_t cycles) {
 		}
 		fflush(stdout);
 	}
+}
+
+void hookKernelPrgLoad(FILE* prg_file, int prg_override_start){
+	if(prg_file){
+		if(pc == 0xff00){
+			// ...inject the app into RAM
+			uint8_t start_lo = fgetc(prg_file);
+			uint8_t start_hi = fgetc(prg_file);
+			uint16_t start;
+			if (prg_override_start >= 0) {
+				start = prg_override_start;
+			} else {
+				start = start_hi << 8 | start_lo;
+			}
+			if(start >= 0xe000){
+				fprintf(stderr, "invalid program start address %x, will override kernel!\n", start);
+			}else{
+				uint16_t end = start + fread(RAM + start, 1, RAM_SIZE-start, prg_file);
+			}
+			fclose(prg_file);
+			prg_file = NULL;
+		}
+	}
+}
+
+
+//called after each 6502 instruction
+void instructionCb(uint32_t cycles) {
+	if (doQuit)
+		return;
+
+	for (uint8_t i = 0; i < cycles; i++) {
+		spi_step();
+	}
+
+	trace();
+
+	hookCharOut();
+
+//	hookKernelPrgLoad(prg_file, prg_override_start);
 
 	if (pc == 0xffff) {
 		if (save_on_exit) {

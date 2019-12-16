@@ -1395,14 +1395,6 @@ static void writeRegister(VDP* vdp, UInt16 ioPort, UInt8 value)
     }
 }
 
-void testVdpWriteRegister(int value){
-	writeRegister(theVdp, NULL, value);
-}
-
-void testVdpWriteLatch(int value){
-	writeLatch(theVdp, NULL, value);
-}
-
 void vdpForceSync()
 {
     if (theVdp != NULL) {

@@ -32,7 +32,7 @@ void opl2_init() {
 
 	if(Mix_OpenAudio(opl2_samplerate, AUDIO_S16, 2, opl2_audiobuffer))
 	{
-		printf("Unable to open audio: %s\n", Mix_GetError());
+		fprintf(stderr, "Unable to open audio: %s\n", Mix_GetError());
 		return;
 	}
 

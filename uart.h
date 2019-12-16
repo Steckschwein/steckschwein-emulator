@@ -6,8 +6,14 @@
 #define _UART_H_
 
 #include <stdint.h>
+#include <stdio.h>
 
-void uart_init();
+#define lsr_DR 		1<<0 // data ready
+#define lsr_THRE 	1<<5 // transmitter holding register
+
+void
+uart_init(FILE* prg_file, int prg_override_start);
+
 uint8_t uart_read(uint8_t reg);
 void uart_write(uint8_t reg, uint8_t value);
 
