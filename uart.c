@@ -2,16 +2,9 @@
 // Copyright (c) 2019 Michael Steil
 // All rights reserved. License: 2-clause BSD
 
-#include <stdio.h>
-#include <stdbool.h>
-#include <time.h>
-#include <string.h>
-#include <stdlib.h>
+#include <sys/stat.h>
 #include "uart.h"
 #include "memory.h"
-#include <sys/stat.h>
-//XXX
-#include "glue.h"
 
 static uint8_t uartregisters[16];
 
@@ -24,7 +17,6 @@ static uint16_t *p_prg_size;
 static upload_protocol_ix = 0;
 
 void uart_init(FILE *prg_file, int prg_override_start) {
-	srand(time(NULL));
 	if (prg_file) {
 		struct stat file_stat;
 		int r = fstat(prg_file->_fileno, &file_stat);
@@ -46,7 +38,6 @@ void uart_init(FILE *prg_file, int prg_override_start) {
 		fclose(prg_file);
 		prg_file = NULL;
 	}
-
 }
 
 uint8_t upload_read_bytes(uint8_t r, uint8_t **p_data, int *c) {
