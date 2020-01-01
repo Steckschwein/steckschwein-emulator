@@ -23,16 +23,8 @@
 // CB1 SPICLK (=PB0)
 // CB2 MISO
 
-static bool initialized;
-
 void spi_init() {
-	initialized = false;
 }
-
-#define SPI_DEV_SDCARD	0b1100
-#define SPI_DEV_KEYBRD	0b1010
-#define SPI_DEV_RTC		0b0110
-#define SPI_DESELECT	(SPI_DEV_SDCARD | SPI_DEV_KEYBRD | SPI_DEV_RTC)
 
 static uint8_t last_keycode = 0;
 void spi_handle_keyboard(SDLKey key) {
@@ -69,28 +61,10 @@ void dispatch_device(uint8_t port) {
 		spi_rtc_deselect();
 	}
 
-//	if(is_rtc)
-//		printf("%d %d %x\n", bit_counter, mosi, port);
-
 //	TODO FIXME ugly
 	last_sdcard = is_sdcard;
 	last_rtc = is_rtc;
 	last_key = is_keyboard;
-
-// For initialization, the client has to pull&release CLK 74 times.
-// The SD card should be deselected, because it's not actual
-// data transmission (we ignore this).
-//	if (!initialized) { // TODO FIXME move to sdcard.c
-//		if (clk == 1) {
-//			static int init_counter = 0;
-//			init_counter++;
-//			if (init_counter >= 70) {
-//				sdcard_select();
-//				initialized = true;
-//			}
-//		}
-//		return;
-//	}
 
 // for everything else, a device has to be selected
 	if (!is_sdcard && !is_keyboard && !is_rtc) {

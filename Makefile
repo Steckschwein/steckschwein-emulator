@@ -25,7 +25,7 @@ CFLAGS   += -DDEBUG_ENABLED
 
 CPPFLAGS = -g -DNO_ASM
 #
-# ym3812 opl2 sound
+# ym3812 opl sound
 #CPPFLAGS +=-DBUILD_YM3812
 
 LIBS     = -lSDL -lSDL_mixer -lm#-lz -lGL
@@ -118,9 +118,10 @@ INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Cpu
 INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Debugger
 INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Emulator
 INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Memory
+INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Sdl
+INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/SoundChips
 INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/VideoChips
 INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/VideoRender
-INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Sdl
 
 #vpath % $(ROOT_DIR)
 vpath % $(ROOT_DIR)/cpu
@@ -132,9 +133,10 @@ vpath % $(EXTERN_BLUEMSX_DIR)/Src/Cpu
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Debugger
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Emulator
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Memory
+vpath % $(EXTERN_BLUEMSX_DIR)/Src/Sdl
+vpath % $(EXTERN_BLUEMSX_DIR)/Src/SoundChips
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/VideoChips
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/VideoRender
-vpath % $(EXTERN_BLUEMSX_DIR)/Src/Sdl
 
 #
 # Source files
@@ -143,7 +145,7 @@ vpath % $(EXTERN_BLUEMSX_DIR)/Src/Sdl
 SOURCE_FILES += disasm.c
 SOURCE_FILES += main.c
 SOURCE_FILES += memory.c
-SOURCE_FILES += opl2.c
+SOURCE_FILES += ym3812.c
 SOURCE_FILES += sdcard.c
 SOURCE_FILES += spi.c
 SOURCE_FILES += uart.c
@@ -152,14 +154,12 @@ SOURCE_FILES += via.c
 # rtc sound
 SOURCE_FILES += ds1306.c
 
-# opl sound
-SOURCE_FILES += fmopl.c
-
 # cpu 65x02
 SOURCE_FILES += fake6502.c
 
 # blueMSX Src
 SOURCE_FILES += SdlEvent.c
+SOURCE_FILES += SdlSound.c
 SOURCE_FILES += SdlTimer.c
 SOURCE_FILES += SdlThread.c
 SOURCE_FILES += SdlVideoIn.c
@@ -172,6 +172,9 @@ SOURCE_FILES += hq3x.c
 SOURCE_FILES += Scalebit.c
 SOURCE_FILES += VideoRender.c
 
+SOURCE_FILES += Fmopl.c
+SOURCE_FILES += Ymdeltat.c
+SOURCE_FILES += AudioMixer.c
 SOURCE_FILES += Properties.c
 SOURCE_FILES += Board.c
 SOURCE_FILES += IoPort.c

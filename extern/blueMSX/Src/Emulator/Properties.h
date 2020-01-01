@@ -28,7 +28,7 @@
 #ifndef PROPERTIES_H
 #define PROPERTIES_H
 
-//#include "AudioMixer.h"
+#include "AudioMixer.h"
 #include "VideoRender.h"
 //#include "MediaDb.h"
 
@@ -313,7 +313,6 @@ typedef struct {
     char inputName[256];
 } VideoInProperties;
 
-/*
 typedef struct {
     int enable;
     int volume;
@@ -361,7 +360,7 @@ typedef struct {
         int  mt32ToGm;
     } MidiOut;
 } SoundProperties;
-
+/*
 typedef struct {
 	int POV0isAxes;
 } JoystickGeneric;
@@ -480,8 +479,9 @@ typedef struct Properties {
     EmulationProperties emulation;
     VideoProperties     video;
     VideoInProperties   videoIn;
-/*	 
+
     SoundProperties     sound;
+/*
     JoystickGeneric     joystick;
     JoystickProperties  joy1;
     JoystickProperties  joy2;

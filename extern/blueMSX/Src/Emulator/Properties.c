@@ -247,8 +247,8 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->videoIn.disabled            = 0;
     properties->videoIn.inputIndex          = 0;
     properties->videoIn.inputName[0]        = 0;
-/*
-    properties->sound.driver                = P_SOUND_DRVDIRECTX;
+
+//    properties->sound.driver                = P_SOUND_DRVDIRECTX;
     properties->sound.bufSize               = 100;
     properties->sound.stabilizeDSoundTiming = 1;
 
@@ -304,23 +304,23 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->sound.mixerChannel[MIXER_CHANNEL_KEYBOARD].pan = 55;
     properties->sound.mixerChannel[MIXER_CHANNEL_KEYBOARD].volume = 65;
 
-    properties->sound.YkIn.type               = P_MIDI_NONE;
+//    properties->sound.YkIn.type               = P_MIDI_NONE;
     properties->sound.YkIn.name[0]            = 0;
     strcpy(properties->sound.YkIn.fileName, "midiin.dat");
     properties->sound.YkIn.desc[0]            = 0;
     properties->sound.YkIn.channel            = 0;
-    properties->sound.MidiIn.type             = P_MIDI_NONE;
+//    properties->sound.MidiIn.type             = P_MIDI_NONE;
     properties->sound.MidiIn.name[0]          = 0;
     strcpy(properties->sound.MidiIn.fileName, "midiin.dat");
     properties->sound.MidiIn.desc[0]          = 0;
-    properties->sound.MidiOut.type            = P_MIDI_NONE;
+//    properties->sound.MidiOut.type            = P_MIDI_NONE;
     properties->sound.MidiOut.name[0]         = 0;
     strcpy(properties->sound.MidiOut.fileName, "midiout.dat");
     properties->sound.MidiOut.desc[0]         = 0;
     properties->sound.MidiOut.mt32ToGm        = 0;
 
-    properties->joystick.POV0isAxes    = 0;
-
+//    properties->joystick.POV0isAxes    = 0;
+/*
 #ifdef WII
     // Use joystick by default
     strcpy(properties->joy1.type, "joystick");

@@ -4,17 +4,43 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #include "sdcard.h"
 
+#define BLOCK_SIZE 512
+
 static int cmd_receive_counter;
 FILE *sdcard_file = NULL;
+
+static bool initialized = false;
 
 void
 sdcard_select()
 {
 	cmd_receive_counter = 0;
 }
+
+// For initialization, the client has to pull&release CLK 74 times.
+// The SD card should be deselected, because it's not actual
+// data transmission (we ignore this).
+//	if (!initialized) { // TODO FIXME move to sdcard.c
+//		if (clk == 1) {
+//			static int init_counter = 0;
+//			init_counter++;
+//			if (init_counter >= 70) {
+//				sdcard_select();
+//				initialized = true;
+//			}
+//		}
+//		return;
+//	}
+
+static uint8_t read_block_response[2 //data token
+								   + BLOCK_SIZE//
+								   + 2 //block check crc
+								   + 4 //busy wait
+								   ];
 
 uint8_t
 sdcard_handle(uint8_t inbyte)
@@ -23,52 +49,53 @@ sdcard_handle(uint8_t inbyte)
 		return 0x0;
 
 	static uint8_t cmd[6];
+	static uint8_t last_cmd;
 
 	static const uint8_t *response = NULL;
 	static int response_length = 0;
 	static int response_counter = 0;
+
 	static uint8_t mblock = 0;//multi block counter
-	uint8_t outbyte;
+	uint8_t outbyte = 0xff;
 
 	if (cmd_receive_counter == 0 && inbyte == 0xff) {
 		// send response data
-		if (!response && cmd[0] == 0x40 + 18){//last cmd is read multiblock
+		if (!response && last_cmd == 0x40 + 18){//last captured cmd is read multiblock
 			uint32_t lba =
 			cmd[1] << 24 |
 			cmd[2] << 16 |
 			cmd[3] << 8 |
 			cmd[4];
-			static uint8_t read_block_response[2 + 512 + 2];
-			read_block_response[0] = 0;
-			read_block_response[1] = 0xfe;
-
 			printf("\nReading LBA %d multiblock (%d)\n", lba+mblock, mblock);
 
-			int bytes_read = fread(&read_block_response[2], 1, 512, sdcard_file);
+			int bytes_read = fread(&read_block_response[2], 1, BLOCK_SIZE,
+					sdcard_file);
 			if (!bytes_read) {
 				fprintf(stderr, "read block ($%x): Error fread file: (lba: %x): %s\n", mblock, lba, strerror(errno));
 			}
-			if (bytes_read != 512) {
+			if (bytes_read != BLOCK_SIZE) {
 				printf("Warning: short read!\n");
 			}
+			read_block_response[0] = 0;
+			read_block_response[1] = 0xfe;
+			memset(&read_block_response[2+BLOCK_SIZE+2], 0xff,4);
 			response = read_block_response;
-			response_length = 2 + 512 + 2;
+			response_length = 2 + BLOCK_SIZE + 2 + 2;
 			response_counter = 0;//start over
 			mblock++;
 		}
 		if (response) {
 			outbyte = response[response_counter++];
+			printf("%x ", outbyte);
 			if (response_counter == response_length) {
 				response = NULL;
+				printf("\n");
 			}
-		} else {
-			outbyte = 0xff;
 		}
 	} else {
 		cmd[cmd_receive_counter++] = inbyte;
 		if (cmd_receive_counter == 6) {//cmd length 6 byte
 			cmd_receive_counter = 0;
-
 //							printf("*** COMMAND: $40 + %d\n", cmd[0] - 0x40);
 			switch (cmd[0]) {
 				case 0x40: {
@@ -85,7 +112,7 @@ sdcard_handle(uint8_t inbyte)
 					break;
 				}
 				case 0x40 + 12: { //CMD12 - end transmission, e.g. on multi block read
-					static const uint8_t r[] = { 1, 0x00, 0x00, 0x01, 0xaa };
+					static const uint8_t r[] = { 0 };//1, 0x00, 0x00, 0x01, 0xaa };
 					mblock = 0;
 					response = r;
 					response_length = sizeof(r);
@@ -111,17 +138,17 @@ sdcard_handle(uint8_t inbyte)
 					cmd[2] << 16 |
 					cmd[3] << 8 |
 					cmd[4];
-					static uint8_t read_block_response[2 + 512 + 2];
 					read_block_response[0] = 0;
 					read_block_response[1] = 0xfe;
 					printf("Reading LBA %d\n", lba);
-					fseek(sdcard_file, lba * 512, SEEK_SET);
-					int bytes_read = fread(&read_block_response[2], 1, 512, sdcard_file);
-					if (bytes_read != 512) {
-						printf("Warning: short read!\n");
+					fseek(sdcard_file, lba * BLOCK_SIZE, SEEK_SET);
+					int bytes_read = fread(&read_block_response[2], 1, BLOCK_SIZE,
+							sdcard_file);
+					if (bytes_read != BLOCK_SIZE) {
+						fprintf(stderr, "Warning: short read!\n");
 					}
 					response = read_block_response;
-					response_length = 2 + 512 + 2;
+					response_length = 2 + BLOCK_SIZE + 2;
 					break;
 				}
 				case 0x40 + 18: { // CMD18 - read multi block
@@ -130,7 +157,7 @@ sdcard_handle(uint8_t inbyte)
 					cmd[2] << 16 |
 					cmd[3] << 8 |
 					cmd[4];
-					int r = fseek(sdcard_file, lba * 512, SEEK_SET);//do just the seek here, the fread is done above
+					int r = fseek(sdcard_file, lba * BLOCK_SIZE, SEEK_SET); //do just the seek here, the fread is done above
 					mblock = 0;
 					break;
 				}
@@ -153,9 +180,9 @@ sdcard_handle(uint8_t inbyte)
 					break;
 				}
 			}
+			last_cmd = cmd[0];
 			response_counter = 0;
 		}
-		outbyte = 0xff;
 	}
 
 #ifdef TRACE

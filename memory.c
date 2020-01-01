@@ -8,14 +8,14 @@
 #include "glue.h"
 #include "via.h"
 #include "uart.h"
-#include "opl2.h"
+#include "ym3812.h"
 
 #include "memory.h"
 
 uint8_t ctrl_port;
 
-uint8_t *RAM;
-uint8_t ROM[ROM_SIZE];
+uint8_t* RAM;
+uint8_t* ROM;
 
 #define DEVICE_EMULATOR (0x9fb0)
 
@@ -23,6 +23,7 @@ void
 memory_init()
 {
 	RAM = malloc(RAM_SIZE);
+	ROM = malloc(ROM_SIZE);
 	ctrl_port = 0;
 }
 
@@ -65,7 +66,7 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 		}
 		else if (address < 0x0250) // OPL2 at $0240
 		{
-			return opl2_read(address & 0xf);
+			return ioPortRead(NULL,address);
 		}
 		else
 		{
@@ -105,7 +106,6 @@ write6502(uint16_t address, uint8_t value)
 		else if (address < 0x0230) // VDP at $0220
 		{
 			ioPortWrite(NULL,address,value);
-
 			return;
 		}
 		else if (address < 0x0240) // latch at $0x0230
@@ -116,7 +116,8 @@ write6502(uint16_t address, uint8_t value)
 		}
 		else if (address < 0x0250) // OPL2 at $0240
 		{
-			return opl2_write(address & 0xf, value);
+			ioPortWrite(NULL,address,value);
+			return;
 		}
 
 		// TODO I/O map?

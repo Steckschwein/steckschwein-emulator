@@ -32,7 +32,7 @@
 //#include "MediaDb.h"
 //#include "Machine.h"
 #include "VDP.h"
-//#include "AudioMixer.h"
+#include "AudioMixer.h"
 #include <stdio.h>
 
 typedef struct {
@@ -104,6 +104,8 @@ typedef enum { HD_NONE, HD_SUNRISEIDE, HD_BEERIDE, HD_GIDE, HD_RSIDE,
 HdType boardGetHdType(int hdIndex);
 
 const char* boardGetBaseDirectory();
+
+Mixer* boardGetMixer();
 
 #define boardFrequency() (6 * 3579545)	//
 

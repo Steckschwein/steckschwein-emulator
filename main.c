@@ -13,20 +13,20 @@
 #include <unistd.h>
 #include <limits.h>
 
+#include <SDL.h>
+
 #include "cpu/fake6502.h"
 #include "disasm.h"
 #include "memory.h"
 #include "via.h"
-#include "opl2.h"
 #include "uart.h"
 #include "spi.h"
 #include "sdcard.h"
 #include "glue.h"
 //#include "debugger.h"
 #include "Properties.h"
+//#include "ArchSound.h"
 #include "ArchThread.h"
-
-#include "SDL.h"
 
 #define AUDIO_SAMPLES 4096
 #define SAMPLERATE 22050
@@ -35,8 +35,6 @@
 #include <emscripten.h>
 #include <pthread.h>
 #endif
-
-#define MHZ 8
 
 void* emulator_loop(void *param);
 void emscripten_main_loop(void);
@@ -75,6 +73,8 @@ int32_t perf_frame_count = 0;
 bool trace_mode = false;
 uint16_t trace_address = 0;
 #endif
+
+static Mixer *mixer;
 
 FILE *prg_file;
 int prg_override_start = -1;
@@ -180,7 +180,6 @@ void machine_reset() {
 	spi_init();
 	uart_init(prg_file, prg_override_start);
 	via1_init();
-	opl2_init();
 	reset6502();
 }
 
@@ -484,19 +483,17 @@ static void handleEvent(SDL_Event *event) {
 }
 
 #ifdef SINGLE_THREADED
-int archPollEvent()
-{
-    SDL_Event event;
+int archPollEvent() {
+	SDL_Event event;
 
-    while(SDL_PollEvent(&event)) {
-        if( event.type == SDL_QUIT ) {
-            doQuit = 1;
-        }
-        else {
-            handleEvent(&event);
-        }
-    }
-    return doQuit;
+	while (SDL_PollEvent(&event)) {
+		if (event.type == SDL_QUIT) {
+			doQuit = 1;
+		} else {
+			handleEvent(&event);
+		}
+	}
+	return doQuit;
 }
 #endif
 
@@ -553,7 +550,7 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
 	}
 
 #ifdef SINGLE_THREADED
-    emuExitFlag |= archPollEvent();
+	emuExitFlag |= archPollEvent();
 #endif
 
 	if (((++kbdPollCnt & 0x03) >> 1) == 0) {
@@ -607,10 +604,10 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
 
 	overflowCount = emulatorGetCpuOverflow() ? 1 : 0;
 #ifdef NO_HIRES_TIMERS
-    if (diffTime > 50U) {
-        overflowCount = 1;
-        diffTime = 0;
-    }
+	if (diffTime > 50U) {
+		overflowCount = 1;
+		diffTime = 0;
+	}
 #else
 	if (diffTime > 100U) {
 		overflowCount = 1;
@@ -633,6 +630,17 @@ int emulatorGetCpuOverflow() {
 	int overflow = emuTimeOverflow;
 	emuTimeOverflow = 0;
 	return overflow;
+}
+
+void emulatorSuspend() {
+	if (emuState == EMU_RUNNING) {
+		emuState = EMU_SUSPENDED;
+		do {
+			archThreadSleep(10);
+		} while (!emuSuspendFlag);
+		archSoundSuspend();
+//        archMidiEnable(0);
+	}
 }
 
 void emulatorSetFrequency(int logFrequency, int *frequency) {
@@ -659,7 +667,7 @@ static void emulatorThread() {
 		reverseBufferCnt = properties->emulation.reverseMaxTime * 1000
 				/ reversePeriod;
 	}
-	success = boardRun(frequency, reversePeriod, reverseBufferCnt, WaitForSync);
+	success = boardRun(mixer, frequency, reversePeriod, reverseBufferCnt, WaitForSync);
 	//the emu loop
 	//ledSetAll(0);
 	emuState = EMU_STOPPED;
@@ -677,7 +685,7 @@ static void emulatorThread() {
 
 int emulatorGetSyncPeriod() {
 #ifdef NO_HIRES_TIMERS
-    return 10;
+	return 10;
 #else
 	return properties->emulation.syncMethod == P_EMU_SYNCAUTO
 			|| properties->emulation.syncMethod == P_EMU_SYNCNONE ? 2 : 1;
@@ -742,9 +750,9 @@ EmuState emulatorGetState() {
 
 void emulatorSetState(EmuState state) {
 	if (state == EMU_RUNNING) {
-//      archSoundResume();
+		archSoundResume();
 	} else {
-//      archSoundSuspend();
+		archSoundSuspend();
 	}
 	if (state == EMU_STEP) {
 		state = EMU_RUNNING;
@@ -770,9 +778,17 @@ void emulatorStart(const char *stateName) {
 
 	dbgEnable();
 
+//	archEmulationStartNotification();
+
 	emulatorResume();
 
 	emuExitFlag = 0;
+
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MOONSOUND, 1);
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_YAMAHA_SFG, 1);
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXAUDIO, 1);
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXMUSIC, 1);
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_SCC, 1);
 
 	properties->emulation.pauseSwitch = 0;
 	//switchSetPause(properties->emulation.pauseSwitch);
@@ -794,14 +810,14 @@ void emulatorStart(const char *stateName) {
 	//clearlog();
 
 #if SINGLE_THREADED
-    emuState = EMU_RUNNING;
-    emulatorThread();
+	emuState = EMU_RUNNING;
+	emulatorThread();
 
-    if (emulationStartFailure) {
-        archEmulationStopNotification();
-        emuState = EMU_STOPPED;
-        archEmulationStartFailure();
-    }
+	if (emulationStartFailure) {
+		archEmulationStopNotification();
+		emuState = EMU_STOPPED;
+		archEmulationStartFailure();
+	}
 #else
 	emuThread = archThreadCreate(emulatorThread, THREAD_PRIO_HIGH);
 
@@ -852,14 +868,28 @@ void emulatorStop() {
 
 	emuExitFlag = 1;
 
-//    archSoundSuspend();
+	archSoundSuspend();
 	archThreadJoin(emuThread, 3000);
 	archThreadDestroy(emuThread);
+//    archMidiEnable(0);
+//    machineDestroy(machine);
+	archThreadDestroy(emuThread);
+#ifndef WII
+	archEventDestroy(emuSyncEvent);
+#endif
+
 	archEventDestroy(emuStartEvent);
+
+	// Reset active indicators in mixer
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MOONSOUND, 1);
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_YAMAHA_SFG, 1);
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXAUDIO, 1);
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXMUSIC, 1);
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_SCC, 1);
 
 	archEmulationStopNotification();
 
-	dbgDisable();dbgPrint();
+	dbgDisable(); dbgPrint();
 //    savelog();
 }
 
@@ -894,6 +924,14 @@ int emulatorSyncScreen() {
 		}
 	}
 	return rv;
+}
+
+void emulatorRestartSound() {
+	emulatorSuspend();
+	archSoundDestroy();
+	archSoundCreate(mixer, 44100, properties->sound.bufSize,
+			properties->sound.stereo ? 2 : 1);
+	emulatorResume();
 }
 
 void trace() {
@@ -957,9 +995,9 @@ void hookCharOut() {
 	}
 }
 
-void hookKernelPrgLoad(FILE* prg_file, int prg_override_start){
-	if(prg_file){
-		if(pc == 0xff00){
+void hookKernelPrgLoad(FILE *prg_file, int prg_override_start) {
+	if (prg_file) {
+		if (pc == 0xff00) {
 			// ...inject the app into RAM
 			uint8_t start_lo = fgetc(prg_file);
 			uint8_t start_hi = fgetc(prg_file);
@@ -969,17 +1007,19 @@ void hookKernelPrgLoad(FILE* prg_file, int prg_override_start){
 			} else {
 				start = start_hi << 8 | start_lo;
 			}
-			if(start >= 0xe000){
-				fprintf(stderr, "invalid program start address %x, will override kernel!\n", start);
-			}else{
-				uint16_t end = start + fread(RAM + start, 1, RAM_SIZE-start, prg_file);
+			if (start >= 0xe000) {
+				fprintf(stderr,
+						"invalid program start address %x, will override kernel!\n",
+						start);
+			} else {
+				uint16_t end = start
+						+ fread(RAM + start, 1, RAM_SIZE - start, prg_file);
 			}
 			fclose(prg_file);
 			prg_file = NULL;
 		}
 	}
 }
-
 
 //called after each 6502 instruction
 void instructionCb(uint32_t cycles) {
@@ -1029,6 +1069,9 @@ int main(int argc, char **argv) {
 	// no ROM file is specified on the command line.
 	strncpy(rom_path + strlen(rom_path), "/rom.bin",
 	PATH_MAX - strlen(rom_path));
+
+	memory_init();
+	mixer = mixerCreate();
 
 	argc--;
 	argv++;
@@ -1311,14 +1354,9 @@ int main(int argc, char **argv) {
 	//register cpu hook
 	hookexternal(instructionCb);
 
-	if (!headless) {
-		if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-			return 1;
-		}
+	if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+		return 1;
 	}
-
-	memory_init();
-	machine_reset();
 
 	properties = propCreate(0, 0, /* P_KBD_EUROPEAN,*/0, "");
 
@@ -1338,6 +1376,38 @@ int main(int argc, char **argv) {
 	if (!createSdlWindow()) {
 		return 0;
 	}
+
+	dpyUpdateAckEvent = archEventCreate(0);
+
+//    keyboardInit();
+
+	machine_reset();
+
+//    emulatorInit(properties, mixer);
+//    actionInit(video, properties, mixer);
+//    langInit();
+
+//    langSetLanguage(properties->language);
+//
+//    joystickPortSetType(0, properties->joy1.typeId);
+//    joystickPortSetType(1, properties->joy2.typeId);
+
+//    uartIoSetType(properties->ports.Com.type, properties->ports.Com.fileName);
+//    ykIoSetMidiInType(properties->sound.YkIn.type, properties->sound.YkIn.fileName);
+
+	emulatorRestartSound();
+
+	for (int i = 0; i < MIXER_CHANNEL_TYPE_COUNT; i++) {
+		mixerSetChannelTypeVolume(mixer, i,
+				properties->sound.mixerChannel[i].volume);
+		mixerSetChannelTypePan(mixer, i, properties->sound.mixerChannel[i].pan);
+		mixerEnableChannelType(mixer, i,
+				properties->sound.mixerChannel[i].enable);
+	}
+
+	mixerSetMasterVolume(mixer, properties->sound.masterVolume);
+	mixerEnableMaster(mixer, properties->sound.masterEnable);
+
 	videoUpdateAll(video, properties);
 
 	emulatorStart("Start");
@@ -1355,6 +1425,8 @@ int main(int argc, char **argv) {
 	}
 	videoDestroy(video);
 	propDestroy(properties);
+	archSoundDestroy();
+	mixerDestroy(mixer);
 
 	return 0;
 }

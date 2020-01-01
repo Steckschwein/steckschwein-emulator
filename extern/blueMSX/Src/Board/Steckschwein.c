@@ -2,14 +2,17 @@
 #include "MOS6502.h"
 //test
 #include "VDP.h"
+#include "ym3812.h"
 
 UInt8* steckschweinRam;
 static UInt32          steckschweinRamSize;
 static UInt32          steckschweinRamStart;
 
 static MOS6502* mos6502;
+static YM3812* ym3812;
 
 static void destroy() {
+	ym3812Destroy(ym3812);
 /*
    rtcDestroy(rtc);
 
@@ -76,12 +79,14 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
      boardInit(&mos6502->systemTime);
 
-     //ioPortReset();
+     ioPortReset();
      //ramMapperIoCreate();
 
      mos6502Reset(mos6502, 0);
-     //mixerReset(boardGetMixer());
 
+     mixerReset(boardGetMixer());
+
+     ym3812 = ym3812Create(boardGetMixer());
      //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
      //slotManagerCreate();
 
@@ -91,6 +96,7 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
      //sprintf(cmosName, "%s" DIR_SEPARATOR "%s.cmos", boardGetBaseDirectory(), machine->name);
      //rtc = rtcCreate(machine->cmos.enable, machine->cmos.batteryBacked ? cmosName : 0);
+
 
      int vramSize = 0x20000;
      vdpCreate(VDP_STECKSCHWEIN, VDP_V9958, vdpSyncMode, vramSize / 0x4000);

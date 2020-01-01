@@ -115,7 +115,7 @@ int ioPortCheckSub(int subport)
 
 UInt8 ioPortRead(void* ref, UInt16 port)
 {
-    port &= 0xff;
+    port &= 0xff;//TODO FIXME iotable only 8bit
 
 //    if (boardGetType() == BOARD_MSX && port >= 0x40 && port < 0x50) {
 //        if (ioSubTable[currentSubport].read == NULL) {

@@ -32,7 +32,9 @@
 #include "SG1000.h"
 #include "Coleco.h"
 #include "Adam.h"
+*/
 #include "AudioMixer.h"
+/*
 #include "YM2413.h"
 #include "Y8950.h"
 #include "Moonsound.h"
@@ -57,6 +59,7 @@
 
 static int skipSync;
 static int pendingInt;
+static Mixer* boardMixer = NULL;
 static int (*syncToRealClock)(int, int) = NULL;
 
 UInt32* boardSysTime;
@@ -68,6 +71,7 @@ static int fdcTimingEnable = 1;
 static int fdcActive       = 0;
 static BoardTimer* fdcTimer;
 static BoardTimer* syncTimer;
+static BoardTimer* mixerTimer;
 static BoardTimer* stateTimer;
 static BoardTimer* breakpointTimer;
 
@@ -354,6 +358,13 @@ static void doSync(UInt32 time, int breakpointHit)
     }
 }
 
+static void onMixerSync(void* ref, UInt32 time)
+{
+    mixerSync(boardMixer);
+
+    boardTimerAdd(mixerTimer, boardSystemTime() + boardFrequency() / 50);
+}
+
 static void onStateSync(void* ref, UInt32 time)
 {
     if (enableSnapshots) {
@@ -427,7 +438,7 @@ int boardRewind()
         boardTimerAdd(stateTimer, boardSystemTime() + stateFrequency);
     }
     //boardTimerAdd(syncTimer, boardSystemTime() + 1);
-//    boardTimerAdd(mixerTimer, boardSystemTime() + boardFrequency() / 50);
+    boardTimerAdd(mixerTimer, boardSystemTime() + boardFrequency() / 50);
 
     if (boardPeriodicCallback != NULL) {
         boardTimerAdd(periodicTimer, boardSystemTime() + periodicInterval);
@@ -440,7 +451,7 @@ void boardSetFrequency(int frequency)
 {
    boardFreq = frequency * (boardFrequency() / 3579545);
 
-   //mixerSetBoardFrequency(frequency);
+   mixerSetBoardFrequency(frequency);
 }
 
 int boardGetRefreshRate()
@@ -680,7 +691,8 @@ void boardInit(UInt32* systemTime)
     }
 }
 
-int boardRun(int frequency,
+int boardRun(Mixer* mixer,
+			 int frequency,
              int reversePeriod,
              int reverseBufferCnt,
              int (*syncCallback)(int, int))
@@ -692,6 +704,8 @@ int boardRun(int frequency,
 
     videoManagerReset();
     debugDeviceManagerReset();
+
+    boardMixer = mixer;
 
 //    boardType = machine->board.type;
    // PatchReset(boardType);
@@ -710,6 +724,7 @@ int boardRun(int frequency,
     if (success) {
         syncTimer = boardTimerCreate(onSync, NULL);
         fdcTimer = boardTimerCreate(onFdcDone, NULL);
+        mixerTimer = boardTimerCreate(onMixerSync, NULL);
 
         stateFrequency = boardFrequency() / 1000 * reversePeriod;
 
@@ -748,6 +763,7 @@ int boardRun(int frequency,
 
         boardTimerDestroy(fdcTimer);
         boardTimerDestroy(syncTimer);
+        boardTimerDestroy(mixerTimer);
         if (breakpointTimer != NULL) {
             boardTimerDestroy(breakpointTimer);
         }
@@ -767,6 +783,7 @@ int boardRun(int frequency,
 static char baseDirectory[512];
 static int oversamplingYM2413    = 1;
 static int oversamplingY8950     = 1;
+static int oversamplingYM3812    = 1;
 static int oversamplingMoonsound = 1;
 static int enableYM2413          = 1;
 static int enableY8950           = 1;
@@ -776,6 +793,12 @@ static int videoAutodetect       = 1;
 const char* boardGetBaseDirectory() {
     return baseDirectory;
 }
+
+Mixer* boardGetMixer()
+{
+    return boardMixer;
+}
+
 
 void boardSetDirectory(const char* dir) {
     strcpy(baseDirectory, dir);
@@ -795,6 +818,10 @@ void boardSetY8950Oversampling(int value) {
 
 int boardGetY8950Oversampling() {
     return oversamplingY8950;
+}
+
+int boardGetYM3812Oversampling() {
+    return oversamplingYM3812;
 }
 
 void boardSetMoonsoundOversampling(int value) {
