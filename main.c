@@ -28,9 +28,6 @@
 //#include "ArchSound.h"
 #include "ArchThread.h"
 
-#define AUDIO_SAMPLES 4096
-#define SAMPLERATE 22050
-
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <pthread.h>
@@ -1358,7 +1355,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	properties = propCreate(0, 0, /* P_KBD_EUROPEAN,*/0, "");
+	properties = propCreate(0, 0, P_EMU_SYNCAUTO, "steckschwein");
 
 	properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
 //    properties->emulation.syncMethod = P_EMU_SYNCTOVBLANKASYNC;
