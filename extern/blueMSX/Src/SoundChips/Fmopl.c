@@ -23,8 +23,8 @@
 #define	PI 3.14159265358979323846
 #endif
 
-extern void fmOplTimerSet(void *ref, int timer, int count);
-extern void fmOplTimerStart(void *ref, int timer, int start);
+extern void ym3812TimerSet(void *ref, int timer, int count);
+extern void ym3812TimerStart(void *ref, int timer, int start);
 
 int switchGetAudio() {
 	return 1;
@@ -729,10 +729,10 @@ void OPLWriteReg(FM_OPL *OPL, int r, int v) {
 			}
 			return;
 		case 0x02: /* Timer 1 */
-			fmOplTimerSet(OPL->ref, 0, 1 * (256 - v));
+			ym3812TimerSet(OPL->ref, 0, 1 * (256 - v));
 			break;
 		case 0x03: /* Timer 2 */
-			fmOplTimerSet(OPL->ref, 1, 4 * (256 - v));
+			ym3812TimerSet(OPL->ref, 1, 4 * (256 - v));
 			return;
 		case 0x04: /* IRQ clear / mask	and	Timer enable */
 			if (v & 0x80) { /* IRQ flag	clear */
@@ -742,8 +742,8 @@ void OPLWriteReg(FM_OPL *OPL, int r, int v) {
 				OPL_STATUS_RESET(OPL, v & 0x78);
 				OPL_STATUSMASK_SET(OPL, ((~v) & 0x78) | 0x01);
 
-				fmOplTimerStart(OPL->ref, 0, v & 1);
-				fmOplTimerStart(OPL->ref, 1, v & 2);
+				ym3812TimerStart(OPL->ref, 0, v & 1);
+				ym3812TimerStart(OPL->ref, 1, v & 2);
 			}
 			return;
 		case 0x06: /* Key Board OUT */

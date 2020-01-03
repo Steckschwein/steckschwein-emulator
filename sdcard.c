@@ -86,10 +86,8 @@ sdcard_handle(uint8_t inbyte)
 		}
 		if (response) {
 			outbyte = response[response_counter++];
-			printf("%x ", outbyte);
 			if (response_counter == response_length) {
 				response = NULL;
-				printf("\n");
 			}
 		}
 	} else {

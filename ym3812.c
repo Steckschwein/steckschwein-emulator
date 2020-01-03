@@ -84,12 +84,15 @@ void ym3812TimerStart(void* ptr, int timer, int start)
     }
 }
 
-void fmOplTimerSet(void* ref, int timer, int count){
+void ym3812TimerSet(void* ref, int timer, int count){
+    YM3812 * ym3812 = (YM3812*)ref;
 
-}
-
-void fmOplTimerStart(void* ref, int timer, int start){
-
+    if (timer == 0) {
+        ym3812->timerValue1 = count;
+    }
+    else {
+        ym3812->timerValue2 = count;
+    }
 }
 
 static Int32* ym3812Sync(void* ref, UInt32 count)
@@ -160,7 +163,7 @@ void ym3812Reset(YM3812* ym3812)
 }
 
 UInt8 ym3812Read(YM3812* ym3812, UInt16 ioPort) {
-	printf("opl2_read %x\n", ioPort);
+//	printf("opl2_read %x\n", ioPort);
     switch (ioPort & 1) {
     case 0:
         return (UInt8)OPLRead(ym3812->opl, 0);
@@ -175,7 +178,7 @@ UInt8 ym3812Read(YM3812* ym3812, UInt16 ioPort) {
 }
 
 void ym3812Write(YM3812* ym3812, UInt16 ioPort, UInt8 value) {
-	printf("opl2_write %x %x\n", ioPort, value);
+//	printf("opl2_write %x %x\n", ioPort, value);
     switch (ioPort & 1) {
     case 0:
         OPLWrite(ym3812->opl, 0, value);

@@ -710,5 +710,5 @@ void mixerStopLog(Mixer* mixer)
 void mixerSetEnable(Mixer* mixer, int enable)
 {
     mixer->enable = enable;
-//    printf("AUDIO: %s\n", enable?"enabled":"disabled");
+    printf("AUDIO: %s\n", enable?"enabled":"disabled");
 }

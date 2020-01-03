@@ -10,7 +10,6 @@
 #define PORT_ADDR 0x240
 #define PORT_DATA 0x241
 
-
 #include <stdint.h>
 
 #include "extern/blueMSX/Src/SoundChips/Fmopl.h"
