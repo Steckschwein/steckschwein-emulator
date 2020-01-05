@@ -15,8 +15,11 @@ FILE *sdcard_file = NULL;
 
 static bool initialized = false;
 
+void spi_sdcard_deselect() {
+}
+
 void
-sdcard_select()
+spi_sdcard_select()
 {
 	cmd_receive_counter = 0;
 }
@@ -42,9 +45,7 @@ static uint8_t read_block_response[2 //data token
 								   + 4 //busy wait
 								   ];
 
-uint8_t
-sdcard_handle(uint8_t inbyte)
-{
+uint8_t spi_sdcard_handle(uint8_t inbyte) {
 	if(!sdcard_file)
 		return 0x0;
 

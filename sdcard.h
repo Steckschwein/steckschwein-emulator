@@ -7,7 +7,8 @@
 
 extern FILE *sdcard_file;
 
-void sdcard_select();
-uint8_t sdcard_handle(uint8_t inbyte);
+void spi_sdcard_select();
+void spi_sdcard_deselect();
+uint8_t spi_sdcard_handle(uint8_t inbyte);
 
 #endif

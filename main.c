@@ -460,10 +460,11 @@ static void handleEvent(SDL_Event *event) {
 		break;
 	case SDL_KEYDOWN:
 //        shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
-		spi_handle_keyboard(event->key.keysym.sym);
+		spi_handle_keyevent(event->key);
 		break;
 	case SDL_KEYUP:
 //        shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
+		spi_handle_keyevent(event->key);
 		break;
 	case SDL_VIDEOEXPOSE:
 		updateEmuDisplay(1);

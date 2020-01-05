@@ -1,30 +1,30 @@
-Commander X16 Emulator
+Steckschwein Emulator
 ======================
 
-This is an emulator for the Commander X16 computer system. It only depends on SDL2 and should compile on all modern operating systems.
+This is the emulator for the 8bit Steckschwein homebrew computer forked from the X16 naked Emulator and adapted to blueMSX. It only depends on SDL and therefore can be compiled on all modern operating systems.
 
 
 Binaries & Compiling
 --------------------
 
-<a href="https://travis-ci.org/commanderx16/x16-emulator"><img alt="Travis (.org)" src="https://img.shields.io/travis/commanderx16/x16-emulator.svg?label=CI&logo=travis&logoColor=white&style=for-the-badge"></a>
+<!--a href="https://travis-ci.org/commanderx16/x16-emulator"><img alt="Travis (.org)" src="https://img.shields.io/travis/commanderx16/x16-emulator.svg?label=CI&logo=travis&logoColor=white&style=for-the-badge"></a-->
 
 Binary releases for MacOS, Windows and x86_64 Linux are available on the [releases page][releases].
 
-The emulator itself is dependent only on SDL2. However, to run the emulated system you will also need a compatible `rom.bin` ROM image. This will be
+The emulator itself is dependent only on SDL. However, to run the emulated system you will also need a compatible `rom.bin` ROM image. This will be
 loaded from the directory containing the emulator binary, or you can use the `-rom .../path/to/rom.bin` option.
 
 > __WARNING:__ Older versions of the ROM might not work in newer versions of the emulator, and vice versa.
 
-You can build a ROM image yourself using the [build instructions][x16rom-build] in the [x16rom] repo. The `rom.bin` included in the [_latest_ release][releases] of the emulator may also work with the HEAD of this repo, but this is not guaranteed.
+You can build a Steckschwein ROM image yourself using the [build instructions][x16rom-build] in the [Steckschwein Repository][steckschwein-repo]. The `rom.bin` included in the [_latest_ release][releases] of the emulator may also work with the HEAD of this repo, but this is not guaranteed.
 
 ### Linux Build
 
 The SDL2 development package is available as a distribution package with most major versions of Linux:
-- Red Hat: `yum install SDL2-devel`
-- Debian: `apt-get install libsdl2-dev`
+- Red Hat: `yum install SDL-devel`
+- Debian: `apt-get install libsdl1.2-dev`
 
-Type `make` to build the source. The output will be `x16emu` in the current directory. Remember you will also need a `rom.bin` as described above.
+Type `make` to build the source. The output will be `steckschwein-emu` in the current directory. Remember you will also need a `rom.bin` as described above.
 
 ### WebAssembly Build
 
@@ -489,4 +489,5 @@ updated KERNAL with proper power-on message
 [releases]: https://github.com/commanderx16/x16-emulator/releases
 [webassembly]: webassembly/WebAssembly.md
 [x16rom-build]: https://github.com/commanderx16/x16-rom#releases-and-building
-[x16rom]: https://github.com/commanderx16/x16-rom
+[steckschwein-repo]: https://bitbucket.org/steckschwein/steckschwein-code/src/default/steckos/bios/
+

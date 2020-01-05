@@ -28,7 +28,7 @@ CPPFLAGS = -g -DNO_ASM
 # ym3812 opl sound
 #CPPFLAGS +=-DBUILD_YM3812
 
-LIBS     = -lSDL -lSDL_mixer -lm#-lz -lGL
+LIBS     = -lSDL -lm#-lz -lGL
 TARGET   = steckschwein-emu
 
 SRCS        = $(SOURCE_FILES)
@@ -76,7 +76,9 @@ ifeq ($(CROSS_COMPILE_WINDOWS),1)
 endif
 
 ifdef EMSCRIPTEN
-	LDFLAGS+=--shell-file webassembly/steckschwein-emu-template.html --preload-file rom.bin -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
+	LDFLAGS+=--shell-file webassembly/steckschwein-emu-template.html
+	#LDFLAGS+=--preload-file rom.bin
+ 	#LDFLAGS+=-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
 	# To the Javascript runtime exported functions
 	LDFLAGS+=-s EXPORTED_FUNCTIONS='["_j2c_reset", "_j2c_paste", "_j2c_start_audio", _main]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'
 
@@ -183,6 +185,8 @@ SOURCE_FILES += MOS6502.c
 SOURCE_FILES += DebugDeviceManager.c
 SOURCE_FILES += Debugger.c
 
+# wasm
+SOURCE_FILES += javascript_interface.c
 
 all: $(OUTPUT_DIR) $(TARGET)
 
