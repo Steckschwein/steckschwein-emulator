@@ -69,7 +69,17 @@ void spi_handle_keyevent(SDL_KeyboardEvent* keyBrdEvent) {
 		case SDLK_F12:
 			if(is_up)
 				last_keycode = 0xf1 + (keyBrdEvent->keysym.sym - SDLK_F1);
-		break;
+			break;
+		case SDLK_RIGHT:
+		case SDLK_LEFT:
+			if(is_up)
+				last_keycode = 0x10 + (keyBrdEvent->keysym.sym - SDLK_RIGHT);
+			break;
+		case SDLK_UP:
+		case SDLK_DOWN:
+			if(is_up)
+				last_keycode = 0x1e + (keyBrdEvent->keysym.sym - SDLK_UP);
+			break;
 		default:
 			if(is_up){
 				last_keycode = (shift ? toupper(keyBrdEvent->keysym.sym) : keyBrdEvent->keysym.sym);
