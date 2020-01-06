@@ -968,7 +968,6 @@ static void OPL_UnLockTable(void) {
 int YM3812UpdateOne(FM_OPL *OPL) {
 	int i;
 	int data;
-//	OPLSAMPLE *buf = buffer;
 	UINT32 amsCnt = OPL->amsCnt;
 	UINT32 vibCnt = OPL->vibCnt;
 	UINT8 rythm = OPL->rythm & 0x20;
@@ -1004,7 +1003,7 @@ int YM3812UpdateOne(FM_OPL *OPL) {
 	if (rythm)
 		OPL_CALC_RH(S_CH);
 	/* limit check */
-	data = outd; //Limit( outd ,	OPL_MAXOUT,	OPL_MINOUT );
+	data = Limit( outd ,	OPL_MAXOUT,	OPL_MINOUT );
 	/* store to sound buffer */
 //		buf[i] = data >> OPL_OUTSB;
 //	}

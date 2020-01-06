@@ -20,7 +20,7 @@ You can build a Steckschwein ROM image yourself using the [build instructions][x
 
 ### Linux Build
 
-The SDL2 development package is available as a distribution package with most major versions of Linux:
+The SDL Version 1.2 development package is available as a distribution package with most major versions of Linux:
 - Red Hat: `yum install SDL-devel`
 - Debian: `apt-get install libsdl1.2-dev`
 

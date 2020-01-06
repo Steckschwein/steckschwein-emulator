@@ -6,10 +6,6 @@
 /* for MSX-AUDIO specifics */
 #define MSX_AUDIO
 
-/* --- select emulation chips --- */
-#define HAS_YM3812	1
-#define BUILD_YM3812 (HAS_YM3812)
-
 /* --- system optimize --- */
 /* select bit size of output : 8 or 16 */
 #define OPL_OUTPUT_BIT 16
@@ -157,6 +153,7 @@ unsigned char OPLPeek(FM_OPL *OPL,int a);
 int OPLTimerOver(FM_OPL *OPL,int c);
 
 int Y8950UpdateOne(FM_OPL *OPL);
+int YM3812UpdateOne(FM_OPL *OPL);
 
 void Y8950LoadState(FM_OPL *OPL);
 void Y8950SaveState(FM_OPL *OPL);

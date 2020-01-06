@@ -1,7 +1,7 @@
 #
 # Comment out if verbose comilation is wanted
 #
-SILENT = @
+#SILENT = @
 
 #
 # windows 10 build
@@ -23,10 +23,10 @@ CFLAGS   = -g -w -DLSB_FIRST -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_E
 CFLAGS   += -DSINGLE_THREADED
 CFLAGS   += -DDEBUG_ENABLED
 
-CPPFLAGS = -g -DNO_ASM
+#CPPFLAGS = -g -DNO_ASM
 #
 # ym3812 opl sound
-#CPPFLAGS +=-DBUILD_YM3812
+CPPFLAGS +=-DBUILD_YM3812
 
 LIBS     = -lSDL -lm#-lz -lGL
 TARGET   = steckschwein-emu
