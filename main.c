@@ -200,16 +200,25 @@ static void usage() {
 	printf("\tEnable a specific keyboard layout decode table.\n");
 	printf("-sdcard <sdcard.img>\n");
 	printf("\tSpecify SD card image (partition map + FAT32)\n");
+	printf("-upload <file>[,<load_addr>]\n");
+	printf("\tEmulate serial upload of <file> \n");
+	printf("\t(.PRG file with 2 byte start address header)\n");
+	printf("\tThe override load address is hex without a prefix.\n");
+
+/*
 	printf("-prg <app.prg>[,<load_addr>]\n");
 	printf("\tLoad application from the local disk into RAM\n");
 	printf("\t(.PRG file with 2 byte start address header)\n");
 	printf("\tThe override load address is hex without a prefix.\n");
+*/
 	printf("-bas <app.txt>\n");
 	printf("\tInject a BASIC program in ASCII encoding through the\n");
 	printf("\tkeyboard.\n");
+/*
 	printf("-run\n");
 	printf("\tStart the -prg/-bas program using RUN or SYS, depending\n");
 	printf("\ton the load address.\n");
+*/
 	printf("-echo [{iso|raw}]\n");
 	printf("\tPrint all KERNAL output to the host's stdout.\n");
 	printf("\tBy default, everything but printable ASCII characters get\n");
@@ -1121,7 +1130,7 @@ int main(int argc, char **argv) {
 			}
 			argc--;
 			argv++;
-		} else if (!strcmp(argv[0], "-prg")) {
+		} else if (!strcmp(argv[0], "-upload")) {
 			argc--;
 			argv++;
 			if (!argc || argv[0][0] == '-') {
@@ -1130,11 +1139,11 @@ int main(int argc, char **argv) {
 			prg_path = argv[0];
 			argc--;
 			argv++;
-		} else if (!strcmp(argv[0], "-run")) {
+		} /*else if (!strcmp(argv[0], "-run")) {
 			argc--;
 			argv++;
 			run_after_load = true;
-		} else if (!strcmp(argv[0], "-bas")) {
+		} */ else if (!strcmp(argv[0], "-bas")) {
 			argc--;
 			argv++;
 			if (!argc || argv[0][0] == '-') {
