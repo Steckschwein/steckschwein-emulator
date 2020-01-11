@@ -13,31 +13,12 @@
 static int cmd_receive_counter;
 FILE *sdcard_file = NULL;
 
-static bool initialized = false;
-
-void spi_sdcard_deselect() {
-}
-
-void
-spi_sdcard_select()
-{
+void spi_sdcard_select(){
 	cmd_receive_counter = 0;
 }
 
-// For initialization, the client has to pull&release CLK 74 times.
-// The SD card should be deselected, because it's not actual
-// data transmission (we ignore this).
-//	if (!initialized) { // TODO FIXME move to sdcard.c
-//		if (clk == 1) {
-//			static int init_counter = 0;
-//			init_counter++;
-//			if (init_counter >= 70) {
-//				sdcard_select();
-//				initialized = true;
-//			}
-//		}
-//		return;
-//	}
+void spi_sdcard_deselect() {
+}
 
 static uint8_t read_block_response[2 //data token
 								   + BLOCK_SIZE//
@@ -47,7 +28,7 @@ static uint8_t read_block_response[2 //data token
 
 uint8_t spi_sdcard_handle(uint8_t inbyte) {
 	if(!sdcard_file)
-		return 0x0;
+		return 0;
 
 	static uint8_t cmd[6];
 	static uint8_t last_cmd;
@@ -59,7 +40,7 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 	static uint8_t mblock = 0;//multi block counter
 	uint8_t outbyte = 0xff;
 
-	if (cmd_receive_counter == 0 && inbyte == 0xff) {
+ 	if (cmd_receive_counter == 0 && inbyte == 0xff) {
 		// send response data
 		if (!response && last_cmd == 0x40 + 18){//last captured cmd is read multiblock
 			uint32_t lba =
@@ -104,7 +85,7 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 					response_length = sizeof(r);
 					break;
 				}
-				case 0x40 + 8: {
+				case 0x40 + 8: {//CMD8: SEND_IF_COND
 					static const uint8_t r[] = { 1, 0x00, 0x00, 0x01, 0xaa };
 					response = r;
 					response_length = sizeof(r);
@@ -125,7 +106,7 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 				}
 				case 0x40 + 16: {
 					// set block size
-					printf("Set block size = 0x%04x\n", cmd[2] << 8 | cmd[3]);
+					printf("set block size = 0x%04x\n", cmd[2] << 8 | cmd[3]);
 					static const uint8_t r[] = { 1 };
 					response = r;
 					response_length = sizeof(r);
@@ -160,13 +141,13 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 					mblock = 0;
 					break;
 				}
-				case 0x40 + 55: {
+				case 0x40 + 55: {//CMD55 APP_CMD
 					static const uint8_t r[] = { 1 };
 					response = r;
 					response_length = sizeof(r);
 					break;
 				}
-				case 0x40 + 58: {
+				case 0x40 + 58: {//READ_OCR
 					static const uint8_t r[] = { 0, 0, 0, 0 };
 					response = r;
 					response_length = sizeof(r);

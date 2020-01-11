@@ -107,7 +107,6 @@ void dispatch_device(uint8_t port) {
 		spi_sdcard_select();
 	} else if (!last_key && is_keyboard) {
 		bit_counter = 0;
-//		printf("keyboard\n");
 		last_key = 0;
 	} else if (!last_rtc && is_rtc) {
 		bit_counter = 0;
@@ -132,7 +131,7 @@ void dispatch_device(uint8_t port) {
 		return;
 	}
 	last_clk = clk;
-	if (clk == 0) {	// only care about rising clock
+	if (!clk) {	// only care about rising clock
 		return;
 	}
 
@@ -141,6 +140,24 @@ void dispatch_device(uint8_t port) {
 	inbyte <<= 1;
 	inbyte |= mosi;
 	bit_counter++;
+
+	if (is_sdcard) {
+		static bool initialized = false;
+		// For initialization, the client has to pull&release CLK 74 times.
+		// The SD card should be deselected, because it's not actual
+		// data transmission (we ignore this).
+		if (!initialized) { // TODO FIXME move to sdcard.c
+			if (clk) {
+				static int init_counter = 0;
+				init_counter++;
+				if (init_counter >= 74) {
+					spi_sdcard_select();
+					initialized = true;
+				}
+			}
+			return;
+		}
+	}
 
 	if (bit_counter != 8) {
 		return;

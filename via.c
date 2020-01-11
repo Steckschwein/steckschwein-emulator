@@ -4,11 +4,10 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <time.h>
 #include <stdlib.h>
+#include <time.h>
 #include "via.h"
 #include "memory.h"
-//XXX
 #include "glue.h"
 
 //
@@ -44,8 +43,17 @@ via1_read(uint8_t reg)
 		// PB
 		// 0 input  -> take input bit
 		// 1 output -> take output bit
-		return (via1pb_in & (via1registers[2] ^ 0xff)) |
-			(via1registers[0] & via1registers[2]);
+		uint8_t v = (via1pb_in & (via1registers[2] ^ 0xff))
+				| (via1registers[0] & via1registers[2]);
+
+		if((via1registers[2] & SD_DETECT) == 0){//SD_DETECT pin set as input?
+			if(sdcard_file){
+				v&=~(SD_DETECT);
+			}else{
+				v|= SD_DETECT;
+			}
+		}
+		return v;
 	} else {
 		return via1registers[reg];
 	}

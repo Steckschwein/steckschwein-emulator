@@ -6,6 +6,9 @@
 #define _VIA_H_
 
 #include <stdint.h>
+#include <sdcard.h>
+
+#define SD_DETECT 1<<6
 
 uint8_t via1_read(uint8_t reg);
 void via1_write(uint8_t reg, uint8_t value);

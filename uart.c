@@ -23,20 +23,20 @@ void uart_init(FILE *prg_file, int prg_override_start) {
 		if (r) {
 			fprintf(stderr, "error fstat %s\n", strerror(errno));
 		} else {
-//			p_prg_size = &prg_size;
 			uint8_t offs = (prg_override_start == -1 ? 2 : 0);
 			prg_size = file_stat.st_size - offs; //-offs byte, if start address is given as argument
 			p_prg_img = malloc(prg_size + (2-offs));//align memory for prg image, we always allocate 2 byte + prg. image size
 			if (p_prg_img == NULL) {
 				fprintf(stderr, "out of memory\n");
 			}
-			int prg_start = (prg_override_start == -1 ? *(p_prg_img + 1) << 8 | *(p_prg_img + 0) : prg_override_start);
-			*(p_prg_img+0) = prg_start & 0xff;
-			*(p_prg_img+1) = prg_start>>8 & 0xff;
+			if(prg_override_start != -1){
+				*(p_prg_img+0) = prg_override_start & 0xff;
+				*(p_prg_img+1) = prg_override_start>>8 & 0xff;
+			}
 
 			r = fread(p_prg_img+(2-offs), 1, prg_size, prg_file);
 			if (r) {
-				printf("uart() load program, start $%x size $%x\n", prg_start,
+				printf("uart() load program, start $%x size $%x\n", (*(p_prg_img+0) | *(p_prg_img+1)<<8),
 						prg_size);
 			}
 		}
