@@ -1,7 +1,7 @@
 #
 # Comment out if verbose comilation is wanted
 #
-#SILENT = @
+SILENT = @
 
 #
 # windows 10 build
