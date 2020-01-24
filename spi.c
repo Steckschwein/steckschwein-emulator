@@ -9,6 +9,8 @@
 #include "via.h"
 #include "ds1306.h"
 
+#include "scancodes_de_cp437.h"
+
 #include <SDL_keysym.h>
 #include <SDL_events.h>
 
@@ -30,61 +32,70 @@ void spi_init() {
 
 static uint8_t last_keycode = 0;
 
-uint8_t spi_handle_keyboard(){
+uint8_t spi_handle_keyboard() {
 	uint8_t outbyte = last_keycode;
 	last_keycode = 0;
 	return outbyte;
 }
 
-void spi_handle_keyevent(SDL_KeyboardEvent* keyBrdEvent) {
+void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 
 	static bool shift = false;
+	static uint8_t index = 0;
 
 	bool is_up = keyBrdEvent->type == SDL_KEYUP;
 
-	switch(keyBrdEvent->keysym.sym){
-		case SDLK_LCTRL:
-		case SDLK_RCTRL:
-
+	SDLKey keyCode = keyBrdEvent->keysym.sym;
+	switch (keyCode) {
+	case SDLK_LCTRL:
+	case SDLK_RCTRL:
 		break;
-
-		case SDLK_LSHIFT:
-		case SDLK_RSHIFT:
-			shift = !is_up;
+	case SDLK_LSHIFT:
+	case SDLK_RSHIFT:
+		shift = !is_up;
+		index = is_up ? (index & ~(1)) : index | 1;
 		break;
-		case SDLK_LALT:
-		case SDLK_RALT:
+	case SDLK_LALT:
+		index = is_up ? (index & ~(2)) : index | 2;
 		break;
-		case SDLK_F1:
-		case SDLK_F2:
-		case SDLK_F3:
-		case SDLK_F4:
-		case SDLK_F5:
-		case SDLK_F6:
-		case SDLK_F7:
-		case SDLK_F8:
-		case SDLK_F9:
-		case SDLK_F10:
-		case SDLK_F11:
-		case SDLK_F12:
-			if(is_up)
-				last_keycode = 0xf1 + (keyBrdEvent->keysym.sym - SDLK_F1);
-			break;
-		case SDLK_RIGHT:
-		case SDLK_LEFT:
-			if(is_up)
-				last_keycode = 0x10 + (keyBrdEvent->keysym.sym - SDLK_RIGHT);
-			break;
-		case SDLK_UP:
-		case SDLK_DOWN:
-			if(is_up)
-				last_keycode = 0x1e + (keyBrdEvent->keysym.sym - SDLK_UP);
-			break;
-		default:
-			if(is_up){
-				last_keycode = (shift ? toupper(keyBrdEvent->keysym.sym) : keyBrdEvent->keysym.sym);
-				printf("spi_handle_keyboard() %x\n", last_keycode);
+	case SDLK_MODE:
+	case SDLK_RALT:
+		index = is_up ? (index & ~(4)) : index | 4;
+		break;
+	case SDLK_F1:
+	case SDLK_F2:
+	case SDLK_F3:
+	case SDLK_F4:
+	case SDLK_F5:
+	case SDLK_F6:
+	case SDLK_F7:
+	case SDLK_F8:
+	case SDLK_F9:
+	case SDLK_F10:
+	case SDLK_F11:
+	case SDLK_F12:
+		if (is_up)
+			last_keycode = 0xf1 + (keyCode - SDLK_F1);
+		break;
+	case SDLK_RIGHT:
+	case SDLK_LEFT:
+		if (!is_up)
+			last_keycode = 0x10 + (keyCode - SDLK_RIGHT);
+		break;
+	case SDLK_UP:
+	case SDLK_DOWN:
+		if (!is_up)
+			last_keycode = 0x1e + (keyCode - SDLK_UP);
+		break;
+	default:
+		if (!is_up) {
+			if (scancodes[keyCode]) {
+				uint8_t i = (index >= 4 ? 3 : index >= 2 ? 2 : index);
+				last_keycode = scancodes[keyCode][i];
+			} else {
+				last_keycode = keyCode; //unmapped
 			}
+		}
 	}
 }
 
@@ -112,7 +123,7 @@ void dispatch_device(uint8_t port) {
 		bit_counter = 0;
 		spi_rtc_select();
 	}
-	if (last_rtc && !is_rtc){
+	if (last_rtc && !is_rtc) {
 		spi_rtc_deselect();
 	}
 

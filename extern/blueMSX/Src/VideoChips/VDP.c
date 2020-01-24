@@ -838,7 +838,6 @@ static void vdpUpdateRegisters(VDP* vdp, UInt8 reg, UInt8 value)
     if (reg == 0 || reg == 8 || reg == 9)
         printf("W %.2x: 0x%.2x\n", reg, value);
 #endif
-//    printf("W %.2x: 0x%.2x\n", reg, value);
 
     change = vdp->vdpRegs[reg] ^ value;
     vdp->vdpRegs[reg] = value;
