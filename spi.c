@@ -49,6 +49,7 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 	switch (keyCode) {
 	case SDLK_LCTRL:
 	case SDLK_RCTRL:
+		index = is_up ? (index & ~(2)) : index | 2;
 		break;
 	case SDLK_LSHIFT:
 	case SDLK_RSHIFT:
@@ -56,12 +57,11 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 		index = is_up ? (index & ~(1)) : index | 1;
 		break;
 	case SDLK_LALT:
-		index = is_up ? (index & ~(2)) : index | 2;
 		break;
-	case SDLK_MODE:
 	case SDLK_RALT:
 		index = is_up ? (index & ~(4)) : index | 4;
 		break;
+	case SDLK_MODE:
 	case SDLK_F1:
 	case SDLK_F2:
 	case SDLK_F3:
@@ -90,7 +90,7 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 	default:
 		if (!is_up) {
 			if (scancodes[keyCode]) {
-				uint8_t i = (index >= 4 ? 3 : index >= 2 ? 2 : index);
+ 				uint8_t i = (index >= 4 ? 3 : index >= 2 ? 2 : index);
 				last_keycode = scancodes[keyCode][i];
 			} else {
 				last_keycode = keyCode; //unmapped
