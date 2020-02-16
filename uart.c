@@ -54,8 +54,8 @@ void loadFile(int prg_override_start, FILE *prg_file) {
 	} else {
 		uint8_t offs = (prg_override_start == -1 ? 2 : 0);
 		prg_size = file_stat.st_size - offs; //-offs byte, if start address is given as argument
-		p_prg_img = p_prg_img_ix = malloc(prg_size + (2 - offs)); //align memory for prg image, we always allocate 2 byte + prg. image size
 		p_prg_size = &prg_size;
+		p_prg_img = p_prg_img_ix = malloc(prg_size + (2 - offs)); //align memory for prg image, we always allocate 2 byte + prg. image size
 		if (p_prg_img_ix == NULL) {
 			fprintf(stderr, "out of memory\n");
 		}

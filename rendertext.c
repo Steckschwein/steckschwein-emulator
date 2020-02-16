@@ -5,15 +5,6 @@ int xPos = 0;
 int yPos = 0;
 
 // *******************************************************************************************
-// left trim string
-//
-char *ltrim(char *s)
-{
-	while(isspace(*s)) s++;
-	return s;
-}
-
-// *******************************************************************************************
 //
 //										Simple 5 x 7 Font
 //
@@ -123,7 +114,6 @@ static unsigned char fontdata[] = {
 //										Write character
 //
 // *******************************************************************************************
-
 void DEBUGWrite(SDL_Renderer *renderer, int x, int y, int ch, SDL_Color colour) {
 	SDL_Rect rc;
 	rc.x = xPos + (x * 6 * CHAR_SCALE);							// Work out cell position

@@ -17,12 +17,12 @@
 #include <SDL_keysym.h>
 #include <SDL_video.h>
 
-#include "cpu/support.h"
+//#include "cpu/support.h"
 #include "disasm.h"
 #include "EmulatorDebugger.h"
 #include "glue.h"
 #include "memory.h"
-#include "rendertext.h"
+//#include "rendertext.h"
 
 static void DEBUGHandleKeyEvent(SDLKey key,int isShift);
 
@@ -118,6 +118,26 @@ int currentLineLen= 0;											// command line buffer length
 //			If it returns -ve, then exit.
 //
 // *******************************************************************************************
+
+// *******************************************************************************************
+// left trim string
+//
+char *ltrim(char *s)
+{
+	while(isspace(*s)) s++;
+	return s;
+}
+
+
+void DEBUGWrite(int x, int y, int ch, SDL_Color colour) {
+	putchar(ch);
+}
+
+void DEBUGString(int x, int y, char *s, SDL_Color colour) {
+	while (*s != '\0') {
+		DEBUGWrite(x++, y, *s++, colour);
+	}
+}
 
 int  DEBUGGetCurrentStatus(void) {
 
@@ -309,7 +329,7 @@ static void DEBUGExecCmd() {
 	if(*line) {
 		line++;
 	}
-	// printf("cmd:%c line: '%s'\n", cmd, line);
+	printf("cmd:%c line: '%s'\n", cmd, line);
 
 	switch (cmd) {
 		case CMD_DUMP_MEM:
@@ -369,19 +389,20 @@ void DEBUGRenderDisplay(int width, int height) {
 	if (showFullDisplay) return;								// Not rendering debug.
 
 	SDL_Rect rc;
-	rc.w = DBG_WIDTH * 6 * CHAR_SCALE;							// Erase background, set up rect
-	rc.h = height;
-	xPos = width-rc.w;yPos = 0; 								// Position screen
-	rc.x = xPos;rc.y = yPos; 									// Set rectangle and black out.
-	SDL_SetRenderDrawColor(dbgRenderer,0,0,0,SDL_ALPHA_OPAQUE);
-	SDL_RenderFillRect(dbgRenderer,&rc);
+//	rc.w = DBG_WIDTH * 6 * CHAR_SCALE;							// Erase background, set up rect
+//	rc.h = height;
+//	xPos = width-rc.w;yPos = 0; 								// Position screen
+//	rc.x = xPos;rc.y = yPos; 									// Set rectangle and black out.
+//	SDL_SetRenderDrawColor(dbgRenderer,0,0,0,SDL_ALPHA_OPAQUE);
+//	SDL_RenderFillRect(dbgRenderer,&rc);
 
 	DEBUGRenderRegisters();							// Draw register name and values.
 	DEBUGRenderCode(20, currentPC);							// Render 6502 disassembly.
 	DEBUGRenderData(21, currentData);
 	DEBUGRenderStack(20);
 
-	DEBUGRenderCmdLine(xPos, rc.w, height);
+//	TODO FIXME DEBUGRenderCmdLine(xPos, rc.w, height);
+	DEBUGRenderCmdLine(0, 0, height);
 }
 
 // *******************************************************************************************
@@ -393,11 +414,11 @@ void DEBUGRenderDisplay(int width, int height) {
 static void DEBUGRenderCmdLine(int x, int width, int height) {
 	char buffer[sizeof(cmdLine)+1];
 
-	SDL_SetRenderDrawColor(dbgRenderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-	SDL_RenderDrawLine(dbgRenderer, x, height-12, x+width, height-12);
+//	SDL_SetRenderDrawColor(dbgRenderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+//	SDL_RenderDrawLine(dbgRenderer, x, height-12, x+width, height-12);
 
 	sprintf(buffer, ">%s", cmdLine);
-	DEBUGString(dbgRenderer, 0, DBG_HEIGHT-1, buffer, col_cmdLine);
+//	DEBUGString(dbgRenderer, 0, DBG_HEIGHT-1, buffer, col_cmdLine);
 }
 // *******************************************************************************************
 //
@@ -412,7 +433,7 @@ static void DEBUGRenderData(int y,int data) {
 		for (int i = 0;i < 8;i++) {
 			int byte= real_read6502((data+i) & 0xFFFF, true, currentBank);
 			DEBUGNumber(DBG_MEMX+8+i*3,y,byte,2, col_data);
-			DEBUGWrite(dbgRenderer, DBG_MEMX+33+i,y,byte, col_data);
+			DEBUGWrite(DBG_MEMX+33+i,y,byte, col_data);
 		}
 		y++;
 		data += 8;
@@ -433,7 +454,10 @@ static void DEBUGRenderCode(int lines, int initialPC) {
 
 		int size = disasm(initialPC, RAM, buffer, sizeof(buffer), true, currentPCBank);	// Disassemble code
 		// Output assembly highlighting PC
-		DEBUGString(dbgRenderer, DBG_ASMX+8, y, buffer, initialPC == pc ? col_highlight : col_data);
+//		DEBUGString(dbgRenderer, DBG_ASMX+8, y, buffer, initialPC == pc ? col_highlight : col_data);
+		printf(buffer);
+//		DEBUGString(dbgRenderer, DBG_ASMX+8, y, buffer, initialPC == pc ? col_highlight : col_data);
+
 		initialPC += size;										// Forward to next
 	}
 }
@@ -450,7 +474,8 @@ static char *labels[] = { "NV-BDIZC","","","A","X","Y","","BKA","BKO", "PC","SP"
 static int DEBUGRenderRegisters(void) {
 	int n = 0,yc = 0;
 	while (labels[n] != NULL) {									// Labels
-		DEBUGString(dbgRenderer, DBG_LBLX,n,labels[n], col_label);n++;
+//		DEBUGString(dbgRenderer, DBG_LBLX,n,labels[n], col_label);n++;
+		DEBUGString(DBG_LBLX,n,labels[n], col_label);n++;
 	}
 	yc++;
 	DEBUGNumber(DBG_LBLX, yc, (status >> 7) & 1, 1, col_data);
@@ -497,7 +522,8 @@ static void DEBUGRenderStack(int bytesCount) {
 		DEBUGNumber(DBG_STCK,y,data & 0xFFFF,4, col_label);
 		int byte = real_read6502((data++) & 0xFFFF, false, 0);
 		DEBUGNumber(DBG_STCK+5,y,byte,2, col_data);
-		DEBUGWrite(dbgRenderer, DBG_STCK+9,y,byte, col_data);
+//		DEBUGWrite(dbgRenderer, DBG_STCK+9,y,byte, col_data);
+		DEBUGWrite(DBG_STCK+9,y,byte, col_data);
 		y++;
 		data= (data & 0xFF) | 0x100;
 	}
@@ -513,7 +539,8 @@ static void DEBUGNumber(int x, int y, int n, int w, SDL_Color colour) {
 	char fmtString[8],buffer[16];
 	snprintf(fmtString, sizeof(fmtString), "%%0%dX", w);
 	snprintf(buffer, sizeof(buffer), fmtString, n);
-	DEBUGString(dbgRenderer, x, y, buffer, colour);
+	DEBUGString(x, y, buffer, colour);
+//	DEBUGString(dbgRenderer, x, y, buffer, colour);
 }
 
 // *******************************************************************************************
@@ -530,7 +557,8 @@ static void DEBUGAddress(int x, int y, int bank, int addr, SDL_Color colour) {
 		strcpy(buffer, "--:");
 	}
 
-	DEBUGString(dbgRenderer, x, y, buffer, colour);
+	DEBUGString(x, y, buffer, colour);
+//	DEBUGString(dbgRenderer, x, y, buffer, colour);
 
 	DEBUGNumber(x+3, y, addr, 4, colour);
 

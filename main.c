@@ -23,7 +23,7 @@
 #include "spi.h"
 #include "sdcard.h"
 #include "glue.h"
-//#include "debugger.h"
+#include "EmulatorDebugger.h"
 #include "Properties.h"
 //#include "ArchSound.h"
 #include "ArchThread.h"
@@ -205,20 +205,20 @@ static void usage() {
 	printf("\t(.PRG file with 2 byte start address header)\n");
 	printf("\tThe override load address is hex without a prefix.\n");
 
-/*
-	printf("-prg <app.prg>[,<load_addr>]\n");
-	printf("\tLoad application from the local disk into RAM\n");
-	printf("\t(.PRG file with 2 byte start address header)\n");
-	printf("\tThe override load address is hex without a prefix.\n");
-*/
+	/*
+	 printf("-prg <app.prg>[,<load_addr>]\n");
+	 printf("\tLoad application from the local disk into RAM\n");
+	 printf("\t(.PRG file with 2 byte start address header)\n");
+	 printf("\tThe override load address is hex without a prefix.\n");
+	 */
 	printf("-bas <app.txt>\n");
 	printf("\tInject a BASIC program in ASCII encoding through the\n");
 	printf("\tkeyboard.\n");
-/*
-	printf("-run\n");
-	printf("\tStart the -prg/-bas program using RUN or SYS, depending\n");
-	printf("\ton the load address.\n");
-*/
+	/*
+	 printf("-run\n");
+	 printf("\tStart the -prg/-bas program using RUN or SYS, depending\n");
+	 printf("\ton the load address.\n");
+	 */
 	printf("-echo [{iso|raw}]\n");
 	printf("\tPrint all KERNAL output to the host's stdout.\n");
 	printf("\tBy default, everything but printable ASCII characters get\n");
@@ -674,7 +674,8 @@ static void emulatorThread() {
 		reverseBufferCnt = properties->emulation.reverseMaxTime * 1000
 				/ reversePeriod;
 	}
-	success = boardRun(mixer, frequency, reversePeriod, reverseBufferCnt, WaitForSync);
+	success = boardRun(mixer, frequency, reversePeriod, reverseBufferCnt,
+			WaitForSync);
 	//the emu loop
 	//ledSetAll(0);
 	emuState = EMU_STOPPED;
@@ -896,7 +897,7 @@ void emulatorStop() {
 
 	archEmulationStopNotification();
 
-	dbgDisable(); dbgPrint();
+	dbgDisable();dbgPrint();
 //    savelog();
 }
 
@@ -1039,7 +1040,15 @@ void instructionCb(uint32_t cycles) {
 
 	trace();
 
-	hookCharOut();
+	if (debugger_enabled) {
+		int dbgCmd = DEBUGGetCurrentStatus();
+//		if (dbgCmd > 0)
+//			continue;
+//		if (dbgCmd < 0)
+//			break;
+	} else {
+		hookCharOut();
+	}
 
 //	hookKernelPrgLoad(prg_file, prg_override_start);
 
@@ -1139,10 +1148,10 @@ int main(int argc, char **argv) {
 			argc--;
 			argv++;
 		} /*else if (!strcmp(argv[0], "-run")) {
-			argc--;
-			argv++;
-			run_after_load = true;
-		} */ else if (!strcmp(argv[0], "-bas")) {
+		 argc--;
+		 argv++;
+		 run_after_load = true;
+		 } */else if (!strcmp(argv[0], "-bas")) {
 			argc--;
 			argv++;
 			if (!argc || argv[0][0] == '-') {
@@ -1243,7 +1252,7 @@ int main(int argc, char **argv) {
 			argv++;
 			debugger_enabled = true;
 			if (argc && argv[0][0] != '-') {
-				//DEBUGSetBreakPoint((uint16_t)strtol(argv[0], NULL, 16));
+				DEBUGSetBreakPoint((uint16_t) strtol(argv[0], NULL, 16));
 				argc--;
 				argv++;
 			}
@@ -1447,7 +1456,7 @@ emulator_loop(void *param) {
 		}
 
 		if (debugger_enabled) {
-			int dbgCmd = 1;	//DEBUGGetCurrentStatus();
+			int dbgCmd = DEBUGGetCurrentStatus();
 			if (dbgCmd > 0)
 				continue;
 			if (dbgCmd < 0)

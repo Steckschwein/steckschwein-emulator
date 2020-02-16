@@ -143,7 +143,7 @@ vpath % $(EXTERN_BLUEMSX_DIR)/Src/VideoRender
 #
 # Source files
 #
-#SOURCE_FILES += debugger.c
+SOURCE_FILES += EmulatorDebugger.c
 SOURCE_FILES += disasm.c
 SOURCE_FILES += main.c
 SOURCE_FILES += memory.c
