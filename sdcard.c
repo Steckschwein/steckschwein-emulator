@@ -48,7 +48,7 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 			cmd[2] << 16 |
 			cmd[3] << 8 |
 			cmd[4];
-			printf("\nReading LBA %d multiblock (%d)\n", lba+mblock, mblock);
+			DEBUG("Reading LBA %d multiblock (%d)\n", lba+mblock, mblock);
 
 			int bytes_read = fread(&read_block_response[2], 1, BLOCK_SIZE,
 					sdcard_file);
@@ -56,7 +56,7 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 				fprintf(stderr, "read block ($%x): Error fread file: (lba: %x): %s\n", mblock, lba, strerror(errno));
 			}
 			if (bytes_read != BLOCK_SIZE) {
-				printf("Warning: short read!\n");
+				WARN("Warning: short read bytes %d/%d'!\n", bytes_read, BLOCK_SIZE);
 			}
 			read_block_response[0] = 0;
 			read_block_response[1] = 0xfe;
@@ -106,7 +106,7 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 				}
 				case 0x40 + 16: {
 					// set block size
-					printf("set block size = 0x%04x\n", cmd[2] << 8 | cmd[3]);
+					DEBUG("set block size = 0x%04x\n", cmd[2] << 8 | cmd[3]);
 					static const uint8_t r[] = { 1 };
 					response = r;
 					response_length = sizeof(r);
@@ -120,12 +120,12 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 					cmd[4];
 					read_block_response[0] = 0;
 					read_block_response[1] = 0xfe;
-					printf("Reading LBA %d\n", lba);
+					DEBUG("Reading LBA %d\n", lba);
 					fseek(sdcard_file, lba * BLOCK_SIZE, SEEK_SET);
 					int bytes_read = fread(&read_block_response[2], 1, BLOCK_SIZE,
 							sdcard_file);
 					if (bytes_read != BLOCK_SIZE) {
-						fprintf(stderr, "Warning: short read!\n");
+						WARN("Warning: short read bytes %d/%d'!\n", bytes_read, BLOCK_SIZE);
 					}
 					response = read_block_response;
 					response_length = 2 + BLOCK_SIZE + 2;
@@ -165,9 +165,7 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 		}
 	}
 
-#ifdef TRACE
-	printf("$%02x ->$%02x \n", inbyte, outbyte);
-#endif
+	DEBUG("$%02x => $%02x \n", inbyte, outbyte);
 
 	return outbyte;
 }

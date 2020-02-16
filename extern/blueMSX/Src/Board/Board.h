@@ -33,6 +33,7 @@
 //#include "Machine.h"
 #include "VDP.h"
 #include "AudioMixer.h"
+#include "glue.h"
 #include <stdio.h>
 
 typedef struct {

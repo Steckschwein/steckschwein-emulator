@@ -73,7 +73,7 @@ uint16_t trace_address = 0;
 
 static Mixer *mixer;
 
-FILE *prg_file;
+unsigned char *prg_path;
 int prg_override_start = -1;
 bool run_after_load = false;
 
@@ -175,7 +175,7 @@ void machine_dump() {
 
 void machine_reset() {
 	spi_init();
-	uart_init(prg_file, prg_override_start);
+	uart_init(prg_path, prg_override_start);
 	via1_init();
 	reset6502();
 }
@@ -1055,7 +1055,6 @@ void instructionCb(uint32_t cycles) {
 int main(int argc, char **argv) {
 	char rom_path_data[PATH_MAX];
 	char *rom_path = rom_path_data;
-	char *prg_path = NULL;
 	char *bas_path = NULL;
 	char *sdcard_path = NULL;
 
@@ -1331,12 +1330,6 @@ int main(int argc, char **argv) {
 		if (comma) {
 			prg_override_start = (uint16_t) strtol(comma + 1, NULL, 16);
 			*comma = 0;
-		}
-
-		prg_file = fopen(prg_path, "rb");
-		if (!prg_file) {
-			printf("Cannot open %s!\n", prg_path);
-			exit(1);
 		}
 	}
 

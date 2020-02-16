@@ -677,7 +677,7 @@ void boardInit(UInt32* systemTime)
     oldTime = *systemTime;
     boardSysTime64 = oldTime * HIRES_CYCLES_PER_LORES_CYCLE;
 
-    printf("boardInit %p\n", boardSysTime);
+    DEBUG ("boardInit %p\n", boardSysTime);
 
     timeAnchor = *systemTime;
 

@@ -8,7 +8,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define TRACE
+#define WARN(...) fprintf(stderr, __VA_ARGS__)
+
+#ifdef DEBUG_ENABLED
+	#define DEBUG(...) printf(__VA_ARGS__)
+#else
+	#define DEBUG(...)
+#endif
+
 
 typedef enum {
 	ECHO_MODE_NONE,

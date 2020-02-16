@@ -3,6 +3,8 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+#include "glue.h"
+
 extern FILE *sdcard_file;
 
 void spi_sdcard_select();
