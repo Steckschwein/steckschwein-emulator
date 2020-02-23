@@ -102,14 +102,18 @@ static volatile int emuSuspendFlag;
 static volatile EmuState emuState = EMU_STOPPED;
 static volatile int emuSingleStep = 0;
 
-static void *emuSyncEvent;
-static void *emuStartEvent;
-static void *emuTimer;
+#ifndef WII
+static void*  emuSyncEvent;
+#endif
+static void*  emuStartEvent;
+#ifndef WII
+static void*  emuTimer;
+#endif
 static void *emuThread;
 
 static int emuExitFlag;
 static UInt32 emuSysTime = 0;
-static UInt32 emuFrequency = 3579545;
+static UInt32 emuFrequency;
 
 static int emulationStartFailure = 0;
 static int pendingDisplayEvents = 0;
@@ -651,7 +655,7 @@ void emulatorSuspend() {
 }
 
 void emulatorSetFrequency(int logFrequency, int *frequency) {
-	emuFrequency = (int) (3579545 * pow(2.0, (logFrequency - 50) / 15.0515));
+	emuFrequency = (int) (EMU_FREQUENCY * pow(2.0, (logFrequency - 50) / 15.0515));
 
 	if (frequency != NULL) {
 		*frequency = emuFrequency;
