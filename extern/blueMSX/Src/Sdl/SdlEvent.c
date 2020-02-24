@@ -39,11 +39,13 @@ void archEventWait(void* event, int timeout) {}
 
 #else
 
+/*
 typedef struct {
     void* eventSem;
     void* lockSem;
     int   state;
 } Event;
+*/
 
 void* archEventCreate(int initState)
 {

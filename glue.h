@@ -16,6 +16,8 @@
 	#define DEBUG(...)
 #endif
 
+#define EMU_FREQUENCY 2000000
+
 
 typedef enum {
 	ECHO_MODE_NONE,

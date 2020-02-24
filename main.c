@@ -26,6 +26,7 @@
 #include "EmulatorDebugger.h"
 #include "Properties.h"
 //#include "ArchSound.h"
+#include "ArchEvent.h"
 #include "ArchThread.h"
 
 #ifdef __EMSCRIPTEN__
@@ -103,9 +104,9 @@ static volatile EmuState emuState = EMU_STOPPED;
 static volatile int emuSingleStep = 0;
 
 #ifndef WII
-static void*  emuSyncEvent;
+static void*  emuSyncEvent = NULL;
 #endif
-static void*  emuStartEvent;
+static void*  emuStartEvent = NULL;
 #ifndef WII
 static void*  emuTimer;
 #endif
@@ -678,8 +679,8 @@ static void emulatorThread() {
 		reverseBufferCnt = properties->emulation.reverseMaxTime * 1000
 				/ reversePeriod;
 	}
-	success = boardRun(mixer, frequency, reversePeriod, reverseBufferCnt,
-			WaitForSync);
+	success = boardRun(mixer, frequency, reversePeriod, reverseBufferCnt, WaitForSync);
+
 	//the emu loop
 	//ledSetAll(0);
 	emuState = EMU_STOPPED;
@@ -713,7 +714,7 @@ void RefreshScreen(int screenMode) {
 	}
 }
 
-static int timerCallback(void *timer) {
+int timerCallback(void *timer) {
 
 	if (properties == NULL) {
 		return 1;
@@ -806,14 +807,22 @@ void emulatorStart(const char *stateName) {
 	//switchSetPause(properties->emulation.pauseSwitch);
 
 #ifndef NO_TIMERS
+#ifndef WII
 	emuSyncEvent = archEventCreate(0);
+	printf("emuSyncEvent: %p %p %p s: %d\n", emuSyncEvent, ((Event*)emuSyncEvent)->eventSem,((Event*)emuSyncEvent)->lockSem,((Event*)emuSyncEvent)->state);
+#endif
 	emuStartEvent = archEventCreate(0);
+	printf("emuStartEvent: %p %p %p s: %d\n", emuStartEvent, ((Event*)emuStartEvent)->eventSem,((Event*)emuStartEvent)->lockSem,((Event*)emuStartEvent)->state);
+#ifndef WII
 	emuTimer = archCreateTimer(emulatorGetSyncPeriod(), timerCallback);
 #endif
-
+#endif
 	//setDeviceInfo(&deviceInfo);
 
 //    inputEventReset();
+
+    archSoundResume();
+//    archMidiEnable(1);
 
 	emuState = EMU_PAUSED;
 	emulationStartFailure = 0;
@@ -1424,6 +1433,20 @@ int main(int argc, char **argv) {
 	videoUpdateAll(video, properties);
 
 	emulatorStart("Start");
+
+    //While the user hasn't quit
+    SDL_Event event;
+    while(!doQuit) {
+        SDL_WaitEvent(&event);
+        do {
+            if( event.type == SDL_QUIT ) {
+                doQuit = 1;
+            }
+            else {
+                handleEvent(&event);
+            }
+        } while(SDL_PollEvent(&event));
+    }
 
 //#ifdef __EMSCRIPTEN__
 //	emscripten_set_main_loop(emscripten_main_loop, 0, 1);
