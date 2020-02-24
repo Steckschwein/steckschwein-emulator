@@ -809,10 +809,10 @@ void emulatorStart(const char *stateName) {
 #ifndef NO_TIMERS
 #ifndef WII
 	emuSyncEvent = archEventCreate(0);
-	printf("emuSyncEvent: %p %p %p s: %d\n", emuSyncEvent, ((Event*)emuSyncEvent)->eventSem,((Event*)emuSyncEvent)->lockSem,((Event*)emuSyncEvent)->state);
+	DEBUG ("emuSyncEvent: %p %p %p s: %d\n", emuSyncEvent, ((Event*)emuSyncEvent)->eventSem,((Event*)emuSyncEvent)->lockSem,((Event*)emuSyncEvent)->state);
 #endif
 	emuStartEvent = archEventCreate(0);
-	printf("emuStartEvent: %p %p %p s: %d\n", emuStartEvent, ((Event*)emuStartEvent)->eventSem,((Event*)emuStartEvent)->lockSem,((Event*)emuStartEvent)->state);
+	DEBUG ("emuStartEvent: %p %p %p s: %d\n", emuStartEvent, ((Event*)emuStartEvent)->eventSem,((Event*)emuStartEvent)->lockSem,((Event*)emuStartEvent)->state);
 #ifndef WII
 	emuTimer = archCreateTimer(emulatorGetSyncPeriod(), timerCallback);
 #endif

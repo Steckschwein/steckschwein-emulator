@@ -26,6 +26,7 @@
 ******************************************************************************
 */
 #include "ArchEvent.h"
+#include "glue.h"
 #include <SDL.h>
 #include <stdlib.h>
 
@@ -39,13 +40,11 @@ void archEventWait(void* event, int timeout) {}
 
 #else
 
-/*
 typedef struct {
     void* eventSem;
     void* lockSem;
     int   state;
 } Event;
-*/
 
 void* archEventCreate(int initState)
 {
@@ -93,7 +92,7 @@ void* archSemaphoreCreate(int initCount)
 
     s->semaphore = SDL_CreateSemaphore(initCount);
 
-    printf("sem %p %p\n", s, s->semaphore);
+    DEBUG ("sem %p %p\n", s, s->semaphore);
     return s;
 }
 
@@ -101,11 +100,10 @@ void archSemaphoreDestroy(void* semaphore)
 {
     Semaphore* s = (Semaphore*)semaphore;
 
-    printf("destroy %p %p\n", s, s->semaphore);
+    DEBUG ("destroy %p %p\n", s, s->semaphore);
     
     SDL_DestroySemaphore(s->semaphore);
     free(s);
-
 }
 
 void archSemaphoreSignal(void* semaphore)

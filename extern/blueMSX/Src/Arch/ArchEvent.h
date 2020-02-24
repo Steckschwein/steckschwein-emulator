@@ -38,10 +38,4 @@ void archSemaphoreDestroy(void* semaphore);
 void archSemaphoreSignal(void* semaphore);
 void archSemaphoreWait(void* semaphore, int timeout);
 
-typedef struct {
-    void* eventSem;
-    void* lockSem;
-    int   state;
-} Event;
-
 #endif
