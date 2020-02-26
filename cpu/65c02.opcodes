@@ -44,5 +44,23 @@ trb abso 6 $1c
 tsb zp 5 $04
 tsb abso 6 $0c
 
-dbg imp 1 $FF
+rmb0 zp 5 $07
+rmb1 zp 5 $17
+rmb2 zp 5 $27
+rmb3 zp 5 $37
+rmb4 zp 5 $47
+rmb5 zp 5 $57
+rmb6 zp 5 $67
+rmb7 zp 5 $77
 
+smb0 zp 5 $87
+smb1 zp 5 $97
+smb2 zp 5 $a7
+smb3 zp 5 $b7
+smb4 zp 5 $c7
+smb5 zp 5 $d7
+smb6 zp 5 $e7
+smb7 zp 5 $f7
+
+
+dbg imp 1 $FF
