@@ -18,6 +18,7 @@
 
 #define EMU_FREQUENCY 2000000
 
+extern bool isDebuggerEnabled;
 
 typedef enum {
 	ECHO_MODE_NONE,
@@ -51,7 +52,7 @@ extern uint16_t pc;
 extern uint8_t* RAM;
 extern uint8_t* ROM;
 
-extern bool debugger_enabled;
+extern bool isDebuggerEnabled;
 extern bool log_video;
 extern bool log_keyboard;
 echo_mode_t echo_mode;

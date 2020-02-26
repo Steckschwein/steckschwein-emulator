@@ -30,7 +30,7 @@ void spi_init() {
 
 }
 
-static uint8_t last_keycode = 0;
+volatile uint8_t last_keycode = 0;
 
 uint8_t spi_handle_keyboard() {
 	uint8_t outbyte = last_keycode;

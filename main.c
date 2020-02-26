@@ -41,7 +41,7 @@ void emscripten_main_loop(void);
 char *keymaps[] = { "en-us", "en-gb", "de", "nordic", "it", "pl", "hu", "es",
 		"fr", "de-ch", "fr-be", "pt-br", };
 
-bool debugger_enabled = false;
+bool isDebuggerEnabled = false;
 bool headless = false;
 char *paste_text = NULL;
 char paste_text_data[65536];
@@ -496,8 +496,8 @@ static void handleEvent(SDL_Event *event) {
 
 #ifdef SINGLE_THREADED
 int archPollEvent() {
-	SDL_Event event;
 
+	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT) {
 			doQuit = 1;
@@ -809,10 +809,8 @@ void emulatorStart(const char *stateName) {
 #ifndef NO_TIMERS
 #ifndef WII
 	emuSyncEvent = archEventCreate(0);
-	DEBUG ("emuSyncEvent: %p %p %p s: %d\n", emuSyncEvent, ((Event*)emuSyncEvent)->eventSem,((Event*)emuSyncEvent)->lockSem,((Event*)emuSyncEvent)->state);
 #endif
 	emuStartEvent = archEventCreate(0);
-	DEBUG ("emuStartEvent: %p %p %p s: %d\n", emuStartEvent, ((Event*)emuStartEvent)->eventSem,((Event*)emuStartEvent)->lockSem,((Event*)emuStartEvent)->state);
 #ifndef WII
 	emuTimer = archCreateTimer(emulatorGetSyncPeriod(), timerCallback);
 #endif
@@ -1053,15 +1051,7 @@ void instructionCb(uint32_t cycles) {
 
 	trace();
 
-	if (debugger_enabled) {
-		int dbgCmd = DEBUGGetCurrentStatus();
-//		if (dbgCmd > 0)
-//			continue;
-//		if (dbgCmd < 0)
-//			break;
-	} else {
-		hookCharOut();
-	}
+	hookCharOut();
 
 //	hookKernelPrgLoad(prg_file, prg_override_start);
 
@@ -1071,7 +1061,6 @@ void instructionCb(uint32_t cycles) {
 			doQuit = 1;
 		}
 	}
-
 }
 
 int main(int argc, char **argv) {
@@ -1263,7 +1252,7 @@ int main(int argc, char **argv) {
 		} else if (!strcmp(argv[0], "-debug")) {
 			argc--;
 			argv++;
-			debugger_enabled = true;
+			isDebuggerEnabled = true;
 			if (argc && argv[0][0] != '-') {
 				DEBUGSetBreakPoint((uint16_t) strtol(argv[0], NULL, 16));
 				argc--;
@@ -1434,9 +1423,9 @@ int main(int argc, char **argv) {
 
 	emulatorStart("Start");
 
-    //While the user hasn't quit
+#ifndef SINGLE_THREADED	//on multi-threaded the main thread will loop here
     SDL_Event event;
-    while(!doQuit) {
+    while(!doQuit) {    //While the user hasn't quit
         SDL_WaitEvent(&event);
         do {
             if( event.type == SDL_QUIT ) {
@@ -1447,6 +1436,7 @@ int main(int argc, char **argv) {
             }
         } while(SDL_PollEvent(&event));
     }
+#endif
 
 //#ifdef __EMSCRIPTEN__
 //	emscripten_set_main_loop(emscripten_main_loop, 0, 1);
@@ -1463,6 +1453,7 @@ int main(int argc, char **argv) {
 	propDestroy(properties);
 	archSoundDestroy();
 	mixerDestroy(mixer);
+	memory_destroy();
 
 	return 0;
 }
@@ -1482,7 +1473,7 @@ emulator_loop(void *param) {
 			}
 		}
 
-		if (debugger_enabled) {
+		if (isDebuggerEnabled) {
 			int dbgCmd = DEBUGGetCurrentStatus();
 			if (dbgCmd > 0)
 				continue;

@@ -52,6 +52,9 @@ void* archEventCreate(int initState)
     e->state = initState ? 1 : 0;
     e->lockSem  = archSemaphoreCreate(1);
     e->eventSem  = archSemaphoreCreate(e->state);
+
+	DEBUG ("archEventCreate: %p %p %p s: %d\n", e, ((Event*)e)->eventSem,((Event*)e)->lockSem,((Event*)e)->state);
+
     return e;
 }
 

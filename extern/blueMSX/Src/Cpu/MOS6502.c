@@ -1,5 +1,7 @@
 #include "MOS6502.h"
 #include "cpu/fake6502.h"
+#include "glue.h"
+
 #include <stddef.h>
 
 MOS6502* mos6502create(MOS6502TimerCb timerCb){
@@ -28,15 +30,6 @@ void mos6502Execute(MOS6502* mos6502) {
     int i=0;
     while (!mos6502->terminate) {
 
-//    	if(i % 2 == 0){
-//    		testVdpWriteLatch(mos6502->systemTime>>4);
-//    	}else if(i % 2 == 1){
-//    		int v = 0x87;
-//    		testVdpWriteLatch(v);
-//    	}
-//    	i++;
-//
-
         if ((Int32)(mos6502->timeout - mos6502->systemTime) <= 0) {
             if (mos6502->timerCb != NULL) {
             	mos6502->timerCb(NULL);
@@ -45,6 +38,14 @@ void mos6502Execute(MOS6502* mos6502) {
 
     	step6502();
         mos6502->systemTime = clockticks6502;
+
+    	if (isDebuggerEnabled) {
+    		int dbgCmd = DEBUGGetCurrentStatus();
+    		if (dbgCmd > 0)
+    			continue;
+    		if (dbgCmd < 0)
+    			break;
+    	}
     }
 }
 

@@ -13,7 +13,6 @@
 #include "memory.h"
 
 uint8_t ctrl_port;
-
 uint8_t* RAM;
 uint8_t* ROM;
 
@@ -25,6 +24,11 @@ memory_init()
 	RAM = malloc(RAM_SIZE);
 	ROM = malloc(ROM_SIZE);
 	ctrl_port = 0;
+}
+
+void memory_destroy(){
+	free(RAM);
+	free(ROM);
 }
 
 //
@@ -130,8 +134,8 @@ write6502(uint16_t address, uint8_t value)
 */
 	// } else if (address < 0xe000) { // RAM
 		// RAM[address] = value;
-	} else { // Writes go to ram, regardless if ROM active or not
-		// ignore
+	} else {
+		// Writes go to ram, regardless if ROM active or not
 		RAM[address] = value;
 	}
 }
@@ -184,7 +188,7 @@ emu_write(uint8_t reg, uint8_t value)
 {
 	bool v = value != 0;
 	switch (reg) {
-		case 0: debugger_enabled = v; break;
+		case 0: isDebuggerEnabled = v; break;
 		case 1: log_video = v; break;
 		case 2: log_keyboard = v; break;
 		case 3: echo_mode = v; break;
@@ -198,7 +202,7 @@ uint8_t
 emu_read(uint8_t reg)
 {
 	if (reg == 0) {
-		return debugger_enabled ? 1 : 0;
+		return isDebuggerEnabled ? 1 : 0;
 	} else if (reg == 1) {
 		return log_video ? 1 : 0;
 	} else if (reg == 2) {
