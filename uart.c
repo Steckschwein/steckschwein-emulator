@@ -48,7 +48,7 @@ static struct upload_state upload_protocol[] = { //
 void loadFile(int prg_override_start, FILE *prg_file) {
 
 	struct stat file_stat;
-	int r = fstat(prg_file->_fileno, &file_stat);
+	int r = fstat(prg_file->_file, &file_stat);
 	if (r) {
 		fprintf(stderr, "error fstat %s\n", strerror(errno));
 	} else {
