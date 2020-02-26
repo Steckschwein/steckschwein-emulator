@@ -3,12 +3,13 @@
 // All rights reserved. License: 2-clause BSD
 
 #include <sys/stat.h>
+#include <errno.h>
+#include <string.h>
 #include "uart.h"
 #include "memory.h"
 
 static uint8_t uartregisters[16];
 
-#include <errno.h>
 extern int errno;
 
 uint8_t *p_prg_img = NULL;
@@ -100,10 +101,11 @@ uint8_t upload_read_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
 
 uint8_t upload_read_startAddress(uint8_t r) {
 	if (!p_prg_img) {
-		FILE *prg_file = fopen(prg_path, "rb");
+		FILE *prg_file = fopen(prg_path, "r");
 		if (!prg_file) {
-			fprintf(stderr, "uart_init() - cannot open file %s, error %s\n",
+			fprintf(stderr, "uart upload read start address - cannot open file %s, error %s\n",
 					prg_path, strerror(errno));
+			reset_upload();
 			return 0;
 		}
 		loadFile(prg_override_start, prg_file);

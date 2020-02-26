@@ -23,4 +23,6 @@ void memory_save(FILE *f, bool dump_ram, bool dump_bank);
 uint8_t emu_read(uint8_t reg);
 void emu_write(uint8_t reg, uint8_t value);
 
+void memory_destroy();
+
 #endif

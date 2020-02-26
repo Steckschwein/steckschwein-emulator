@@ -10,6 +10,7 @@ static UInt32          steckschweinRamStart;
 
 static MOS6502* mos6502;
 static YM3812* ym3812;
+//static DS
 
 static void destroy() {
 	ym3812Destroy(ym3812);
@@ -57,7 +58,7 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
      //r800 = r800Create(cpuFlags, slotRead, slotWrite, ioPortRead, ioPortWrite, PatchZ80, boardTimerCheckTimeout, NULL, NULL, NULL, NULL, NULL, NULL);
      mos6502 = mos6502create(boardTimerCheckTimeout);
 
-     boardInfo->cpuRef           = mos6502;//r800;
+     boardInfo->cpuRef           = mos6502;
 
      boardInfo->destroy          = destroy;
      boardInfo->getRefreshRate   = getRefreshRate;
@@ -90,7 +91,7 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
      //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
      //slotManagerCreate();
 
-     //r800DebugCreate(r800);
+//     cpuDebugCreate(mos6502);
 
  	  //ioPortRegister(0x2e, testPort, NULL, NULL);
 

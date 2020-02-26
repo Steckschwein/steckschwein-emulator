@@ -139,10 +139,10 @@ void DEBUGString(int x, int y, char *s, SDL_Color colour) {
 	}
 }
 
-int  DEBUGGetCurrentStatus(void) {
+int DEBUGGetCurrentStatus(void) {
 
 	SDL_Event event;
-	if (currentPC < 0) currentPC = pc;							// Initialise current PC displayed.
+	if (currentPC < 0) currentPC = pc;							// Initialize current PC displayed.
 
 	if (currentMode == DMODE_STEP) {							// Single step before
 		currentPC = pc;											// Update current PC
@@ -455,8 +455,7 @@ static void DEBUGRenderCode(int lines, int initialPC) {
 		int size = disasm(initialPC, RAM, buffer, sizeof(buffer), true, currentPCBank);	// Disassemble code
 		// Output assembly highlighting PC
 //		DEBUGString(dbgRenderer, DBG_ASMX+8, y, buffer, initialPC == pc ? col_highlight : col_data);
-		printf(buffer);
-//		DEBUGString(dbgRenderer, DBG_ASMX+8, y, buffer, initialPC == pc ? col_highlight : col_data);
+		DEBUGString(DBG_ASMX+8, y, buffer, initialPC == pc ? col_highlight : col_data);
 
 		initialPC += size;										// Forward to next
 	}
@@ -561,5 +560,4 @@ static void DEBUGAddress(int x, int y, int bank, int addr, SDL_Color colour) {
 //	DEBUGString(dbgRenderer, x, y, buffer, colour);
 
 	DEBUGNumber(x+3, y, addr, 4, colour);
-
 }
