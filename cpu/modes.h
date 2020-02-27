@@ -39,6 +39,13 @@ static void rel() { //relative for branch ops (8-bit immediate value, sign-exten
     if (reladdr & 0x80) reladdr |= 0xFF00;
 }
 
+
+static void zprel() { // zp relative for branch ops bbs/bbr (zp location, 8-bit immediate value, sign-extended)
+    ea = (uint16_t)read6502((uint16_t)pc++);
+    reladdr = (uint16_t)read6502(pc++);
+    if (reladdr & 0x80) reladdr |= 0xFF00;
+}
+
 static void abso() { //absolute
     ea = (uint16_t)read6502(pc) | ((uint16_t)read6502(pc+1) << 8);
     pc += 2;
