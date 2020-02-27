@@ -62,5 +62,7 @@ smb5 zp 5 $d7
 smb6 zp 5 $e7
 smb7 zp 5 $f7
 
+bbs7 zprel 5 $ff
 
-dbg imp 1 $FF
+
+dbg imp 1 $db
