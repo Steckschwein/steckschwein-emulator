@@ -195,7 +195,8 @@ static void smb7() {
 
 
 static void bbs7() {
-    if (ea & 0b10000000) {
+    value = getvalue();
+    if (value & 0b10000000) {
     
 	    oldpc = pc;
 	    pc += reladdr;
