@@ -104,11 +104,11 @@ static volatile EmuState emuState = EMU_STOPPED;
 static volatile int emuSingleStep = 0;
 
 #ifndef WII
-static void*  emuSyncEvent = NULL;
+static void *emuSyncEvent = NULL;
 #endif
-static void*  emuStartEvent = NULL;
+static void *emuStartEvent = NULL;
 #ifndef WII
-static void*  emuTimer;
+static void *emuTimer;
 #endif
 static void *emuThread;
 
@@ -156,7 +156,7 @@ void machine_dump() {
 	}
 	FILE *f = fopen(filename, "wb");
 	if (!f) {
-		printf("Cannot write to %s!\n", filename);
+		fprintf(stderr, "Cannot write to %s!\n", filename);
 		return;
 	}
 
@@ -297,14 +297,14 @@ void archVideoOutputChange() {
 }
 
 void archEmulationStopNotification() {
-	printf("archEmulationStopNotification\n");
+	DEBUG("archEmulationStopNotification\n");
 #ifdef RUN_EMU_ONCE_ONLY
     doQuit = 1;
 #endif
 }
 
 void archEmulationStartFailure() {
-	printf("archEmulationStartFailure\n");
+	DEBUG("archEmulationStartFailure\n");
 #ifdef RUN_EMU_ONCE_ONLY
     doQuit = 1;
 #endif
@@ -334,7 +334,7 @@ int archUpdateEmuDisplay(int syncMode) {
 }
 
 int WaitReverse() {
-	//boardEnableSnapshots(0);
+//	boardEnableSnapshots(0);
 
 	for (;;) {
 		UInt32 sysTime = archGetSystemUpTime(1000);
@@ -345,8 +345,7 @@ int WaitReverse() {
 		}
 		archEventWait(emuSyncEvent, -1);
 	}
-
-	//boardRewind();
+	boardRewind();
 
 	return -60;
 }
@@ -380,23 +379,26 @@ int updateEmuDisplay(int updateAll) {
 		}
 	}
 
+	DEBUGRenderDisplay(width, height);
+
 	if (SDL_MUSTLOCK(surface) && SDL_LockSurface(surface) < 0) {
 		return 0;
 	}
 	SDL_UpdateRect(surface, 0, 0, width, height);
-	if (SDL_MUSTLOCK(surface))
+	if (SDL_MUSTLOCK(surface)){
 		SDL_UnlockSurface(surface);
+	}
 
 	return 0;
 }
 
 void createSdlSurface(int width, int height, int fullscreen) {
+
 	int flags = SDL_SWSURFACE | (fullscreen ? SDL_FULLSCREEN : 0);
-	int bytepp;
 
 	// try default bpp
 	surface = SDL_SetVideoMode(width, height, 0, flags);
-	bytepp = (surface ? surface->format->BytesPerPixel : 0);
+	int bytepp = (surface ? surface->format->BytesPerPixel : 0);
 	if (bytepp != 2 && bytepp != 4) {
 		surface = NULL;
 	}
@@ -414,6 +416,8 @@ void createSdlSurface(int width, int height, int fullscreen) {
 		displayData[0] = (char*) surface->pixels;
 		curDisplayData = 0;
 		displayPitch = surface->pitch;
+
+		DEBUGInitUI(surface);
 	}
 }
 
@@ -656,7 +660,8 @@ void emulatorSuspend() {
 }
 
 void emulatorSetFrequency(int logFrequency, int *frequency) {
-	emuFrequency = (int) (EMU_FREQUENCY * pow(2.0, (logFrequency - 50) / 15.0515));
+	emuFrequency = (int) (EMU_FREQUENCY
+			* pow(2.0, (logFrequency - 50) / 15.0515));
 
 	if (frequency != NULL) {
 		*frequency = emuFrequency;
@@ -679,7 +684,8 @@ static void emulatorThread() {
 		reverseBufferCnt = properties->emulation.reverseMaxTime * 1000
 				/ reversePeriod;
 	}
-	success = boardRun(mixer, frequency, reversePeriod, reverseBufferCnt, WaitForSync);
+	success = boardRun(mixer, frequency, reversePeriod, reverseBufferCnt,
+			WaitForSync);
 
 	//the emu loop
 	//ledSetAll(0);
@@ -804,7 +810,7 @@ void emulatorStart(const char *stateName) {
 	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_SCC, 1);
 
 	properties->emulation.pauseSwitch = 0;
-	//switchSetPause(properties->emulation.pauseSwitch);
+//	switchSetPause(properties->emulation.pauseSwitch);
 
 #ifndef NO_TIMERS
 #ifndef WII
@@ -819,7 +825,7 @@ void emulatorStart(const char *stateName) {
 
 //    inputEventReset();
 
-    archSoundResume();
+	archSoundResume();
 //    archMidiEnable(1);
 
 	emuState = EMU_PAUSED;
@@ -866,7 +872,7 @@ void emulatorStart(const char *stateName) {
 
 void emulatorResume() {
 	if (emuState == EMU_SUSPENDED) {
-		//emuSysTime = 0;
+//		emuSysTime = 0;
 
 		emuState = EMU_RUNNING;
 		archUpdateEmuDisplay(0);
@@ -928,7 +934,7 @@ void actionEmuTogglePause() {
 		emulatorSetState(EMU_PAUSED);
 		debuggerNotifyEmulatorPause();
 	}
-	//archUpdateMenu(0);
+//	archUpdateMenu(0);
 }
 
 static int emuFrameskipCounter = 0;
@@ -959,36 +965,36 @@ void trace() {
 		trace_mode = true;
 	}
 	if (trace_mode) {
-		printf("\t\t\t\t[%6d] ", mos6502instructions());
+		DEBUG ("\t\t\t\t[%6d] ", mos6502instructions());
 
 		char *label = label_for_address(pc);
 		int label_len = label ? strlen(label) : 0;
 		if (label) {
-			printf("%s", label);
+			DEBUG ("%s", label);
 		}
 		for (int i = 0; i < 10 - label_len; i++) {
-			printf(" ");
+			DEBUG (" ");
 		}
-		printf(" .,%04x ", pc);
+		DEBUG (" .,%04x ", pc);
 		char disasm_line[15];
 		int len = disasm(pc, RAM, disasm_line, sizeof(disasm_line), false, 0);
 		for (int i = 0; i < len; i++) {
-			printf("%02x ", read6502(pc + i));
+			DEBUG ("%02x ", read6502(pc + i));
 		}
 		for (int i = 0; i < 9 - 3 * len; i++) {
-			printf(" ");
+			DEBUG (" ");
 		}
-		printf("%s", disasm_line);
+		DEBUG ("%s", disasm_line);
 		for (int i = 0; i < 15 - strlen(disasm_line); i++) {
-			printf(" ");
+			DEBUG (" ");
 		}
 
-		printf("a=$%02x x=$%02x y=$%02x s=$%02x p=", a, x, y, sp);
+		DEBUG ("a=$%02x x=$%02x y=$%02x s=$%02x p=", a, x, y, sp);
 		for (int i = 7; i >= 0; i--) {
-			printf("%c", (status & (1 << i)) ? "czidb.vn"[i] : '-');
+			DEBUG ("%c", (status & (1 << i)) ? "czidb.vn"[i] : '-');
 		}
-//			printf(" --- %04x", RAM[0xae]  | RAM[0xaf]  << 8);
-		printf("\n");
+//			DEBUG (" --- %04x", RAM[0xae]  | RAM[0xaf]  << 8);
+		DEBUG ("\n");
 	}
 #endif
 }
@@ -1321,7 +1327,7 @@ int main(int argc, char **argv) {
 
 	FILE *f = fopen(rom_path, "rb");
 	if (!f) {
-		printf("Cannot open %s!\n", rom_path);
+		fprintf(stderr, "Cannot open %s!\n", rom_path);
 		exit(1);
 	}
 	int rom_size = fread(ROM, 1, ROM_SIZE, f);
@@ -1330,7 +1336,7 @@ int main(int argc, char **argv) {
 	if (sdcard_path) {
 		sdcard_file = fopen(sdcard_path, "rb");
 		if (!sdcard_file) {
-			printf("Cannot open %s!\n", sdcard_path);
+			fprintf(stderr, "Cannot open %s!\n", sdcard_path);
 			exit(1);
 		}
 	}
@@ -1347,7 +1353,7 @@ int main(int argc, char **argv) {
 	if (bas_path) {
 		FILE *bas_file = fopen(bas_path, "r");
 		if (!bas_file) {
-			printf("Cannot open %s!\n", bas_path);
+			fprintf(stderr, "Cannot open %s!\n", bas_path);
 			exit(1);
 		}
 		paste_text = paste_text_data;
@@ -1368,6 +1374,7 @@ int main(int argc, char **argv) {
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
 		return 1;
 	}
+	SDL_ShowCursor(SDL_DISABLE);
 
 	properties = propCreate(0, 0, P_EMU_SYNCAUTO, "steckschwein");
 
@@ -1450,10 +1457,11 @@ int main(int argc, char **argv) {
 		SDL_Quit();
 	}
 	videoDestroy(video);
-	propDestroy(properties);
 	archSoundDestroy();
 	mixerDestroy(mixer);
+	propDestroy(properties);
 	memory_destroy();
+	DEBUGFreeUI();
 
 	return 0;
 }

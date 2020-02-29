@@ -1,8 +1,32 @@
+#include <SDL.h>
+#ifdef __MINGW32__
+#include <ctype.h>
+#endif
 #include "rendertext.h"
+
+#define CHAR_WIDTH 5
+#define CHAR_HEIGHT 7
+#define TEXTURE_HEIGHT (CHAR_HEIGHT * 1)
+#define TEXTURE_WIDTH (CHAR_WIDTH * 0x60)
 
 // Text Area origin => debug area
 int xPos = 0;
 int yPos = 0;
+
+// font texture
+//SDL_Texture *fontTexture;
+SDL_Surface *fontSurface;
+
+int textureInitialized = 0;
+
+// *******************************************************************************************
+// left trim string
+//
+char *ltrim(char *s)
+{
+	while(isspace(*s)) s++;
+	return s;
+}
 
 // *******************************************************************************************
 //
@@ -111,25 +135,69 @@ static unsigned char fontdata[] = {
 
 // *******************************************************************************************
 //
+//										Initialize charset
+//
+// *******************************************************************************************
+
+void DEBUGDestroy(){
+	SDL_free(fontSurface);
+}
+
+void DEBUGInitChars(SDL_Surface *renderer) {
+//	uint16_t textureData[TEXTURE_WIDTH * TEXTURE_HEIGHT];
+//	memset(textureData, 0, sizeof textureData);
+
+	fontSurface = SDL_DisplayFormatAlpha(renderer);
+//	SDL_CreateRGBSurfaceFrom(&textureData, TEXTURE_WIDTH,TEXTURE_HEIGHT,0,0,))
+//	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+//	fontTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA4444, SDL_TEXTUREACCESS_STATIC, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+	uint16_t *textureData = fontSurface->pixels;
+
+	for (int ch =0x00; ch<0x60; ch++){
+		int rcx = 0;
+		for (int x1 = 0; x1 < 5; x1++) {
+			int rcy = 0;
+			int pixData = fontdata[ch * 5 + x1];
+			while (pixData != 0) {
+				textureData[ch*CHAR_WIDTH + rcy*TEXTURE_WIDTH + rcx] = (pixData & 1) ? 0xFFFF : 0x0000;
+				pixData = pixData >> 1;
+				rcy++;
+			}
+			rcx++;
+		}
+	}
+//	SDL_UpdateTexture(fontTexture, NULL, &textureData, TEXTURE_WIDTH*2);
+	textureInitialized = 1;
+}
+
+// *******************************************************************************************
+//
 //										Write character
 //
 // *******************************************************************************************
-void DEBUGWrite(SDL_Renderer *renderer, int x, int y, int ch, SDL_Color colour) {
-	SDL_Rect rc;
-	rc.x = xPos + (x * 6 * CHAR_SCALE);							// Work out cell position
-	rc.w = CHAR_SCALE;rc.h = CHAR_SCALE; 						// and draw sizes.
-	ch = (ch & 0x7F);if (ch < 0x20) ch = '.';					// Process character
-	SDL_SetRenderDrawColor(renderer, colour.r, colour.g, colour.b, colour.a);	// Set colour.
-	for (int x1 = 0;x1 < 5;x1++) {
-		rc.y = yPos + (y * 8 * CHAR_SCALE);
-		int pixData = fontdata[(ch - 0x20) * 5 + x1];
-		while (pixData != 0) {
-			if (pixData & 1) SDL_RenderFillRect(renderer,&rc);
-			pixData = pixData >> 1;
-			rc.y += rc.h;
-		}
-		rc.x += CHAR_SCALE;										// Horizontal spacing.
+
+void DEBUGWrite(SDL_Surface *renderer, int x, int y, int ch, SDL_Color colour) {
+	if (!textureInitialized) {
+		DEBUGInitChars(renderer);
 	}
+//	SDL_SetTextureColorMod(fontTexture, colour.r, colour.g, colour.b);
+//	SDL_SetColors(renderer, colour,)
+	ch-=0x20;
+	SDL_Rect srcRect = {
+		ch* CHAR_WIDTH,
+		0,
+		CHAR_WIDTH,
+		CHAR_HEIGHT
+	};
+	SDL_Rect dstRect = {
+		x*(CHAR_WIDTH+1) + xPos,
+		y*(CHAR_HEIGHT+1) + yPos,
+		CHAR_WIDTH,
+		CHAR_HEIGHT
+	};
+    //Blit the surface
+    SDL_BlitSurface(fontSurface, &srcRect, renderer, &dstRect);
+//	SDL_RenderCopy(renderer, fontTexture, &srcRect, &dstRect);
 }
 
 // *******************************************************************************************
@@ -138,7 +206,7 @@ void DEBUGWrite(SDL_Renderer *renderer, int x, int y, int ch, SDL_Color colour) 
 //
 // *******************************************************************************************
 
-void DEBUGString(SDL_Renderer *renderer, int x, int y, char *s, SDL_Color colour) {
+void DEBUGString(SDL_Surface *renderer, int x, int y, char *s, SDL_Color colour) {
 	while (*s != '\0') {
 		DEBUGWrite(renderer, x++, y, *s++, colour);
 	}

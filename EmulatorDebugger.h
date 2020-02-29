@@ -20,7 +20,7 @@ void DEBUGRenderDisplay(int width,int height);
 void DEBUGBreakToDebugger(void);
 int  DEBUGGetCurrentStatus(void);
 void DEBUGSetBreakPoint(int newBreakPoint);
-//void DEBUGInitUI(SDL_Renderer *pRenderer);
+void DEBUGInitUI(SDL_Surface *surface);
 void DEBUGFreeUI();
 
 #define DBG_WIDTH 		(60)									// Char cells across

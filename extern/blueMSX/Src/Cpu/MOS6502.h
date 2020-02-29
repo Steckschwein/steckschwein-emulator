@@ -30,5 +30,6 @@ void mos6502SetBreakpoint(MOS6502* mos6502, UInt16 address);
 void mos6502ClearBreakpoint(MOS6502* mos6502, UInt16 address);
 void mos6502StopExecution(MOS6502* mos6502);
 UInt32 mos6502GetTimeTrace(MOS6502* mos6502, int offset);
+void mos6502Destroy(MOS6502* mos6502);
 
 #endif

@@ -212,5 +212,5 @@ static void bbs7() {
 // *******************************************************************************************
 
 static void dbg() {
-//    DEBUGBreakToDebugger();                          // Invoke debugger.
+    DEBUGBreakToDebugger();                          // Invoke debugger.
 }
