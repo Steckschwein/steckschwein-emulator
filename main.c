@@ -400,6 +400,7 @@ void createSdlSurface(int width, int height, int fullscreen) {
 	surface = SDL_SetVideoMode(width, height, 0, flags);
 	int bytepp = (surface ? surface->format->BytesPerPixel : 0);
 	if (bytepp != 2 && bytepp != 4) {
+		SDL_FreeSurface(surface);
 		surface = NULL;
 	}
 
