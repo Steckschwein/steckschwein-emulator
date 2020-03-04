@@ -141,6 +141,29 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 					mblock = 0;
 					break;
 				}
+				case 0x40 + 24: { // write block
+					uint32_t lba =
+					cmd[1] << 24 |
+					cmd[2] << 16 |
+					cmd[3] << 8 |
+					cmd[4];
+					read_block_response[0] = 0;
+					read_block_response[1] = 0xfe;
+					DEBUG("Writing LBA %d\n", lba);
+/*
+					fseek(sdcard_file, lba * BLOCK_SIZE, SEEK_SET);
+					int bytes_read = fread(&read_block_response[2], 1, BLOCK_SIZE,
+							sdcard_file);
+					if (bytes_read != BLOCK_SIZE) {
+						WARN("Warning: short read bytes %d/%d'!\n", bytes_read, BLOCK_SIZE);
+					}
+					response = read_block_response;
+					*/
+					response = 0;
+					response_length = 2 + BLOCK_SIZE + 2;
+					break;
+				}
+
 				case 0x40 + 55: {//CMD55 APP_CMD
 					static const uint8_t r[] = { 1 };
 					response = r;
