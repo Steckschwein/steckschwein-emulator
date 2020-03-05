@@ -311,14 +311,13 @@ void archEmulationStartFailure() {
 }
 
 int archUpdateEmuDisplay(int syncMode) {
-	SDL_Event event;
-
 	if (pendingDisplayEvents > 1) {
 		return 1;
 	}
 
 	pendingDisplayEvents++;
 
+	SDL_Event event;
 	event.type = SDL_USEREVENT;
 	event.user.code = EVENT_UPDATE_DISPLAY;
 	event.user.data1 = NULL;
@@ -1058,7 +1057,9 @@ void instructionCb(uint32_t cycles) {
 
 	trace();
 
-	hookCharOut();
+	if(!isDebuggerEnabled){
+		hookCharOut();
+	}
 
 //	hookKernelPrgLoad(prg_file, prg_override_start);
 

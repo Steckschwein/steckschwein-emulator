@@ -14,9 +14,8 @@ int xPos = 0;
 int yPos = 0;
 
 // font texture
-uint16_t textureData[TEXTURE_WIDTH * TEXTURE_HEIGHT];
+uint16_t *textureData;
 SDL_Surface *fontSurface;
-
 int textureInitialized = 0;
 
 // *******************************************************************************************
@@ -142,6 +141,7 @@ static unsigned char fontdata[] = { 0x00, 0x00, 0x00, 0x00, 0x00, // 0x20 (space
 
 void DEBUGDestroy() {
 	SDL_free(fontSurface);
+	free(textureData);
 }
 
 int _main(int argc, char **argv) {
@@ -149,31 +149,38 @@ int _main(int argc, char **argv) {
 	SDL_Init(SDL_INIT_VIDEO);
 
 	SDL_Surface *screen = SDL_SetVideoMode(640, 480, 0, SDL_SWSURFACE);
+	SDL_Rect screenRect = { 0, 0, 640, 480 };
+	SDL_FillRect(screen, &screenRect, SDL_MapRGBA(screen->format, 0, 0, 0, 0xff));
 
 	DEBUGInitChars(screen);
-	SDL_Color color;
-	color.r = 100;
-	color.g = 000;
-	color.b = 0;
-	color.unused = 0;
 
 //	char *s= "!abcdefghijklmnopqrstuvwxyz\0";
-	char *s= "!abcdefghijkl112233445566mnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ\0";
+	char *s = "!abcdefghijkl112233445566mnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ\0";
 
-	DEBUGString(screen, 0,2,s,color);
-	DEBUGString(screen, 0,3,s,color);
+	SDL_Color color;
+	color.r = 0xff;
+	color.g = 0x0;
+	color.b = 0;
+	color.unused = 0;
+	DEBUGString(screen, 0, 2, s, color);
+
+	color.r = 0;
+	color.g = 0xff;
+	color.b = 0x00;
+	color.unused = 0;
+	DEBUGString(screen, 0, 3, s, color);
 
 	if (SDL_MUSTLOCK(screen) && SDL_LockSurface(screen) < 0) {
 		return 0;
 	}
 	SDL_UpdateRect(screen, 0, 0, 640, 480);
-	if (SDL_MUSTLOCK(screen)){
+	if (SDL_MUSTLOCK(screen)) {
 		SDL_UnlockSurface(screen);
 	}
 
 	SDL_Event event;
-	for (;;){
-		if(SDL_PollEvent(&event) && event.type == SDL_QUIT){
+	for (;;) {
+		if (SDL_PollEvent(&event) && event.type == SDL_QUIT) {
 			break;
 		}
 	}
@@ -184,7 +191,8 @@ int _main(int argc, char **argv) {
 }
 
 void DEBUGInitChars(SDL_Surface *renderer) {
-	memset(textureData, 0, sizeof textureData);
+	size_t textureMemSize = sizeof(uint32_t) * TEXTURE_WIDTH * TEXTURE_HEIGHT;
+	textureData = malloc(textureMemSize);
 
 	int depth = 16;
 	int pitch = TEXTURE_WIDTH * (depth / 8);
@@ -196,31 +204,27 @@ void DEBUGInitChars(SDL_Surface *renderer) {
 	Uint32 bmask = 0x00000f00;
 	Uint32 amask = 0x0000f000;
 #endif
-//	pitch= 0;
-//	rmask = 0;
-//	gmask = 0;
-//	bmask = 0;
-//	amask = 0;
 
-	fontSurface = SDL_CreateRGBSurfaceFrom(&textureData, TEXTURE_WIDTH,	TEXTURE_HEIGHT, depth, pitch, rmask, gmask, bmask, amask);
-	if(fontSurface == NULL){
+	fontSurface = SDL_CreateRGBSurfaceFrom(textureData, TEXTURE_WIDTH, TEXTURE_HEIGHT, depth, pitch, rmask, gmask,
+			bmask, amask);
+	if (fontSurface == NULL) {
 		fprintf(stderr, "could not create font surface!\n");
 		return;
 	}
 //	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 //	fontTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA4444, SDL_TEXTUREACCESS_STATIC, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+
+	//	0 - trans., 0xff opaque
+	uint32_t bgColor = SDL_MapRGBA(fontSurface->format, 0x0, 0x0, 0x0, SDL_ALPHA_OPAQUE);
+	uint32_t fntColor = SDL_MapRGBA(fontSurface->format, 0xff, 0xff, 0xff, SDL_ALPHA_TRANSPARENT);
+
 	for (int ch = 0x00; ch < 0x60; ch++) {
-		int rcx = 0;
 		for (int x1 = 0; x1 < CHAR_WIDTH; x1++) {
-			int rcy = 0;
-			int pixData = fontdata[ch * CHAR_WIDTH + x1];
-			while (pixData != 0) {
-				textureData[ch * CHAR_WIDTH + rcy * TEXTURE_WIDTH + rcx] =
-						(pixData & 1) ? 0xFFFF : 0x0000;
+			unsigned char pixData = fontdata[ch * CHAR_WIDTH + x1];
+			for(int rcy = 0;rcy<CHAR_HEIGHT;rcy++){
+				textureData[ch * CHAR_WIDTH + rcy * TEXTURE_WIDTH + x1] = (pixData & 1) ? fntColor : bgColor;
 				pixData = pixData >> 1;
-				rcy++;
 			}
-			rcx++;
 		}
 	}
 //	SDL_UpdateTexture(fontTexture, NULL, &textureData, TEXTURE_WIDTH*2);
@@ -240,15 +244,13 @@ void DEBUGWrite(SDL_Surface *renderer, int x, int y, int ch, SDL_Color colour) {
 //	SDL_SetTextureColorMod(fontTexture, colour.r, colour.g, colour.b);
 //	SDL_SetColors(renderer, colour,)
 	ch -= 0x20;
-	SDL_Rect srcRect = { ch * CHAR_WIDTH, 0,
-	CHAR_WIDTH,
-	CHAR_HEIGHT };
-	SDL_Rect dstRect = { x * (CHAR_WIDTH + 1) + xPos, y * (CHAR_HEIGHT + 1)
-			+ yPos,
-	CHAR_WIDTH,
-	CHAR_HEIGHT };
-	//Blit the surface
-	SDL_BlitSurface(fontSurface, &srcRect, renderer, &dstRect);
+	SDL_Rect srcRect = { ch * CHAR_WIDTH, 0, CHAR_WIDTH, CHAR_HEIGHT };
+	SDL_Rect dstRect = { x * (CHAR_WIDTH + 1) + xPos, y * (CHAR_HEIGHT + 1) + yPos, CHAR_WIDTH, CHAR_HEIGHT };
+
+	Uint32 bgColor = SDL_MapRGBA(renderer->format, colour.r, colour.g, colour.b, 0xff);
+	SDL_FillRect(renderer, &dstRect, bgColor);
+
+	SDL_BlitSurface(fontSurface, &srcRect, renderer, &dstRect);	//Blit the surface
 //	SDL_RenderCopy(renderer, fontTexture, &srcRect, &dstRect);
 }
 
