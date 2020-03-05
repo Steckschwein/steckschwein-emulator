@@ -38,8 +38,7 @@ void* emulator_loop(void *param);
 void emscripten_main_loop(void);
 
 // This must match the KERNAL's set!
-char *keymaps[] = { "en-us", "en-gb", "de", "nordic", "it", "pl", "hu", "es",
-		"fr", "de-ch", "fr-be", "pt-br", };
+char *keymaps[] = { "en-us", "en-gb", "de", "nordic", "it", "pl", "hu", "es", "fr", "de-ch", "fr-be", "pt-br", };
 
 bool isDebuggerEnabled = false;
 bool headless = false;
@@ -357,34 +356,30 @@ int updateEmuDisplay(int updateAll) {
 	int height = zoom * HEIGHT;
 	int borderWidth;
 
-	frameBuffer = frameBufferFlipViewFrame(
-			properties->emulation.syncMethod == P_EMU_SYNCTOVBLANKASYNC);
+	frameBuffer = frameBufferFlipViewFrame(properties->emulation.syncMethod == P_EMU_SYNCTOVBLANKASYNC);
 	if (frameBuffer == NULL) {
 		frameBuffer = frameBufferGetWhiteNoiseFrame();
 	}
 
 	borderWidth = (320 - frameBuffer->maxWidth) * zoom / 2;
 
-	videoRender(video, frameBuffer, bitDepth, zoom,
-			dpyData + borderWidth * bytesPerPixel, 0, displayPitch, -1);
+	videoRender(video, frameBuffer, bitDepth, zoom, dpyData + borderWidth * bytesPerPixel, 0, displayPitch, -1);
 
 	if (borderWidth > 0) {
 		int h = height;
 		while (h--) {
 			memset(dpyData, 0, borderWidth * bytesPerPixel);
-			memset(dpyData + (width - borderWidth) * bytesPerPixel, 0,
-					borderWidth * bytesPerPixel);
+			memset(dpyData + (width - borderWidth) * bytesPerPixel, 0, borderWidth * bytesPerPixel);
 			dpyData += displayPitch;
 		}
 	}
-
 	DEBUGRenderDisplay(width, height);
 
 	if (SDL_MUSTLOCK(surface) && SDL_LockSurface(surface) < 0) {
 		return 0;
 	}
 	SDL_UpdateRect(surface, 0, 0, width, height);
-	if (SDL_MUSTLOCK(surface)){
+	if (SDL_MUSTLOCK(surface)) {
 		SDL_UnlockSurface(surface);
 	}
 
@@ -453,6 +448,7 @@ int createSdlWindow() {
 }
 
 static void handleEvent(SDL_Event *event) {
+
 	switch (event->type) {
 	case SDL_USEREVENT:
 		switch (event->user.code) {
@@ -494,7 +490,6 @@ static void handleEvent(SDL_Event *event) {
 	case SDL_MOUSEMOTION:
 //        sdlMouseMove(event->motion.x, event->motion.y);
 		break;
-
 	}
 }
 
@@ -505,7 +500,7 @@ int archPollEvent() {
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT) {
 			doQuit = 1;
-		} else {
+		} else if(!doQuit){//empty queue
 			handleEvent(&event);
 		}
 	}
@@ -518,8 +513,7 @@ static int emuUseSynchronousUpdate() {
 		return properties->emulation.syncMethod;
 	}
 
-	if (properties->emulation.speed == 50 && enableSynchronousUpdate
-			&& emuMaxSpeed == 0) {
+	if (properties->emulation.speed == 50 && enableSynchronousUpdate && emuMaxSpeed == 0) {
 		return properties->emulation.syncMethod;
 	}
 	return P_EMU_SYNCAUTO;
@@ -588,8 +582,7 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
             while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
 #endif
 			archEventWait(emuSyncEvent, -1);
-			if (((emuMaxSpeed || emuMaxEmuSpeed) && !emuExitFlag)
-					|| overflowCount > 0) {
+			if (((emuMaxSpeed || emuMaxEmuSpeed) && !emuExitFlag) || overflowCount > 0) {
 #ifdef NO_TIMERS
                 while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
 #endif
@@ -660,8 +653,7 @@ void emulatorSuspend() {
 }
 
 void emulatorSetFrequency(int logFrequency, int *frequency) {
-	emuFrequency = (int) (EMU_FREQUENCY
-			* pow(2.0, (logFrequency - 50) / 15.0515));
+	emuFrequency = (int) (EMU_FREQUENCY * pow(2.0, (logFrequency - 50) / 15.0515));
 
 	if (frequency != NULL) {
 		*frequency = emuFrequency;
@@ -678,14 +670,11 @@ static void emulatorThread() {
 
 	emulatorSetFrequency(properties->emulation.speed, &frequency);
 
-	if (properties->emulation.reverseEnable
-			&& properties->emulation.reverseMaxTime > 0) {
+	if (properties->emulation.reverseEnable && properties->emulation.reverseMaxTime > 0) {
 		reversePeriod = 50;
-		reverseBufferCnt = properties->emulation.reverseMaxTime * 1000
-				/ reversePeriod;
+		reverseBufferCnt = properties->emulation.reverseMaxTime * 1000 / reversePeriod;
 	}
-	success = boardRun(mixer, frequency, reversePeriod, reverseBufferCnt,
-			WaitForSync);
+	success = boardRun(mixer, frequency, reversePeriod, reverseBufferCnt, WaitForSync);
 
 	//the emu loop
 	//ledSetAll(0);
@@ -714,8 +703,7 @@ int emulatorGetSyncPeriod() {
 void RefreshScreen(int screenMode) {
 
 //    lastScreenMode = screenMode;
-	if (emuUseSynchronousUpdate() == P_EMU_SYNCFRAMES
-			&& emuState == EMU_RUNNING) {
+	if (emuUseSynchronousUpdate() == P_EMU_SYNCFRAMES && emuState == EMU_RUNNING) {
 		emulatorSyncScreen();
 	}
 }
@@ -746,8 +734,7 @@ int timerCallback(void *timer) {
 			if (emuState == EMU_RUNNING) {
 //                refreshRate = boardGetRefreshRate();
 
-				if (syncMethod == P_EMU_SYNCAUTO
-						|| syncMethod == P_EMU_SYNCNONE) {
+				if (syncMethod == P_EMU_SYNCAUTO || syncMethod == P_EMU_SYNCNONE) {
 					archUpdateEmuDisplay(0);
 				}
 			}
@@ -846,7 +833,7 @@ void emulatorStart(const char *stateName) {
 #else
 	emuThread = archThreadCreate(emulatorThread, THREAD_PRIO_HIGH);
 
-	archEventWait(emuStartEvent, 3000);
+	archEventWait(emuStartEvent, 1000);
 
 	if (emulationStartFailure) {
 		archEmulationStopNotification();
@@ -872,7 +859,7 @@ void emulatorStart(const char *stateName) {
 
 void emulatorResume() {
 	if (emuState == EMU_SUSPENDED) {
-//		emuSysTime = 0;
+		emuSysTime = 0;
 
 		emuState = EMU_RUNNING;
 		archUpdateEmuDisplay(0);
@@ -954,8 +941,7 @@ int emulatorSyncScreen() {
 void emulatorRestartSound() {
 	emulatorSuspend();
 	archSoundDestroy();
-	archSoundCreate(mixer, 44100, properties->sound.bufSize,
-			properties->sound.stereo ? 2 : 1);
+	archSoundCreate(mixer, 44100, properties->sound.bufSize, properties->sound.stereo ? 2 : 1);
 	emulatorResume();
 }
 
@@ -1033,12 +1019,9 @@ void hookKernelPrgLoad(FILE *prg_file, int prg_override_start) {
 				start = start_hi << 8 | start_lo;
 			}
 			if (start >= 0xe000) {
-				fprintf(stderr,
-						"invalid program start address %x, will override kernel!\n",
-						start);
+				fprintf(stderr, "invalid program start address %x, will override kernel!\n", start);
 			} else {
-				uint16_t end = start
-						+ fread(RAM + start, 1, RAM_SIZE - start, prg_file);
+				uint16_t end = start + fread(RAM + start, 1, RAM_SIZE - start, prg_file);
 			}
 			fclose(prg_file);
 			prg_file = NULL;
@@ -1048,8 +1031,6 @@ void hookKernelPrgLoad(FILE *prg_file, int prg_override_start) {
 
 //called after each 6502 instruction
 void instructionCb(uint32_t cycles) {
-	if (doQuit)
-		return;
 
 	for (uint8_t i = 0; i < cycles; i++) {
 		spi_step();
@@ -1057,7 +1038,7 @@ void instructionCb(uint32_t cycles) {
 
 	trace();
 
-	if(!isDebuggerEnabled){
+	if (!isDebuggerEnabled) {
 		hookCharOut();
 	}
 
@@ -1314,8 +1295,7 @@ int main(int argc, char **argv) {
 			if (!argc || argv[0][0] == '-') {
 				usage();
 			}
-			if (!strcmp(argv[0], "nearest") || !strcmp(argv[0], "linear")
-					|| !strcmp(argv[0], "best")) {
+			if (!strcmp(argv[0], "nearest") || !strcmp(argv[0], "linear") || !strcmp(argv[0], "best")) {
 				scale_quality = argv[0];
 			} else {
 				usage();
@@ -1359,11 +1339,9 @@ int main(int argc, char **argv) {
 			exit(1);
 		}
 		paste_text = paste_text_data;
-		size_t paste_size = fread(paste_text, 1, sizeof(paste_text_data) - 1,
-				bas_file);
+		size_t paste_size = fread(paste_text, 1, sizeof(paste_text_data) - 1, bas_file);
 		if (run_after_load) {
-			strncpy(paste_text + paste_size, "\rRUN\r",
-					sizeof(paste_text_data) - paste_size);
+			strncpy(paste_text + paste_size, "\rRUN\r", sizeof(paste_text_data) - paste_size);
 		} else {
 			paste_text[paste_size] = 0;
 		}
@@ -1384,13 +1362,10 @@ int main(int argc, char **argv) {
 //    properties->emulation.syncMethod = P_EMU_SYNCTOVBLANKASYNC;
 
 	video = videoCreate();
-	videoSetColors(video, properties->video.saturation,
-			properties->video.brightness, properties->video.contrast,
+	videoSetColors(video, properties->video.saturation, properties->video.brightness, properties->video.contrast,
 			properties->video.gamma);
-	videoSetScanLines(video, properties->video.scanlinesEnable,
-			properties->video.scanlinesPct);
-	videoSetColorSaturation(video, properties->video.colorSaturationEnable,
-			properties->video.colorSaturationWidth);
+	videoSetScanLines(video, properties->video.scanlinesEnable, properties->video.scanlinesPct);
+	videoSetColorSaturation(video, properties->video.colorSaturationEnable, properties->video.colorSaturationWidth);
 
 	bitDepth = 32;
 	if (!createSdlWindow()) {
@@ -1418,11 +1393,9 @@ int main(int argc, char **argv) {
 	emulatorRestartSound();
 
 	for (int i = 0; i < MIXER_CHANNEL_TYPE_COUNT; i++) {
-		mixerSetChannelTypeVolume(mixer, i,
-				properties->sound.mixerChannel[i].volume);
+		mixerSetChannelTypeVolume(mixer, i, properties->sound.mixerChannel[i].volume);
 		mixerSetChannelTypePan(mixer, i, properties->sound.mixerChannel[i].pan);
-		mixerEnableChannelType(mixer, i,
-				properties->sound.mixerChannel[i].enable);
+		mixerEnableChannelType(mixer, i, properties->sound.mixerChannel[i].enable);
 	}
 
 	mixerSetMasterVolume(mixer, properties->sound.masterVolume);
@@ -1431,19 +1404,16 @@ int main(int argc, char **argv) {
 	videoUpdateAll(video, properties);
 
 	emulatorStart("Start");
-
 #ifndef SINGLE_THREADED	//on multi-threaded the main thread will loop here
-    SDL_Event event;
-    while(!doQuit) {    //While the user hasn't quit
+    SDL_Event event;//While the user hasn't quit
+    while(!doQuit){
         SDL_WaitEvent(&event);
-        do {
-            if( event.type == SDL_QUIT ) {
-                doQuit = 1;
-            }
-            else {
-                handleEvent(&event);
-            }
-        } while(SDL_PollEvent(&event));
+		if( event.type == SDL_QUIT ) {
+			doQuit = 1;
+		}
+		else {
+			handleEvent(&event);
+		}
     }
 #endif
 
@@ -1530,8 +1500,7 @@ emulator_loop(void *param) {
 				printf("Load: %d%%\n", load > 100 ? 100 : load);
 
 				if ((int) frames_behind > 0) {
-					printf("Rendering is behind %d frames.\n",
-							-(int) frames_behind);
+					printf("Rendering is behind %d frames.\n", -(int) frames_behind);
 				}
 			}
 #ifdef __EMSCRIPTEN__

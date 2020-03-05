@@ -64,7 +64,7 @@ static void DEBUGExecCmd();
 //
 //		isDebuggerEnabled should be a flag set as a command line switch - without it
 //		it will run unchanged. It should not be necessary to test the render code
-//		because showDebugOnRender is statically initialised to zero and will only
+//		because showDebugOnRender is statically initialized to zero and will only
 //		change if DEBUGGetCurrentStatus() is called.
 //
 // *******************************************************************************************
@@ -86,10 +86,7 @@ static void DEBUGExecCmd();
 // *** MUST BE SCAN CODES ***
 
 enum DBG_CMD {
-	CMD_DUMP_MEM = 'm',
-	CMD_DISASM = 'd',
-	CMD_SET_BANK = 'b',
-	CMD_SET_REGISTER = 'r'
+	CMD_DUMP_MEM = 'm', CMD_DISASM = 'd', CMD_SET_BANK = 'b', CMD_SET_REGISTER = 'r'
 };
 
 // RGB colours
@@ -118,7 +115,6 @@ int currentLineLen = 0;							// command line buffer length
 //
 
 SDL_Surface *dbgSurface; 								// Renderer passed in.
-
 
 // *******************************************************************************************
 //
@@ -163,18 +159,14 @@ int DEBUGGetCurrentStatus(void) {
 				return -1;
 
 			case SDL_KEYDOWN:							// Handle key presses.
-				DEBUGHandleKeyEvent(event.key.keysym.sym,
-						SDL_GetModState() & (KMOD_LSHIFT | KMOD_RSHIFT));
+				DEBUGHandleKeyEvent(event.key.keysym.sym, SDL_GetModState() & (KMOD_LSHIFT | KMOD_RSHIFT));
 				break;
-
 			}
 		}
 	}
 
 	showDebugOnRender = (currentMode != DMODE_RUN);	// Do we draw it - only in RUN mode.
 	if (currentMode == DMODE_STOP) { 						// We're in charge.
-//		video_update();
-//		DEBUGRenderDisplay();
 		updateEmuDisplay(1);
 		return 1;
 	}
@@ -225,7 +217,7 @@ void DEBUGBreakToDebugger(void) {
 // *******************************************************************************************
 //
 //									Handle keyboard state.
-//
+//DEBUGHandleKeyEvent
 // *******************************************************************************************
 
 static void DEBUGHandleKeyEvent(SDLKey key, int isShift) {
@@ -292,19 +284,16 @@ static void DEBUGHandleKeyEvent(SDLKey key, int isShift) {
 
 }
 
-char kNUM_KEYPAD_CHARS[10] =
-		{ '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' };
+char kNUM_KEYPAD_CHARS[10] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
 static bool DEBUGBuildCmdLine(SDLKey key) {
 	// right now, let's have a rudimentary input: only backspace to delete last char
 	// later, I want a real input line with delete, backspace, left and right cursor
 	// devs like their comfort ;)
 	if (currentLineLen <= sizeof(cmdLine)) {
-		if ((key >= SDLK_SPACE && key <= SDLK_AT)
-				|| (key >= SDLK_LEFTBRACKET && key <= SDLK_z)
-				|| (key >= SDLK_1 && key <= SDLK_0)) {
-			cmdLine[currentPosInLine++] =
-					key >= SDLK_1 ? kNUM_KEYPAD_CHARS[key - SDLK_1] : key;
+		if ((key >= SDLK_SPACE && key <= SDLK_AT) || (key >= SDLK_LEFTBRACKET && key <= SDLK_z)
+				|| (key >= SDLK_0 && key <= SDLK_0)) {
+			cmdLine[currentPosInLine++] = (key >= SDLK_0 && key<=SDLK_9)  ? kNUM_KEYPAD_CHARS[key - SDLK_0] : key;
 			if (currentPosInLine > currentLineLen) {
 				currentLineLen++;
 			}
@@ -414,7 +403,7 @@ void DEBUGRenderDisplay(int width, int height) {
 	rc.x = xPos;
 	rc.y = yPos; 							// Set rectangle and black out.
 
-	SDL_FillRect(dbgSurface, &rc, SDL_MapRGBA(dbgSurface->format,0,0,0,SDL_ALPHA_OPAQUE));
+	SDL_FillRect(dbgSurface, &rc, SDL_MapRGBA(dbgSurface->format, 0, 0, 0, SDL_ALPHA_OPAQUE));
 
 	DEBUGRenderRegisters();					// Draw register name and values.
 	DEBUGRenderCode(20, currentPC);			// Render 6502 disassembly.
@@ -432,12 +421,8 @@ void DEBUGRenderDisplay(int width, int height) {
 
 static void DEBUGRenderCmdLine(int x, int width, int height) {
 	char buffer[sizeof(cmdLine) + 1];
-
-//	SDL_SetRenderDrawColor(dbgSurface, 255, 255, 255, SDL_ALPHA_OPAQUE);
-//	SDL_SetPalette(dbgSurface, 255, 255, 255, SDL_ALPHA_OPAQUE);
-
-//	SDL_RenderDrawLine(dbgSurface, x, height-12, x+width, height-12);
-
+	SDL_Rect lineRect = { lineRect.x = x, lineRect.y = height - 12, lineRect.w = width, lineRect.h = 1 };
+	SDL_FillRect(dbgSurface, &lineRect, SDL_MapRGB(dbgSurface->format, 0xff, 0xff, 0xff));
 	sprintf(buffer, ">%s", cmdLine);
 	DEBUGString(dbgSurface, 0, DBG_HEIGHT - 1, buffer, col_cmdLine);
 }
@@ -449,8 +434,7 @@ static void DEBUGRenderCmdLine(int x, int width, int height) {
 
 static void DEBUGRenderData(int y, int data) {
 	while (y < DBG_HEIGHT - 2) {						// To bottom of screen
-		DEBUGAddress(DBG_MEMX, y, (uint8_t) currentBank, data & 0xFFFF,
-				col_label);	// Show label.
+		DEBUGAddress(DBG_MEMX, y, (uint8_t) currentBank, data & 0xFFFF, col_label);	// Show label.
 
 		for (int i = 0; i < 8; i++) {
 			int byte = real_read6502((data + i) & 0xFFFF, true, currentBank);
@@ -474,11 +458,9 @@ static void DEBUGRenderCode(int lines, int initialPC) {
 
 		DEBUGAddress(DBG_ASMX, y, currentPCBank, initialPC, col_label);
 
-		int size = disasm(initialPC, RAM, buffer, sizeof(buffer), true,
-				currentPCBank);	// Disassemble code
+		int size = disasm(initialPC, RAM, buffer, sizeof(buffer), true, currentPCBank);	// Disassemble code
 		// Output assembly highlighting PC
-		DEBUGString(dbgSurface, DBG_ASMX + 8, y, buffer,
-				initialPC == pc ? col_highlight : col_data);
+		DEBUGString(dbgSurface, DBG_ASMX + 8, y, buffer, initialPC == pc ? col_highlight : col_data);
 		initialPC += size;									// Forward to next
 	}
 }
@@ -489,8 +471,8 @@ static void DEBUGRenderCode(int lines, int initialPC) {
 //
 // *******************************************************************************************
 
-static char *labels[] = { "NV-BDIZC", "", "", "A", "X", "Y", "", "BKA", "BKO",
-		"PC", "SP", "", "BRK", "", "VA", "VD0", "VD1", "VCT", NULL };
+static char *labels[] = { "NV-BDIZC", "", "", "A", "X", "Y", "", "BKA", "BKO", "PC", "SP", "", "BRK", "", "VA", "VD0",
+		"VD1", "VCT", NULL };
 
 static int DEBUGRenderRegisters(void) {
 	int n = 0, yc = 0;

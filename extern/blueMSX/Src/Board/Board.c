@@ -716,7 +716,9 @@ int boardRun(Mixer* mixer,
 
 	boardRunning = 1;
     memset(&boardInfo, 0, sizeof(boardInfo));
-    VdpSyncMode vdpSyncMode = VDP_SYNC_50HZ;
+
+    VdpSyncMode vdpSyncMode = VDP_SYNC_AUTO;
+
     success = steckSchweinCreate(vdpSyncMode, &boardInfo);
 
     boardCaptureInit();

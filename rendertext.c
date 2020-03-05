@@ -214,7 +214,6 @@ void DEBUGInitChars(SDL_Surface *renderer) {
 //	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 //	fontTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA4444, SDL_TEXTUREACCESS_STATIC, TEXTURE_WIDTH, TEXTURE_HEIGHT);
 
-	//	0 - trans., 0xff opaque
 	uint32_t bgColor = SDL_MapRGBA(fontSurface->format, 0x0, 0x0, 0x0, SDL_ALPHA_OPAQUE);
 	uint32_t fntColor = SDL_MapRGBA(fontSurface->format, 0xff, 0xff, 0xff, SDL_ALPHA_TRANSPARENT);
 
