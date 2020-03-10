@@ -449,6 +449,18 @@ int createSdlWindow() {
 
 static void handleEvent(SDL_Event *event) {
 
+	//    	if (isDebuggerEnabled) {
+	//    		int dbgCmd = DEBUGGetCurrentStatus();
+	//    		if (dbgCmd > 0)
+	//    			continue;
+	//    		if (dbgCmd < 0)
+	//    			break;
+	//    	}
+	//
+	//
+
+	DEBUGHandleEvent(event);
+
 	switch (event->type) {
 	case SDL_USEREVENT:
 		switch (event->user.code) {
@@ -1453,13 +1465,13 @@ emulator_loop(void *param) {
 			}
 		}
 
-		if (isDebuggerEnabled) {
-			int dbgCmd = DEBUGGetCurrentStatus();
-			if (dbgCmd > 0)
-				continue;
-			if (dbgCmd < 0)
-				break;
-		}
+//		if (isDebuggerEnabled) {
+//			int dbgCmd = DEBUGGetCurrentStatus();
+//			if (dbgCmd > 0)
+//				continue;
+//			if (dbgCmd < 0)
+//				break;
+//		}
 
 		uint32_t old_clockticks6502 = clockticks6502;
 		step6502();

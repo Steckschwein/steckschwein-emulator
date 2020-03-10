@@ -124,26 +124,28 @@ SDL_Surface *dbgSurface; 								// Renderer passed in.
 //			If it returns -ve, then exit.
 //
 // *******************************************************************************************
-int DEBUGGetCurrentStatus(void) {
+int DEBUGHandleEvent(SDL_Event *pEvent) {
 
-	SDL_Event event;
 	if (currentPC < 0)
 		currentPC = pc;						// Initialise current PC displayed.
 
 	if (currentMode == DMODE_STEP) {					// Single step before
 		currentPC = pc;										// Update current PC
 		currentMode = DMODE_STOP;			// So now stop, as we've done it.
+		dbgPause();
 	}
 
 	if (pc == breakPoint || pc == stepBreakPoint) {			// Hit a breakpoint.
 		currentPC = pc;										// Update current PC
 		currentMode = DMODE_STOP;			// So now stop, as we've done it.
 		stepBreakPoint = -1;						// Clear step breakpoint.
+		dbgPause();
 	}
 
 	if (SDL_GetKeyState(NULL)[DBGSCANKEY_BRK]) {	// Stop on break pressed.
 		currentMode = DMODE_STOP;
 		currentPC = pc; 							// Set the PC to what it is.
+		dbgPause();
 	}
 
 	if (currentPCBank < 0 && currentPC >= 0xA000) {
@@ -153,15 +155,8 @@ int DEBUGGetCurrentStatus(void) {
 	if (currentMode != DMODE_RUN) {			// Not running, we own the keyboard.
 		showFullDisplay = 								// Check showing screen.
 				SDL_GetKeyState(NULL)[DBGSCANKEY_SHOW];
-		while (SDL_PollEvent(&event)) { 			// We now poll events here.
-			switch (event.type) {
-			case SDL_QUIT:									// Time for exit
-				return -1;
-
-			case SDL_KEYDOWN:							// Handle key presses.
-				DEBUGHandleKeyEvent(event.key.keysym.sym, SDL_GetModState() & (KMOD_LSHIFT | KMOD_RSHIFT));
-				break;
-			}
+		if (pEvent->type == SDL_KEYDOWN) {
+			DEBUGHandleKeyEvent(pEvent->key.keysym.sym, SDL_GetModState() & (KMOD_LSHIFT | KMOD_RSHIFT));
 		}
 	}
 
@@ -227,6 +222,7 @@ static void DEBUGHandleKeyEvent(SDLKey key, int isShift) {
 
 	case DBGKEY_STEP:							// Single step (F11 by default)
 		currentMode = DMODE_STEP; 			// Runs once, then switches back.
+		dbgStep();
 		break;
 
 	case DBGKEY_STEPOVER:						// Step over (F10 by default)
@@ -234,13 +230,16 @@ static void DEBUGHandleKeyEvent(SDLKey key, int isShift) {
 		if (opcode == 0x20) { 							// Is it JSR ?
 			stepBreakPoint = pc + 3;					// Then break 3 on.
 			currentMode = DMODE_RUN;					// And run.
+			dbgRun();
 		} else {
 			currentMode = DMODE_STEP;				// Otherwise single step.
+			dbgStep();
 		}
 		break;
 
 	case DBGKEY_RUN:									// F5 Runs until Break.
 		currentMode = DMODE_RUN;
+		dbgRun();
 		break;
 
 	case DBGKEY_SETBRK:						// F9 Set breakpoint to displayed.
@@ -293,7 +292,7 @@ static bool DEBUGBuildCmdLine(SDLKey key) {
 	if (currentLineLen <= sizeof(cmdLine)) {
 		if ((key >= SDLK_SPACE && key <= SDLK_AT) || (key >= SDLK_LEFTBRACKET && key <= SDLK_z)
 				|| (key >= SDLK_0 && key <= SDLK_0)) {
-			cmdLine[currentPosInLine++] = (key >= SDLK_0 && key<=SDLK_9)  ? kNUM_KEYPAD_CHARS[key - SDLK_0] : key;
+			cmdLine[currentPosInLine++] = (key >= SDLK_0 && key <= SDLK_9) ? kNUM_KEYPAD_CHARS[key - SDLK_0] : key;
 			if (currentPosInLine > currentLineLen) {
 				currentLineLen++;
 			}

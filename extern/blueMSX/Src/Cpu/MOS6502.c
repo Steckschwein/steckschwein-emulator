@@ -30,14 +30,13 @@ void mos6502Execute(MOS6502* mos6502) {
     int i=0;
     while (!mos6502->terminate) {
 
-    	if (isDebuggerEnabled) {
-    		int dbgCmd = DEBUGGetCurrentStatus();
-    		if (dbgCmd > 0)
-    			continue;
-    		if (dbgCmd < 0)
-    			break;
-    	}
-
+//    	if (isDebuggerEnabled) {
+//    		int dbgCmd = DEBUGGetCurrentStatus();
+//    		if (dbgCmd > 0)
+//    			continue;
+//    		if (dbgCmd < 0)
+//    			break;
+//    	}
 
         if ((Int32)(mos6502->timeout - mos6502->systemTime) <= 0) {
             if (mos6502->timerCb != NULL) {
