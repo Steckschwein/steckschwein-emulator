@@ -48,13 +48,14 @@ static struct upload_state upload_protocol[] = { //
 
 void loadFile(int prg_override_start, FILE *prg_file) {
 
-	struct stat file_stat;
-	int r = fstat(prg_file->_fileno, &file_stat);
-	if (r) {
-		fprintf(stderr, "error fstat %s\n", strerror(errno));
+	fseek(prg_file, 0L, SEEK_END);
+	long filesize = ftell(prg_file);
+	if (filesize < 0) {
+		fprintf(stderr, "error file size %s\n", strerror(errno));
 	} else {
+		fseek(prg_file, 0L, SEEK_SET);
 		uint8_t offs = (prg_override_start == -1 ? 2 : 0);
-		prg_size = file_stat.st_size - offs; //-offs byte, if start address is given as argument
+		prg_size = filesize - offs; //-offs byte, if start address is given as argument
 		p_prg_size = &prg_size;
 		p_prg_img = p_prg_img_ix = malloc(prg_size + (2 - offs)); //align memory for prg image, we always allocate 2 byte + prg. image size
 		if (p_prg_img_ix == NULL) {
@@ -64,15 +65,13 @@ void loadFile(int prg_override_start, FILE *prg_file) {
 			*(p_prg_img_ix + 0) = prg_override_start & 0xff;
 			*(p_prg_img_ix + 1) = prg_override_start >> 8 & 0xff;
 		}
-		r = fread(p_prg_img_ix + (2 - offs), 1, prg_size, prg_file);
+		int r = fread(p_prg_img_ix + (2 - offs), 1, prg_size, prg_file);
 		if (r) {
-			printf("uart() load file, start 0x%04x size 0x%04x\n",
-					(*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8), prg_size);
+			printf("uart() load file, start 0x%04x size 0x%04x\n", (*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8),
+					prg_size);
 		} else {
-			fprintf(stderr,
-					"uart() load file, start 0x%04x size 0x%04x error: %s\n",
-					(*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8),
-					strerror(errno));
+			fprintf(stderr, "uart() load file, start 0x%04x size 0x%04x error: %s\n",
+					(*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8), strerror(errno));
 			free(p_prg_img);
 		}
 		bytes_available = 2;
@@ -103,8 +102,8 @@ uint8_t upload_read_startAddress(uint8_t r) {
 	if (!p_prg_img) {
 		FILE *prg_file = fopen(prg_path, "r");
 		if (!prg_file) {
-			fprintf(stderr, "uart upload read start address - cannot open file %s, error %s\n",
-					prg_path, strerror(errno));
+			fprintf(stderr, "uart upload read start address - cannot open file %s, error %s\n", prg_path,
+					strerror(errno));
 			reset_upload();
 			return 0;
 		}
