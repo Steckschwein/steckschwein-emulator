@@ -11,7 +11,6 @@
 
 #include "EmulatorDebugger.h"
 
-#include <bits/stdint-uintn.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
