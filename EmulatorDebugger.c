@@ -85,7 +85,7 @@ static void DEBUGExecCmd();
 // *** MUST BE SCAN CODES ***
 
 enum DBG_CMD {
-	CMD_DUMP_MEM = 'm', CMD_DISASM = 'd', CMD_SET_BANK = 'b', CMD_SET_REGISTER = 'r'
+	CMD_SET_BPK = 's',CMD_DUMP_MEM = 'm', CMD_DISASM = 'd', CMD_SET_BANK = 'b', CMD_SET_REGISTER = 'r'
 };
 
 // RGB colours
@@ -242,7 +242,7 @@ static void DEBUGHandleKeyEvent(SDLKey key, int isShift) {
 		break;
 
 	case DBGKEY_SETBRK:						// F9 Set breakpoint to displayed.
-		breakPoint = currentPC;
+		DEBUGSetBreakPoint(currentPC);
 		break;
 
 	case DBGKEY_HOME:				// F1 sets the display PC to the actual one.
@@ -323,6 +323,11 @@ static void DEBUGExecCmd() {
 	// printf("cmd:%c line: '%s'\n", cmd, line);
 
 	switch (cmd) {
+	case CMD_SET_BPK:
+		sscanf(line, "%x", &number);
+		addr = number & 0xFFFF;
+		DEBUGSetBreakPoint(addr);
+		break;
 	case CMD_DUMP_MEM:
 		sscanf(line, "%x", &number);
 		addr = number & 0xFFFF;
