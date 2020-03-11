@@ -206,6 +206,7 @@ void DEBUGSetBreakPoint(int newBreakPoint) {
 void DEBUGBreakToDebugger(void) {
 	currentMode = DMODE_STOP;
 	currentPC = pc;
+	dbgPause();
 }
 
 // *******************************************************************************************

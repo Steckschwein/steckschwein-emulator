@@ -198,8 +198,8 @@ static void usage() {
 	printf("-rom <rom.bin>\n");
 	printf("\tOverride KERNAL/BASIC/* ROM file.\n");
 	printf("-ram <ramsize>\n");
-	printf("\tSpecify banked RAM size in KB (8, 16, 32, ..., 2048).\n");
-	printf("\tThe default is 512.\n");
+	printf("\tSpecify RAM size in KB (8, 16, 32, ..., 64).\n");
+	printf("\tThe default is 64.\n");
 	printf("-keymap <keymap>\n");
 	printf("\tEnable a specific keyboard layout decode table.\n");
 	printf("-sdcard <sdcard.img>\n");
@@ -1112,7 +1112,7 @@ int main(int argc, char **argv) {
 			}
 			int kb = atoi(argv[0]);
 			bool found = false;
-			for (int cmp = 8; cmp <= 2048; cmp *= 2) {
+			for (int cmp = 8; cmp <= 64; cmp *= 2) {
 				if (kb == cmp) {
 					found = true;
 				}
