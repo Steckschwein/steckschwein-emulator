@@ -1885,7 +1885,7 @@ static void getDebugInfo(VDP* vdp, DbgDevice* dbgDevice)
 
     sync(vdp, boardSystemTime());
 
-    dbgDeviceAddMemoryBlock(dbgDevice, langDbgMemVram(), 0, 0, vdp->vramSize, vdp->vram);
+    dbgDeviceAddMemoryBlock(dbgDevice, "VRAM", 0, 0, vdp->vramSize, vdp->vram);
 
     if (vdp->vdpVersion == VDP_V9938) {
         regCount = 24;
@@ -1906,7 +1906,7 @@ static void getDebugInfo(VDP* vdp, DbgDevice* dbgDevice)
         cmdRegCount = 0;
     }
 
-    regBank = dbgDeviceAddRegisterBank(dbgDevice, langDbgRegs(),
+    regBank = dbgDeviceAddRegisterBank(dbgDevice, "Registers",
                                        regCount +
                                        cmdRegCount +
                                        paletteCount +
@@ -2215,7 +2215,7 @@ static void videoDisable(VDP* vdp)
 
 void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int vramPages){
 
-    //DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
+//    DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
 
     DebugCallbacks dbgCallbacks = { getDebugInfo, dbgWriteMemory, dbgWriteRegister, NULL };
     VideoCallbacks videoCallbacks = { videoEnable, videoDisable };
@@ -2297,31 +2297,31 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
     case VDP_TMS9929A:
         vdp->registerValueMask = registerValueMaskMSX1;
         vdp->registerMask      = 0x07;
-        vdpVersionString       = langDbgDevTms9929A();
+        vdpVersionString       = "TMS9929A";
         vdp->hAdjustSc0        = -2; // 6
         break;
     case VDP_TMS99x8A:
         vdp->registerValueMask = registerValueMaskMSX1;
         vdp->registerMask      = 0x07;
         vdp->vdpRegs[9]          &= ~0x02;
-        vdpVersionString       = langDbgDevTms99x8A();
+        vdpVersionString       = "TMS99x8A";
         vdp->hAdjustSc0        = -2; // 6
         break;
     case VDP_V9938:
         vdp->registerValueMask = registerValueMaskMSX2;
         vdp->registerMask      = 0x3f;
-        vdpVersionString       = langDbgDevV9938();
+        vdpVersionString       = "V9938";
         vdp->hAdjustSc0        = 1; // 9
         break;
     case VDP_V9958:
         vdp->registerValueMask = registerValueMaskMSX2p;
         vdp->registerMask      = 0x3f;
-        vdpVersionString       = langDbgDevV9958();
+        vdpVersionString       = "V9958";
         vdp->hAdjustSc0        = 1; // 9
         break;
     }
 
-    //vdp->debugHandle = debugDeviceRegister(DBGTYPE_VIDEO, vdpVersionString, &dbgCallbacks, vdp);
+    vdp->debugHandle = debugDeviceRegister(DBGTYPE_VIDEO, vdpVersionString, &dbgCallbacks, vdp);
 
     switch (vdp->vdpConnector) {
     case VDP_STECKSCHWEIN:

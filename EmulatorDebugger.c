@@ -85,7 +85,7 @@ static void DEBUGExecCmd();
 // *** MUST BE SCAN CODES ***
 
 enum DBG_CMD {
-	CMD_SET_BPK = 's',CMD_DUMP_MEM = 'm', CMD_DISASM = 'd', CMD_SET_BANK = 'b', CMD_SET_REGISTER = 'r'
+	CMD_SET_BPK = 's', CMD_DUMP_MEM = 'm', CMD_DISASM = 'd', CMD_SET_BANK = 'b', CMD_SET_REGISTER = 'r'
 };
 
 // RGB colours
@@ -126,25 +126,19 @@ SDL_Surface *dbgSurface; 								// Renderer passed in.
 int DEBUGHandleEvent(SDL_Event *pEvent) {
 
 	if (currentPC < 0)
-		currentPC = pc;						// Initialise current PC displayed.
+		currentPC = pc;								// Initialize current PC displayed.
 
-	if (currentMode == DMODE_STEP) {					// Single step before
-		currentPC = pc;										// Update current PC
-		currentMode = DMODE_STOP;			// So now stop, as we've done it.
-		dbgPause();
+	if (currentMode == DMODE_STEP) {				// Single step before
+		DEBUGBreakToDebugger();
 	}
 
-	if (pc == breakPoint || pc == stepBreakPoint) {			// Hit a breakpoint.
-		currentPC = pc;										// Update current PC
-		currentMode = DMODE_STOP;			// So now stop, as we've done it.
+	if (pc == breakPoint || pc == stepBreakPoint) {	// Hit a breakpoint.
+		DEBUGBreakToDebugger();
 		stepBreakPoint = -1;						// Clear step breakpoint.
-		dbgPause();
 	}
 
 	if (SDL_GetKeyState(NULL)[DBGSCANKEY_BRK]) {	// Stop on break pressed.
-		currentMode = DMODE_STOP;
-		currentPC = pc; 							// Set the PC to what it is.
-		dbgPause();
+		DEBUGBreakToDebugger();					// Set the PC to what it is.
 	}
 
 	if (currentPCBank < 0 && currentPC >= 0xA000) {
@@ -204,8 +198,8 @@ void DEBUGSetBreakPoint(int newBreakPoint) {
 // *******************************************************************************************
 
 void DEBUGBreakToDebugger(void) {
-	currentMode = DMODE_STOP;
-	currentPC = pc;
+	currentMode = DMODE_STOP;			// So now stop, as we've done it.
+	currentPC = pc;						// Update current PC
 	dbgPause();
 }
 
@@ -475,8 +469,8 @@ static void DEBUGRenderCode(int lines, int initialPC) {
 //
 // *******************************************************************************************
 
-static char *labels[] = { "NV-BDIZC", "", "", "A", "X", "Y", "", "BKA", "BKO", "PC", "SP", "", "BRK", "", "VA", "VD0",
-		"VD1", "VCT", NULL };
+static char *labels[] = { "NV-BDIZC", "", "", "A", "X", "Y", "", "CTL", "PC", "SP", "", "BRK", "", "VDS", "VRL",
+		"VRH", "VRP", NULL };
 
 static int DEBUGRenderRegisters(void) {
 	int n = 0, yc = 0;
@@ -499,8 +493,7 @@ static int DEBUGRenderRegisters(void) {
 	DEBUGNumber(DBG_DATX, yc++, y, 2, col_data);
 	yc++;
 
-//	DEBUGNumber(DBG_DATX, yc++, memory_get_ram_bank(), 2, col_data);
-//	DEBUGNumber(DBG_DATX, yc++, memory_get_rom_bank(), 2, col_data);
+	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(), 4, col_data);
 	DEBUGNumber(DBG_DATX, yc++, pc, 4, col_data);
 	DEBUGNumber(DBG_DATX, yc++, sp | 0x100, 4, col_data);
 	yc++;
@@ -508,6 +501,7 @@ static int DEBUGRenderRegisters(void) {
 	DEBUGNumber(DBG_DATX, yc++, breakPoint & 0xFFFF, 4, col_data);
 	yc++;
 
+//	getDebugInfo();
 //	DEBUGNumber(DBG_DATX, yc++, video_read(0, true) | (video_read(1, true)<<8) | (video_read(2, true)<<16), 2, col_data);
 //	DEBUGNumber(DBG_DATX, yc++, video_read(3, true), 2, col_data);
 //	DEBUGNumber(DBG_DATX, yc++, video_read(4, true), 2, col_data);

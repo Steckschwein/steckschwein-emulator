@@ -26,6 +26,10 @@ memory_init()
 	ctrl_port = 0;
 }
 
+uint8_t memory_get_ctrlport(){
+	return ctrl_port;
+}
+
 void memory_destroy(){
 	free(RAM);
 	free(ROM);

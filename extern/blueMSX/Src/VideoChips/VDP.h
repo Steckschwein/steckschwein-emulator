@@ -51,7 +51,6 @@ int  vdpGetDisplayEnable();
 void vdpForceSync();
 
 // Video DA Interface
-
 #define VDP_VIDEODA_WIDTH  544
 #define VDP_VIDEODA_HEIGHT 240
 

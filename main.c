@@ -272,24 +272,6 @@ void usage_keymap() {
 	exit(1);
 }
 
-char* langDbgMemVram() {
-	return "VRAM";
-}
-char* langDbgRegs() {
-	return "Registers";
-}
-char* langDbgDevTms9929A() {
-	return "TMS9929A";
-}
-char* langDbgDevTms99x8A() {
-	return "TMS99x8A";
-}
-char* langDbgDevV9938() {
-	return "V9938";
-}
-char* langDbgDevV9958() {
-	return "V9958";
-}
 
 void archVideoOutputChange() {
 
