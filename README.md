@@ -205,30 +205,24 @@ Features
 --------
 
 * CPU: Full 65C02 instruction set (improved "fake6502")
-* VERA
+* MSX Video (TMS9929, VDP9938, VDP9958)
 	* Mostly cycle exact emulation
 	* Supports almost all features: composer, two layers, sprites, progressive/interlaced
 * VIA
 	* ROM/RAM banking
 	* PS/2 keyboard
 	* SD card (SPI)
+* Sound (YM3812)
 
 
 Missing Features
 ----------------
 
-* VERA
-	* Does not support raster IRQs (does support VSYNC though)
-	* Does not support the "CURRENT_FIELD" bit
-	* Does not sprite z-depth, collisions or limitations
-	* Only supports the first 16 sprites
-	* Interlaced modes (NTSC/RGB) don't render at the full horizontal fidelity
 * VIA
 	* Does not support counters/timers/IRQs
 	* Does not support game controllers
 * Sound
 	* No support
-
 
 License
 -------
@@ -245,245 +239,6 @@ Known Issues
 
 Release Notes
 -------------
-
-### Release 33
-
-* significant performance optimizations
-* VERA
-	* enabled all 128 sprites
-	* correct sprite zdepth
-	* support for raster IRQs
-* SDL controller support using `-joy1` and `-joy2` [John J Bliss]
-* 65C02 BCD fixes [Norman B. Lancaster]
-* feature parity with new LOAD/VLOAD features [John-Paul Gignac]
-* default RAM and ROM banks are now 0, matching the hardware
-* GIF recording can now be controlled from inside the machine [Randall Bohn]
-* Debugging
-	* Major enhancements to the debugger [kktos]
-	* `-echo` will now encode non-printable characters like this: \X93 for CHR$(93), -bas as 	well as pasting accepts this convention again
-	* `-echo raw` for the original behavior
-	* `-echo iso` to for correct character encoding in ISO mode
-	* `-ram` to specify RAM size; now defaults to 512
-
-### Release 32
-
-* correct ROM banking
-* VERA emulation optimizations [Stephen Horn]
-* added `-dump` option to allow writing RAM, CPU state or VERA state to disk [Nils Hasenbanck]
-* added `-quality` option to change scaling algorithm; now defaults to "best" [Maurizio Porrato]
-* output of `-echo` can now be fed into UNIX pipes [Anonymous Maarten]
-* relative speed of emulator is shown in the title if host can't keep up [Rien]
-* fix: 6502 BCD arithmetic [Rien]
-* fix: colors (white is now white) [Rien]
-* fix: sprite flipping [jjbliss]
-
-### Release 31
-
-* VERA 0.8 register layout
-* removed "-char" (character ROM is now part of rom.bin)
-* GIF recording using -gif [Neil Forbes-Richardson]
-* numpad support [Maurizio Porrato]
-* fake support of VIA timers to work around BASIC RND(0)
-* default ROM is taken from executable's directory [Michael Watters]
-* emulator window has a title [Michael Watters]
-* -debug allows specifying a breakpoint [Frank Buss]
-* package contains the ROM symbols in rom.txt
-* support for VERA SPI
-
-### Release 30
-
-Emulator:
-* VERA can now generate VSYNC interrupts
-* added -keymap for setting the keyboard layout
-* added -scale for integer scaling of the window [Stephen Horn]
-* added -log to enable various logging features (can also be enabled at runtime (POKE $9FB0+) [Randall Bohn])
-* changed -run to be an option to -prg and -bas
-* emulator detection: read $9FBE/$9FBF, must read 0x31 and 0x36
-* fix: -prg and -run no longer corrupt BASIC programs.
-* fix: LOAD,1 into RAM bank [Stephen Horn]
-* fix: 2bpp and 4bpp drawing [Stephen Horn]
-* fix: 4bpp sprites [MonstersGoBoom]
-* fix: build on Linux/ARM
-
-### Release 29
-
-* better keyboard support: if you pretend you have a US keyboard layout when typing, all keys should now be reachable [Paul Robson]
-* -debug will enable the new debugger [Paul Robson]
-* runs at the correct speed (was way too slow on most machines)
-* keyboard shortcuts work on Windows/Linux: Ctrl + F/R/S/V
-* Ctrl + V pastes the clipboard as keypresses
-* -bas file.txt loads a BASIC program in ASCII encoding
-* -echo prints all BASIC/KERNAL output to the terminal, use it with LIST to convert a BASIC program to ASCII
-* -run acts like -prg, but also autostarts the program
-* JMP $FFFF and SYS 65535 exit the emulator and save memory the host's storage
-* the packages now contain the current version of the Programmer's Reference Guide (HTML)
-* fix: on Windows, some file load/saves may be been truncated
-
-### Release 28
-
-* support for 65C02 opcodes [Paul Robson]
-* keep aspect ratio when resizing window [Sebastian Voges]
-* updated sprite logic to VERA 0.7 – **the layout of the sprite data registers has changed, you need to change your code!**
-
-
-### Release 27
-
-* Command line overhaul. Supports `-rom`, `-char`, `-sdcard` and `-prg`.
-* ROM and char filename defaults, so x16emu can be started without arguments.
-* Host Filesystem Interface supports LOAD"$"
-* macOS and Windows packaging logic in Makefile
-
-### Release 26
-
-* better sprite support (clipping, palette offset, flipping)
-* better border support
-* KERNAL can set up interlaced NTSC mode with scaling and borders (compile time option)
-
-### Release 25
-
-* sdcard: fixed LOAD,x,1 to load to the correct addressg
-* sdcard: all temp data will be on bank #255; current bank will remain unchanged
-* DOS: support for DOS commands ("UI", "I", "V", ...) and more status messages (e.g. 26,WRITE PROTECT ON,00,00)
-* BASIC: "DOS" command. Without argument: print disk status; with "$" argument: show directory; with "8" or "9" argument: switch default drive; otherwise: send DOS command; also accessible through F7/F8
-* Vera: cycle exact rendering, NTSC, interlacing, border
-
-### Release 24
-
-* SD card support
-	* pass path to SD card image as third argument
-	* access SD card as drive 8
-	* the local PC/Mac disk is still drive 1
-	* modulo debugging, this would work on a real X16 with the SD card (plus level shifters) hooked up to VIA#2PB as described in sdcard.c in the emulator surce
-
-### Release 23
-
-* Updated emulator and ROM to spec 0.6 – the ROM image should work on a real X16 with VERA 0.6 now.
-
-### Release 22
-
-SYS65375 (SWAPPER) now also clears the screen, avoid ing side effects.
-
-### Release 21
-
-* support for $ and % number prefixes in BASIC
-* support for C128 KERNAL APIs LKUPLA, LKUPSA and CLOSE_ALL
-
-### Release 20
-
-* Toggle fullscreen using Cmd+F or Cmd+return
-* new BASIC instructions and functions:
-	* MON: enter monitor; no more SYS65280 required
-	* VPEEK(bank, address)
-	* VPOKE bank, address, value
-example: VPOKE4,0,VPEEK(4,0) OR 32 [for 256 color BASIC]
-
-### Release 19
-
-* fixed cursor trail bug
-* fixed f7 key in PS/2 driver
-* f keys are assigned with shortcuts now:
-F1: LIST
-F2: &lt;enter monitor&gt;
-F3: RUN
-F4: &lt;switch 40/80&gt;
-F5: LOAD
-F6: SAVE"
-F7: DOS"$ &lt;doesn't work yet&gt;
-F8: DOS &lt;doesn't work yet&gt;
-
-### Release 18
-
-* Fixed scrolling in 40x30 mode when there are double lines on the screen.
-
-### Release 17
-
-* video RAM support in the monitor (SYS65280)
-* 40x30 screen support (SYS65375 to toggle)
-
-### Release 16
-
-* Integrated monitor, start with SYS65280
-rom.bin is now 3*8 KB:
-	* 0: BASIC (bank 0 at $C000)
-	* 1: KERNAL ($E000)
-	* 2: UTIL (bank 1 at $C000)
-
-### Release 15
-
-* correct text mode video RAM layout both in emulator and KERNAL
-
-### Release 14
-
-* KERNAL: fast scrolling
-* KERNAL: upper/lower switching using CHR$($0E)/CHR$($8E)
-* KERNAL: banking init
-* KERNAL: new PS/2 driver
-* Emulator: VERA updates (more modes, second data port)
-* Emulator: RAM and ROM banks start out as all 1 bits
-
-### Release 13
-
-* Supports mode 7 (8bpp bitmap).
-
-### Release 12
-
-* Supports 8bpp tile mode (mode 4)
-
-### Release 11
-
-* The emulator and the KERNAL now speak the bit-level PS/2 protocol over VIA#2 PA0/PA1. The system behaves the same, but keyboard input in the ROM should work on a real device.
-
-### Release 10
-
-updated KERNAL with proper power-on message
-
-### Release 9
-
-* LOAD and SAVE commands are intercepted by the emulator, can be used to access local file system, like this:
-
-      LOAD"TETRIS.PRG
-      SAVE"TETRIS.PRG
-
-* No device number is necessary. Loading absolute works like this:
-
-      LOAD"FILE.PRG",1,1
-
-### Release 8
-
-* New optional override load address for PRG files:
-
-      ./x64emu rom.bin chargen.bin basic.prg,0401
-
-### Release 7
-
-* Now with banking. POKE40801,n to switch the RAM bank at $A000. POKE40800,n to switch the ROM bank at $C000. The ROM file at the command line can be up to 72 KB now (layout: 0: bank 0, 1: KERNAL, 2: bank 1, 3: bank 2 etc.), and the RAM that Cmd+S saves is 2088KB ($0000-$9F00: regular RAM, $9F00-$9FFF: unused, $A000+: extra banks)
-
-### Release 6
-
-* Vera emulation now matches the complete spec dated 2019-07-06: correct video address space layout, palette format, redefinable character set
-
-### Release 5
-
-* BASIC now starts at $0401 (39679 BASIC BYTES FREE)
-
-### Release 4
-
-* Cmd+S now saves all of memory (linear 64 KB for now, including ROM) to "memory.bin", "memory-1.bin", "memory-2.bin", etc. You can extract parts of it with Unix "dd", like: dd if=memory.bin of=basic.bin bs=1 skip=2049 count=38655
-
-### Release 3
-
-* Supports PRG file as third argument, which is injected after "READY.", so BASIC programs work as well.
-
-### Release 2
-
-* STOP key support
-
-### Release 1
-
-* 6502 core, fake PS/2 keyboard emulation (PS/2 data bytes appear at VIA#1 PB) and text mode Vera emulation
-* KERNAL/BASIC modified for memory layout, missing VIC, Vera text mode and PS/2 keyboard
-
-
 
 <!-------------------------------------------------------------------->
 [releases]: https://github.com/commanderx16/x16-emulator/releases
