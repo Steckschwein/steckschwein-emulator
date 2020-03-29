@@ -67,8 +67,10 @@ void loadFile(int prg_override_start, FILE *prg_file) {
 		}
 		int r = fread(p_prg_img_ix + (2 - offs), 1, prg_size, prg_file);
 		if (r) {
-			printf("uart() load file, start 0x%04x size 0x%04x\n", (*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8),
-					prg_size);
+			printf("uart() load file 0x%04x-0x%04x (size 0x%04x)\n", 
+				*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8,
+				(*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8) + prg_size, 
+				prg_size);
 		} else {
 			fprintf(stderr, "uart() load file, start 0x%04x size 0x%04x error: %s\n",
 					(*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8), strerror(errno));
