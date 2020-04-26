@@ -3,7 +3,6 @@
 
 #include "Board.h"
 
-int steckSchweinCreate(VdpSyncMode vdpSyncMode,
-              BoardInfo* boardInfo);
+int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo);
 
 #endif

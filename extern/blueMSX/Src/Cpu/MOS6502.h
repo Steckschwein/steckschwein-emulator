@@ -2,17 +2,24 @@
 #define MOS6502_H
 #include "MsxTypes.h"
 
+#define ENABLE_BREAKPOINTS
+
 typedef UInt32 SystemTime;
 
 typedef void (*MOS6502TimerCb)(void*);
 
 typedef struct{
 	SystemTime    	systemTime;       /* Current system time             */
-	UInt32        	vdpTime;          /* Time of last access to MSX vdp  */
+	UInt32        	vdpTime;          /* Time of last access to VDP  */
     int           	terminate;        /* Termination flag                */
     SystemTime    	timeout;          /* User scheduled timeout          */
     MOS6502TimerCb	timerCb;
     int           intState;         /* Sate of interrupt line          */
+
+#ifdef ENABLE_BREAKPOINTS
+    int           breakpointCount;  /* Number of breakpoints set       */
+    char          breakpoints[0x10000];
+#endif
 
 } MOS6502;
 

@@ -16,7 +16,7 @@
 	#define DEBUG(...)
 #endif
 
-#define EMU_FREQUENCY 2000000
+#define EMU_FREQUENCY 3579545
 
 extern bool isDebuggerEnabled;
 

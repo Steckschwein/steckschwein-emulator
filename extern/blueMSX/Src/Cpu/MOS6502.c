@@ -4,8 +4,8 @@
 
 #include <stddef.h>
 
-MOS6502* mos6502create(MOS6502TimerCb timerCb){
-	MOS6502* mos6502 = malloc(sizeof(MOS6502));
+MOS6502* mos6502create(MOS6502TimerCb timerCb) {
+	MOS6502 *mos6502 = malloc(sizeof(MOS6502));
 	mos6502->systemTime = 0;
 	mos6502->terminate = 0;
 	mos6502->timerCb = timerCb;
@@ -15,80 +15,87 @@ MOS6502* mos6502create(MOS6502TimerCb timerCb){
 	return mos6502;
 }
 
-void mos6502Reset(MOS6502* mos6502, UInt32 cpuTime){
+void mos6502Reset(MOS6502 *mos6502, UInt32 cpuTime) {
 	reset6502();
 }
 
-void mos6502SetInt(MOS6502* mos6502) {
-    mos6502->intState = INT_HIGH;
+void mos6502SetInt(MOS6502 *mos6502) {
+	mos6502->intState = INT_HIGH;
 	irq6502();
-//	DEBUG ("mos6502SetInt %p\n", mos6502);
+	DEBUG ("mos6502SetInt %p\n", mos6502);
 }
 
-void mos6502Execute(MOS6502* mos6502) {
+void mos6502Execute(MOS6502 *mos6502) {
+    static SystemTime lastRefreshTime = 0;
 
-    int i=0;
-    while (!mos6502->terminate) {
+	while (!mos6502->terminate) {
 
-//    	if (isDebuggerEnabled) {
-//    		int dbgCmd = DEBUGGetCurrentStatus();
-//    		if (dbgCmd > 0)
-//    			continue;
-//    		if (dbgCmd < 0)
-//    			break;
-//    	}
-
-        if ((Int32)(mos6502->timeout - mos6502->systemTime) <= 0) {
-            if (mos6502->timerCb != NULL) {
-            	mos6502->timerCb(NULL);
-            }
+		if ((Int32) (mos6502->timeout - mos6502->systemTime) <= 0) {
+			if (mos6502->timerCb != NULL) {
+				mos6502->timerCb(NULL);
+			}
+		}
+        if (mos6502->systemTime - lastRefreshTime > 222 * 3) {
+            lastRefreshTime = mos6502->systemTime;
+            mos6502->systemTime += 20 * 3;
         }
-    	step6502();
 
-        mos6502->systemTime = clockticks6502;
-    }
+#ifdef ENABLE_BREAKPOINTS
+		if (mos6502->breakpointCount > 0) {
+			if (mos6502->breakpoints[pc]) {
+//            if (mos6502->breakpoints[mos6502->regs.PC) {
+//                if (mos6502->breakpointCb != NULL) {
+//                	mos6502->breakpointCb(mos6502->ref, r800->regs.PC.W);
+//                    if (mos6502->terminate) {
+//                        break;
+//                    }
+//                }
+			}
+		}
+#endif
+
+		step6502();
+		mos6502->systemTime = clockticks6502;
+
+	}
 }
 
-void mos6502ClearInt(MOS6502* mos6502) {
-	//DEBUG ("mos6502ClearInt %p\n", mos6502);
-    mos6502->intState = INT_LOW;
+void mos6502ClearInt(MOS6502 *mos6502) {
+	DEBUG ("mos6502ClearInt %p\n", mos6502);
+	mos6502->intState = INT_LOW;
 }
 
-void mos6502SetTimeoutAt(MOS6502* mos6502, SystemTime time){
+void mos6502SetTimeoutAt(MOS6502 *mos6502, SystemTime time) {
 //	DEBUG ("mos6502SetTimeoutAt %p\n", mos6502);
-    mos6502->timeout = time;
+	mos6502->timeout = time;
 }
 
-void mos6502SetBreakpoint(MOS6502* mos6502, UInt16 address){
+void mos6502SetBreakpoint(MOS6502 *mos6502, UInt16 address) {
 	DEBUG ("mos6502SetBreakpoint %p\n", mos6502);
-   /*
 #ifdef ENABLE_BREAKPOINTS
-    if (r800->breakpoints[address] == 0) {
-        r800->breakpoints[address] = 1;
-        r800->breakpointCount++;
-    }
+	if (mos6502->breakpoints[address] == 0) {
+		mos6502->breakpoints[address] = 1;
+		mos6502->breakpointCount++;
+	}
 #endif
-*/
 }
-void mos6502ClearBreakpoint(MOS6502* mos6502, UInt16 address){
-   /*
+void mos6502ClearBreakpoint(MOS6502 *mos6502, UInt16 address) {
 #ifdef ENABLE_BREAKPOINTS
-    if (r800->breakpoints[address] != 0) {
-        r800->breakpointCount--;
-        r800->breakpoints[address] = 0;
-    }
+	if (mos6502->breakpoints[address] != 0) {
+		mos6502->breakpointCount--;
+		mos6502->breakpoints[address] = 0;
+	}
 #endif
-*/
 }
 
-void mos6502StopExecution(MOS6502* mos6502) {
-    mos6502->terminate = 1;
+void mos6502StopExecution(MOS6502 *mos6502) {
+	mos6502->terminate = 1;
 }
 
-UInt32 mos6502GetTimeTrace(MOS6502* mos6502, int offset){
+UInt32 mos6502GetTimeTrace(MOS6502 *mos6502, int offset) {
 	return mos6502->systemTime;
 }
 
-void mos6502Destroy(MOS6502* mos6502){
+void mos6502Destroy(MOS6502 *mos6502) {
 	free(mos6502);
 }

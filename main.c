@@ -431,17 +431,9 @@ int createSdlWindow() {
 
 static void handleEvent(SDL_Event *event) {
 
-	//    	if (isDebuggerEnabled) {
-	//    		int dbgCmd = DEBUGGetCurrentStatus();
-	//    		if (dbgCmd > 0)
-	//    			continue;
-	//    		if (dbgCmd < 0)
-	//    			break;
-	//    	}
-	//
-	//
-
-	DEBUGHandleEvent(event);
+	if(DEBUGHandleEvent(event)){
+//		return;//event was handled
+	}
 
 	switch (event->type) {
 	case SDL_USEREVENT:
@@ -484,6 +476,8 @@ static void handleEvent(SDL_Event *event) {
 	case SDL_MOUSEMOTION:
 //        sdlMouseMove(event->motion.x, event->motion.y);
 		break;
+	default:
+		printf("%x \n", event->type);
 	}
 }
 
@@ -726,7 +720,7 @@ int timerCallback(void *timer) {
 		if (frameCount >= framePeriod) {
 			frameCount %= framePeriod;
 			if (emuState == EMU_RUNNING) {
-//                refreshRate = boardGetRefreshRate();
+                refreshRate = boardGetRefreshRate();
 
 				if (syncMethod == P_EMU_SYNCAUTO || syncMethod == P_EMU_SYNCNONE) {
 					archUpdateEmuDisplay(0);
@@ -746,6 +740,10 @@ int timerCallback(void *timer) {
 
 EmuState emulatorGetState() {
 	return emuState;
+}
+
+int isEmuSingleStep(){
+	return emuSingleStep;
 }
 
 void emulatorSetState(EmuState state) {

@@ -128,7 +128,7 @@ void boardTimerRemove(BoardTimer* timer);
 void boardTimerCheckTimeout(void* usrDefinedCb);
 UInt32 boardCalcRelativeTimeout(UInt32 timerFrequency, UInt32 nextTimeout);
 
-void   boardOnBreakpoint(UInt16 pc);
+void boardOnBreakpoint(UInt16 pc);
 
 void boardSetVideoAutodetect(int value);
 int  boardGetVideoAutodetect();

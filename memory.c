@@ -119,8 +119,7 @@ write6502(uint16_t address, uint8_t value)
 		else if (address < 0x0240) // latch at $0x0230
 		{
 			ctrl_port = value;
-			if (value == 1)
-				printf("ctrl_port %x\n", ctrl_port);
+			DEBUG ("ctrl_port %x\n", ctrl_port);
 		}
 		else if (address < 0x0250) // OPL2 at $0240
 		{
