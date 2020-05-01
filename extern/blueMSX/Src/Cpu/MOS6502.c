@@ -42,10 +42,10 @@ void mos6502Execute(MOS6502 *mos6502) {
 
 #ifdef ENABLE_BREAKPOINTS
 		if (mos6502->breakpointCount > 0) {
-			if (mos6502->breakpoints[pc]) {
-//            if (mos6502->breakpoints[mos6502->regs.PC) {
+            if (mos6502->breakpoints[pc]) {
+            	DEBUGBreakToDebugger();
 //                if (mos6502->breakpointCb != NULL) {
-//                	mos6502->breakpointCb(mos6502->ref, r800->regs.PC.W);
+//                	mos6502->breakpointCb(mos6502->ref, pc);
 //                    if (mos6502->terminate) {
 //                        break;
 //                    }

@@ -100,7 +100,6 @@ int currentPC = -1;											// Current PC value.
 int currentData = 0;							// Current data display address.
 int currentPCBank = -1;
 int currentBank = -1;
-//int currentMode = DMODE_RUN;								// Start running.
 int breakPoint = -1; 											// User Break
 int stepBreakPoint = -1;								// Single step break.
 
@@ -128,27 +127,16 @@ int DEBUGHandleEvent(SDL_Event *pEvent) {
 		currentPC = pc;								// Initialize current PC displayed.
 	}
 
-//	if (currentMode == DMODE_STEP) {				// Single step before
-//	if (emulatorGetState() == EMU_STEP) {
-//		currentPC = pc;
-//		dbgPause();
-//	}
-
-	if (pc == breakPoint) {	// Hit a breakpoint.
-		currentPC = pc;								// Update current PC
-		//currentMode = DMODE_STOP;					// So now stop, as we've done it.
-		stepBreakPoint = -1;						// Clear step breakpoint.
-		dbgPause();
-	}
-	if (pc == stepBreakPoint) {	// Hit a breakpoint.
-		currentPC = pc;								// Update current PC
-		//currentMode = DMODE_STOP;					// So now stop, as we've done it.
-		stepBreakPoint = -1;						// Clear step breakpoint.
-		dbgPause();
+	if (pc == breakPoint || pc == stepBreakPoint) {	// Hit a breakpoint.
+		currentPC = pc;								// Update current PC,
+		if(stepBreakPoint != breakPoint){
+			dbgClearBreakpoint(stepBreakPoint);
+		}
+		stepBreakPoint = -1;						// Clear step breakpoint, if not the explicit one
+		dbgPause();									// So now stop, as we've done it.
 	}
 
 	if (SDL_GetKeyState(NULL)[DBGSCANKEY_BRK]) {	// Stop on break pressed.
-//		currentMode = DMODE_STOP;
 		currentPC = pc; 							// Set the PC to what it is.
 		dbgPause();
 	}
@@ -157,8 +145,7 @@ int DEBUGHandleEvent(SDL_Event *pEvent) {
 //		currentPCBank= currentPC < 0xC000 ? memory_get_ram_bank() : memory_get_rom_bank();
 	}
 
-//	if (currentMode != DMODE_RUN) {			// Not running, we own the keyboard.
-	if (emulatorGetState() != EMU_RUNNING){
+	if (emulatorGetState() != EMU_RUNNING){			// Not running, we own the keyboard.
 		showFullDisplay = 								// Check showing screen.
 				SDL_GetKeyState(NULL)[DBGSCANKEY_SHOW];
 		if (pEvent->type == SDL_KEYDOWN) {
@@ -211,8 +198,7 @@ void DEBUGSetBreakPoint(int newBreakPoint) {
 //
 // *******************************************************************************************
 
-void DEBUGBreakToDebugger(void) {
-//	currentMode = DMODE_STOP;			// So now stop, as we've done it.
+void DEBUGBreakToDebugger(void) {	// So now stop, as we've done it.
 	currentPC = pc;						// Update current PC
  	DEBUGSetBreakPoint(pc);
 	boardOnBreakpoint(pc);
@@ -230,25 +216,21 @@ static void DEBUGHandleKeyEvent(SDLKey key, int isShift) {
 	switch (key) {
 
 	case DBGKEY_STEP:							// Single step (F11 by default)
-//		currentMode = DMODE_STEP; 			// Runs once, then switches back.
-		dbgStep();
+		dbgStep();								// Runs once, then switches back.
 		break;
 
-	case DBGKEY_STEPOVER:						// Step over (F10 by default)
+	case DBGKEY_STEPOVER:								// Step over (F10 by default)
 		opcode = real_read6502(pc, false, 0);			// What opcode is it ?
 		if (opcode == 0x20) { 							// Is it JSR ?
 			stepBreakPoint = pc + 3;					// Then break 3 on.
-//			dbgSetBreakpoint(stepBreakPoint);
-//			currentMode = DMODE_RUN;					// And run.
+			dbgSetBreakpoint(stepBreakPoint);			// And run.
 			dbgRun();
 		} else {
-//			currentMode = DMODE_STEP;					// Otherwise single step.
-			dbgStep();
+			dbgStep();									// Otherwise single step.
 		}
 		break;
 
 	case DBGKEY_RUN:									// F5 Runs until Break.
-//		currentMode = DMODE_RUN;
 		dbgRun();
 		break;
 
