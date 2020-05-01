@@ -199,8 +199,8 @@ void DEBUGSetBreakPoint(int newBreakPoint) {
 // *******************************************************************************************
 
 void DEBUGBreakToDebugger(void) {	// So now stop, as we've done it.
-	currentPC = pc;						// Update current PC
- 	DEBUGSetBreakPoint(pc);
+	currentPC = pc;					// Update current PC
+	dbgPause();
 	boardOnBreakpoint(pc);
 }
 
