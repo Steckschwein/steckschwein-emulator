@@ -75,8 +75,7 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 
 				int res = fread(&block_response[2], 1, BLOCK_SIZE, sdcard_file);
 				if (!res) {
-					fprintf(stderr, "read block ($%x): Error fread file: (lba: %x): %s\n", mblock, lba,
-							strerror(errno));
+					fprintf(stderr, "fread error block $%x, lba %x: %s\n", mblock, lba, strerror(errno));
 				}
 				if (res != BLOCK_SIZE) {
 					WARN("Warning: short read bytes %d/%d'!\n", res, BLOCK_SIZE);
@@ -147,18 +146,25 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 				block_response[0] = 0;
 				block_response[1] = 0xfe;
 				DEBUG("Reading LBA %d\n", lba);
-				fseek(sdcard_file, lba * BLOCK_SIZE, SEEK_SET);
-				int bytes_read = fread(&block_response[2], 1, BLOCK_SIZE, sdcard_file);
-				if (bytes_read != BLOCK_SIZE) {
-					WARN("Warning: short read bytes %d/%d'!\n", bytes_read, BLOCK_SIZE);
+				int fs = fseek(sdcard_file, lba * BLOCK_SIZE, SEEK_SET);
+				if(fs){
+					fprintf(stderr, "error fseek %s\n", strerror(errno));
+				}else{
+					int bytes_read = fread(&block_response[2], 1, BLOCK_SIZE, sdcard_file);
+					if (bytes_read != BLOCK_SIZE) {
+						WARN("Warning: short read lba %x, bytes %d/%d'!\n", lba, bytes_read, BLOCK_SIZE);
+					}
+					response = block_response;
+					response_length = 2 + BLOCK_SIZE + 2;
 				}
-				response = block_response;
-				response_length = 2 + BLOCK_SIZE + 2;
 				break;
 			}
 			case 0x40 + 18: { // CMD18 - read multi block
 				uint32_t lba = cmd[1] << 24 | cmd[2] << 16 | cmd[3] << 8 | cmd[4];
-				int r = fseek(sdcard_file, lba * BLOCK_SIZE, SEEK_SET); //do just the seek here, the fread is done above
+				int fs = fseek(sdcard_file, lba * BLOCK_SIZE, SEEK_SET); //do just the seek here, the fread is done above
+				if(fs){
+					fprintf(stderr, "error fseek %s\n", strerror(errno));
+				}
 				mblock = 0;
 				break;
 			}
@@ -169,13 +175,14 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 				int fs = fseek(sdcard_file, lba * BLOCK_SIZE, SEEK_SET);
 				if(fs){
 					fprintf(stderr, "error fseek %s\n", strerror(errno));
+				}else{
+					block_response[0] = 0;
+					block_response[1] = 0xfe;
+					memset(&block_response[2 + BLOCK_SIZE + 2], 0xff, 4);
+					response = block_response;
+					response_length = 2 + BLOCK_SIZE + 2 + 2;
+					mblock = 0;
 				}
-				block_response[0] = 0;
-				block_response[1] = 0xfe;
-				memset(&block_response[2 + BLOCK_SIZE + 2], 0xff, 4);
-				response = block_response;
-				response_length = 2 + BLOCK_SIZE + 2 + 2;
-				mblock = 0;
 				break;
 			}
 			case 0x40 + 55: { //CMD55 APP_CMD
