@@ -29,7 +29,6 @@ struct upload_state {
 	uint8_t (*write)(uint8_t r, uint8_t v);
 };
 
-//static int c = 2;
 uint8_t upload_read_startAddress(uint8_t r);
 uint8_t upload_read_OK(uint8_t r);
 void upload_write_OK(uint8_t r, uint8_t v);
@@ -101,7 +100,7 @@ uint8_t upload_read_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
 }
 
 uint8_t upload_read_startAddress(uint8_t r) {
-	if (!p_prg_img) {
+	if (!p_prg_img && prg_path) {
 		FILE *prg_file = fopen(prg_path, "r");
 		if (!prg_file) {
 			fprintf(stderr, "uart upload read start address - cannot open file %s, error %s\n", prg_path,
@@ -112,7 +111,10 @@ uint8_t upload_read_startAddress(uint8_t r) {
 		loadFile(prg_override_start, prg_file);
 		fclose(prg_file);
 	}
-	return upload_read_bytes(r, &p_prg_img_ix, &bytes_available);
+	if(p_prg_img){
+		return upload_read_bytes(r, &p_prg_img_ix, &bytes_available);
+	}
+	return 0;
 }
 
 uint8_t upload_read_length(uint8_t r) {

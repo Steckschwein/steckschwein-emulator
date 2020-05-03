@@ -331,14 +331,13 @@ int WaitReverse() {
 }
 
 int updateEmuDisplay(int updateAll) {
-	FrameBuffer *frameBuffer;
 	int bytesPerPixel = bitDepth / 8;
 	char *dpyData = displayData[curDisplayData];
 	int width = zoom * WIDTH;
 	int height = zoom * HEIGHT;
 	int borderWidth;
 
-	frameBuffer = frameBufferFlipViewFrame(properties->emulation.syncMethod == P_EMU_SYNCTOVBLANKASYNC);
+	FrameBuffer *frameBuffer = frameBufferFlipViewFrame(properties->emulation.syncMethod == P_EMU_SYNCTOVBLANKASYNC);
 	if (frameBuffer == NULL) {
 		frameBuffer = frameBufferGetWhiteNoiseFrame();
 	}
