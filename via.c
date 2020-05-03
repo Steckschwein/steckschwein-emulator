@@ -25,13 +25,33 @@
 static uint8_t via1registers[16];
 static uint8_t via1pb_in;
 
-void
-via1_init()
-{
+SDL_Joystick *joy1;
+SDL_Joystick *joy2;
+
+SDL_Joystick* openJoystick(int ix){
+	SDL_Joystick *joy = SDL_JoystickOpen(ix);
+	if(joy){
+		printf("%s - %d axes, %d buttons, %d hats\n",
+				SDL_JoystickName(ix), SDL_JoystickNumAxes(joy), SDL_JoystickNumAxes(joy), SDL_JoystickNumHats(joy));
+	}
+	return joy;
 }
 
-uint8_t
-via1_pb_get_reg(uint8_t reg)
+void via1_joystick(SDL_Event *event){
+	printf("joystick %x \n", event->type);
+}
+
+void via1_init() {
+	int joys = SDL_NumJoysticks();
+	if(joys > 0){
+		printf("found %d joysticks/controllers \n", joys);
+		SDL_JoystickEventState(SDL_ENABLE);
+		joy1 = openJoystick(0);
+		joy2 = openJoystick(1);
+	}
+}
+
+uint8_t via1_pb_get_reg(uint8_t reg)
 {
 	return via1registers[reg];
 }

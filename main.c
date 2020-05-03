@@ -431,7 +431,7 @@ int createSdlWindow() {
 static void handleEvent(SDL_Event *event) {
 
 	if(DEBUGHandleEvent(event)){
-//		return;//event was handled
+		return;//event was handled
 	}
 
 	switch (event->type) {
@@ -475,8 +475,15 @@ static void handleEvent(SDL_Event *event) {
 	case SDL_MOUSEMOTION:
 //        sdlMouseMove(event->motion.x, event->motion.y);
 		break;
+	case SDL_JOYAXISMOTION:		/**< Joystick axis motion */
+	case SDL_JOYBALLMOTION:		/**< Joystick trackball motion */
+	case SDL_JOYHATMOTION:		/**< Joystick hat position change */
+	case SDL_JOYBUTTONDOWN:		/**< Joystick button pressed */
+	case SDL_JOYBUTTONUP:			/**< Joystick button released */
+		via1_joystick(event);
+		break;
 	default:
-		printf("%x \n", event->type);
+		DEBUG("%x \n", event->type);
 	}
 }
 

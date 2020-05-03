@@ -7,8 +7,12 @@
 
 #include <stdint.h>
 #include <sdcard.h>
+#include <SDL_joystick.h>
+#include <SDL_events.h>
 
 #define SD_DETECT 1<<6
+
+void via1_joystick(SDL_Event *event);
 
 uint8_t via1_read(uint8_t reg);
 void via1_write(uint8_t reg, uint8_t value);

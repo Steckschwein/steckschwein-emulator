@@ -123,6 +123,8 @@ SDL_Surface *dbgSurface; 								// Renderer passed in.
 // *******************************************************************************************
 int DEBUGHandleEvent(SDL_Event *pEvent) {
 
+	int handleEvent = 0;
+
 	if (currentPC < 0 || emulatorGetState() == EMU_PAUSED) {
 		currentPC = pc;								// Initialize current PC displayed.
 	}
@@ -137,6 +139,7 @@ int DEBUGHandleEvent(SDL_Event *pEvent) {
 	}
 
 	if (SDL_GetKeyState(NULL)[DBGSCANKEY_BRK]) {	// Stop on break pressed.
+//		DEBUGBreakToDebugger();
 		currentPC = pc; 							// Set the PC to what it is.
 		dbgPause();
 	}
@@ -150,16 +153,16 @@ int DEBUGHandleEvent(SDL_Event *pEvent) {
 				SDL_GetKeyState(NULL)[DBGSCANKEY_SHOW];
 		if (pEvent->type == SDL_KEYDOWN) {
 			DEBUGHandleKeyEvent(pEvent->key.keysym.sym, SDL_GetModState() & (KMOD_LSHIFT | KMOD_RSHIFT));
+			handleEvent = 1;
 		}
 	}
 
 	showDebugOnRender = (emulatorGetState() != EMU_RUNNING);	// Do we draw it - only in RUN mode.
 	if (emulatorGetState() == EMU_PAUSED) { 						// We're in charge.
 		updateEmuDisplay(1);
-		return 1;
 	}
 
-	return 0;											// Run wild, run free.
+	return handleEvent;											// Run wild, run free.
 }
 
 // *******************************************************************************************
@@ -211,6 +214,7 @@ void DEBUGBreakToDebugger(void) {	// So now stop, as we've done it.
 // *******************************************************************************************
 
 static void DEBUGHandleKeyEvent(SDLKey key, int isShift) {
+
 	int opcode;
 
 	switch (key) {
@@ -272,7 +276,6 @@ static void DEBUGHandleKeyEvent(SDLKey key, int isShift) {
 		}
 		break;
 	}
-
 }
 
 char kNUM_KEYPAD_CHARS[10] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
