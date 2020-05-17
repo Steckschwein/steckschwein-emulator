@@ -160,6 +160,7 @@ SOURCE_FILES += sdcard.c
 SOURCE_FILES += spi.c
 SOURCE_FILES += uart.c
 SOURCE_FILES += via.c
+SOURCE_FILES += joystick.c
 
 # rtc sound
 SOURCE_FILES += ds1306.c

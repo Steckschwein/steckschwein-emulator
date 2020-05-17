@@ -23,6 +23,7 @@
 #include "spi.h"
 #include "sdcard.h"
 #include "glue.h"
+#include "joystick.h"
 #include "EmulatorDebugger.h"
 #include "Properties.h"
 //#include "ArchSound.h"
@@ -478,9 +479,9 @@ static void handleEvent(SDL_Event *event) {
 	case SDL_JOYAXISMOTION:		/**< Joystick axis motion */
 	case SDL_JOYBALLMOTION:		/**< Joystick trackball motion */
 	case SDL_JOYHATMOTION:		/**< Joystick hat position change */
+	case SDL_JOYBUTTONUP:		/**< Joystick button released */
 	case SDL_JOYBUTTONDOWN:		/**< Joystick button pressed */
-	case SDL_JOYBUTTONUP:			/**< Joystick button released */
-		via1_joystick(event);
+		printf("joystick event %x b:%x t:%x s:%x\n", event->jbutton.which, event->jbutton.button,event->jbutton.type, event->jbutton.state);
 		break;
 	default:
 		DEBUG("%x \n", event->type);
@@ -1032,6 +1033,7 @@ void instructionCb(uint32_t cycles) {
 
 	for (uint8_t i = 0; i < cycles; i++) {
 		spi_step();
+		joystick_step();
 	}
 
 	trace();
@@ -1245,6 +1247,31 @@ int main(int argc, char **argv) {
 				argc--;
 				argv++;
 			}
+		} else if (!strcmp(argv[0], "-joy1")) {
+			argc--;
+			argv++;
+			if (!strcmp(argv[0], "NES")) {
+				joy1_mode = NES;
+				argc--;
+				argv++;
+			} else if (!strcmp(argv[0], "SNES")) {
+				joy1_mode = SNES;
+				argc--;
+				argv++;
+			}
+
+		} else if (!strcmp(argv[0], "-joy2")){
+			argc--;
+			argv++;
+			if (!strcmp(argv[0], "NES")){
+				joy2_mode = NES;
+				argc--;
+				argv++;
+			} else if (!strcmp(argv[0], "SNES")){
+				joy2_mode = SNES;
+				argc--;
+				argv++;
+			}
 #ifdef TRACE
 		} else if (!strcmp(argv[0], "-trace")) {
 			argc--;
@@ -1374,7 +1401,6 @@ int main(int argc, char **argv) {
 
 //    keyboardInit();
 
-	machine_reset();
 
 //    emulatorInit(properties, mixer);
 //    actionInit(video, properties, mixer);
@@ -1384,9 +1410,12 @@ int main(int argc, char **argv) {
 //
 //    joystickPortSetType(0, properties->joy1.typeId);
 //    joystickPortSetType(1, properties->joy2.typeId);
+	joystick_init();
 
 //    uartIoSetType(properties->ports.Com.type, properties->ports.Com.fileName);
 //    ykIoSetMidiInType(properties->sound.YkIn.type, properties->sound.YkIn.fileName);
+
+	machine_reset();
 
 	emulatorRestartSound();
 

@@ -9,6 +9,7 @@
 #include "via.h"
 #include "memory.h"
 #include "glue.h"
+#include "joystick.h"
 
 //
 // VIA#2
@@ -25,63 +26,40 @@
 static uint8_t via1registers[16];
 static uint8_t via1pb_in;
 
-SDL_Joystick *joy1;
-SDL_Joystick *joy2;
-
-SDL_Joystick* openJoystick(int ix){
-	SDL_Joystick *joy = SDL_JoystickOpen(ix);
-	if(joy){
-		printf("%s - %d axes, %d buttons, %d hats\n",
-				SDL_JoystickName(ix), SDL_JoystickNumAxes(joy), SDL_JoystickNumAxes(joy), SDL_JoystickNumHats(joy));
-	}
-	return joy;
-}
-
-void via1_joystick(SDL_Event *event){
-	printf("joystick %x \n", event->type);
-}
+#define MAX_JOYS 2
 
 void via1_init() {
-	int joys = SDL_NumJoysticks();
-	if(joys > 0){
-		printf("found %d joysticks/controllers \n", joys);
-		SDL_JoystickEventState(SDL_ENABLE);
-		joy1 = openJoystick(0);
-		joy2 = openJoystick(1);
-	}
 }
 
-uint8_t via1_pb_get_reg(uint8_t reg)
-{
+uint8_t via1_pb_get_reg(uint8_t reg) {
 	return via1registers[reg];
 }
 
-uint8_t
-via1_read(uint8_t reg)
-{
-	if (reg == 0) {
-		// PB
+uint8_t via1_read(uint8_t reg) {
+	if (reg == 0) {	// PB
 		// 0 input  -> take input bit
 		// 1 output -> take output bit
-		uint8_t v = (via1pb_in & (via1registers[2] ^ 0xff))
-				| (via1registers[0] & via1registers[2]);
+		uint8_t v = (via1pb_in & (via1registers[2] ^ 0xff)) | (via1registers[0] & via1registers[2]);
 
-		if((via1registers[2] & SD_DETECT) == 0){//SD_DETECT pin set as input?
-			if(sdcard_file){
-				v&=~(SD_DETECT);
-			}else{
-				v|= SD_DETECT;
+		if ((via1registers[2] & SD_DETECT) == 0) {		//SD_DETECT pin set as input?
+			if (sdcard_file) {
+				v &= ~(SD_DETECT);
+			} else {
+				v |= SD_DETECT;
 			}
 		}
 		return v;
+	} else if (reg == 1) { // PA
+		uint8_t value =
+			value = value | (joystick1_data ? JOY_DATA1_MASK : 0) |
+							(joystick2_data ? JOY_DATA2_MASK : 0);
+		return value;
 	} else {
 		return via1registers[reg];
 	}
 }
 
-void
-via1_write(uint8_t reg, uint8_t value)
-{
+void via1_write(uint8_t reg, uint8_t value) {
 	via1registers[reg] = value;
 
 //	printf("via write() %x %x\n", reg, value);
@@ -90,24 +68,26 @@ via1_write(uint8_t reg, uint8_t value)
 		// PB
 	} else if (reg == 2) {
 		// PB DDRB
+	} else if (reg == 1 || reg == 3) {
+		// PA
+		joystick_latch = via1registers[1] & JOY_LATCH_MASK;
+		joystick_clock = via1registers[1] & JOY_CLK_MASK;
 	}
 
 }
 
-uint8_t
-via1_pb_get_out()
-{
-	return via1registers[2] /* DDR  */ & via1registers[0]; /* PB */
+uint8_t via1_pb_get_out() {
+	return via1registers[2] /* DDR  */& via1registers[0]; /* PB */
 }
 
-void
-via1_pb_set_in(uint8_t value)
-{
+void via1_pa_set_in(uint8_t value) {
+	via1registers[1] = value;
+}
+
+void via1_pb_set_in(uint8_t value) {
 	via1pb_in = value;
 }
 
-void
-via1_sr_set(uint8_t value)
-{
+void via1_sr_set(uint8_t value) {
 	via1registers[10] = value;
 }
