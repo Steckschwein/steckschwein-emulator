@@ -90,7 +90,7 @@ void joystick_step() {
 }
 
 bool handle_event(SDL_Event *event) {
-//	joystick1_state = get_joystick_state(joystick1, joy1_mode);
+
 }
 
 bool handle_latch(bool latch, bool clock) {
@@ -141,37 +141,6 @@ uint16_t get_joystick_state(SDL_Joystick *control, enum joy_status mode) {
 		bool x_pressed = SDL_JoystickGetButton(control, SDL_CONTROLLER_BUTTON_Y);
 		bool l_pressed = SDL_JoystickGetButton(control, SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
 		bool r_pressed = SDL_JoystickGetButton(control, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-
-		if (start_pressed) {
-			printf("start \n");
-		}
-		if (select_pressed) {
-			printf("sel \n");
-		}
-		if (a_pressed) {
-			printf("a \n");
-		}
-		if (b_pressed) {
-			printf("b \n");
-		}
-		if (x_pressed) {
-			printf("x \n");
-		}
-		if (y_pressed) {
-			printf("y \n");
-		}
-		if (left_pressed) {
-			printf("l \n");
-		}
-		if (right_pressed) {
-			printf("r \n");
-		}
-		if (up_pressed) {
-			printf("u \n");
-		}
-		if (down_pressed) {
-			printf("d \n");
-		}
 
 		return (!b_pressed) | (!y_pressed) << 1 | (!select_pressed) << 2 | (!start_pressed) << 3 | (!up_pressed) << 4
 				| (!down_pressed) << 5 | (!left_pressed) << 6 | (!right_pressed) << 7 | (!a_pressed) << 8
