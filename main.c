@@ -273,7 +273,6 @@ void usage_keymap() {
 	exit(1);
 }
 
-
 void archVideoOutputChange() {
 
 }
@@ -431,8 +430,8 @@ int createSdlWindow() {
 
 static void handleEvent(SDL_Event *event) {
 
-	if(DEBUGHandleEvent(event)){
-		return;//event was handled
+	if (DEBUGHandleEvent(event)) {
+		return; //event was handled
 	}
 
 	switch (event->type) {
@@ -476,12 +475,23 @@ static void handleEvent(SDL_Event *event) {
 	case SDL_MOUSEMOTION:
 //        sdlMouseMove(event->motion.x, event->motion.y);
 		break;
-	case SDL_JOYAXISMOTION:		/**< Joystick axis motion */
-	case SDL_JOYBALLMOTION:		/**< Joystick trackball motion */
-	case SDL_JOYHATMOTION:		/**< Joystick hat position change */
-	case SDL_JOYBUTTONUP:		/**< Joystick button released */
-	case SDL_JOYBUTTONDOWN:		/**< Joystick button pressed */
-		printf("joystick event %x b:%x t:%x s:%x\n", event->jbutton.which, event->jbutton.button,event->jbutton.type, event->jbutton.state);
+	case SDL_JOYAXISMOTION: /**< Joystick axis motion */
+		DEBUG("joystick axis event %x b:%x t:%x s:%x\n", event->jaxis.which, event->jaxis.axis, event->jaxis.type,
+				event->jaxis.value);
+		break;
+	case SDL_JOYBALLMOTION: /**< Joystick trackball motion */
+		DEBUG("joystick ball event %x b:%x t:%x s:%x\n", event->jball.which, event->jball.ball, event->jball.type,
+				event->jball.xrel);
+		break;
+	case SDL_JOYHATMOTION: /**< Joystick hat position change */
+		handle_event(event);
+		DEBUG("joystick hat event %x b:%x t:%x s:%x\n", event->jhat.which, event->jhat.hat, event->jbutton.type,
+				event->jbutton.state);
+		break;
+	case SDL_JOYBUTTONUP: /**< Joystick button released */
+	case SDL_JOYBUTTONDOWN: /**< Joystick button pressed */
+		DEBUG("joystick button event %x b:%x t:%x s:%x\n", event->jbutton.which, event->jbutton.button,
+				event->jbutton.type, event->jbutton.state);
 		break;
 	default:
 		DEBUG("%x \n", event->type);
@@ -495,7 +505,7 @@ int archPollEvent() {
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT) {
 			doQuit = 1;
-		} else if(!doQuit){//empty queue
+		} else if (!doQuit) { //empty queue
 			handleEvent(&event);
 		}
 	}
@@ -727,7 +737,7 @@ int timerCallback(void *timer) {
 		if (frameCount >= framePeriod) {
 			frameCount %= framePeriod;
 			if (emuState == EMU_RUNNING) {
-                refreshRate = boardGetRefreshRate();
+				refreshRate = boardGetRefreshRate();
 
 				if (syncMethod == P_EMU_SYNCAUTO || syncMethod == P_EMU_SYNCNONE) {
 					archUpdateEmuDisplay(0);
@@ -749,7 +759,7 @@ EmuState emulatorGetState() {
 	return emuState;
 }
 
-int isEmuSingleStep(){
+int isEmuSingleStep() {
 	return emuSingleStep;
 }
 
@@ -1260,14 +1270,14 @@ int main(int argc, char **argv) {
 				argv++;
 			}
 
-		} else if (!strcmp(argv[0], "-joy2")){
+		} else if (!strcmp(argv[0], "-joy2")) {
 			argc--;
 			argv++;
-			if (!strcmp(argv[0], "NES")){
+			if (!strcmp(argv[0], "NES")) {
 				joy2_mode = NES;
 				argc--;
 				argv++;
-			} else if (!strcmp(argv[0], "SNES")){
+			} else if (!strcmp(argv[0], "SNES")) {
 				joy2_mode = SNES;
 				argc--;
 				argv++;
@@ -1400,7 +1410,6 @@ int main(int argc, char **argv) {
 	dpyUpdateAckEvent = archEventCreate(0);
 
 //    keyboardInit();
-
 
 //    emulatorInit(properties, mixer);
 //    actionInit(video, properties, mixer);
