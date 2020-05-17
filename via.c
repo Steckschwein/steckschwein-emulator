@@ -50,8 +50,7 @@ uint8_t via1_read(uint8_t reg) {
 		}
 		return v;
 	} else if (reg == 1) { // PA
-		uint8_t value =
-			value = value | (joystick1_data ? JOY_DATA1_MASK : 0) |
+		uint8_t value = (joystick1_data ? JOY_DATA1_MASK : 0) |
 							(joystick2_data ? JOY_DATA2_MASK : 0);
 		return value;
 	} else {
