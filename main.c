@@ -1062,6 +1062,12 @@ void instructionCb(uint32_t cycles) {
 	}
 }
 
+void assertParam(int argc, char **argv) {
+	if (!argc || argv[0][0] == '-') {
+		usage();
+	}
+}
+
 int main(int argc, char **argv) {
 	char rom_path_data[PATH_MAX];
 	char *rom_path = rom_path_data;
@@ -1096,18 +1102,14 @@ int main(int argc, char **argv) {
 		if (!strcmp(argv[0], "-rom")) {
 			argc--;
 			argv++;
-			if (!argc || argv[0][0] == '-') {
-				usage();
-			}
+			assertParam(argc, argv);
 			rom_path = argv[0];
 			argc--;
 			argv++;
 		} else if (!strcmp(argv[0], "-ram")) {
 			argc--;
 			argv++;
-			if (!argc || argv[0][0] == '-') {
-				usage();
-			}
+			assertParam(argc, argv);
 			int kb = atoi(argv[0]);
 			bool found = false;
 			for (int cmp = 8; cmp <= 64; cmp *= 2) {
@@ -1142,9 +1144,7 @@ int main(int argc, char **argv) {
 		} else if (!strcmp(argv[0], "-upload")) {
 			argc--;
 			argv++;
-			if (!argc || argv[0][0] == '-') {
-				usage();
-			}
+			assertParam(argc, argv);
 			prg_path = argv[0];
 			argc--;
 			argv++;
@@ -1155,18 +1155,14 @@ int main(int argc, char **argv) {
 		 } */else if (!strcmp(argv[0], "-bas")) {
 			argc--;
 			argv++;
-			if (!argc || argv[0][0] == '-') {
-				usage();
-			}
+			assertParam(argc, argv);
 			bas_path = argv[0];
 			argc--;
 			argv++;
 		} else if (!strcmp(argv[0], "-sdcard")) {
 			argc--;
 			argv++;
-			if (!argc || argv[0][0] == '-') {
-				usage();
-			}
+			assertParam(argc, argv);
 			sdcard_path = argv[0];
 			argc--;
 			argv++;
@@ -1187,9 +1183,7 @@ int main(int argc, char **argv) {
 		} else if (!strcmp(argv[0], "-log")) {
 			argc--;
 			argv++;
-			if (!argc || argv[0][0] == '-') {
-				usage();
-			}
+			assertParam(argc, argv);
 			for (char *p = argv[0]; *p; p++) {
 				switch (tolower(*p)) {
 				case 'k':
@@ -1210,9 +1204,7 @@ int main(int argc, char **argv) {
 		} else if (!strcmp(argv[0], "-dump")) {
 			argc--;
 			argv++;
-			if (!argc || argv[0][0] == '-') {
-				usage();
-			}
+			assertParam(argc, argv);
 			dump_cpu = false;
 			dump_ram = false;
 			dump_bank = false;
@@ -1242,9 +1234,7 @@ int main(int argc, char **argv) {
 			argv++;
 			// set up for recording
 			record_gif = RECORD_GIF_PAUSED;
-			if (!argc || argv[0][0] == '-') {
-				usage();
-			}
+			assertParam(argc, argv);
 			gif_path = argv[0];
 			argv++;
 			argc--;
@@ -1301,9 +1291,7 @@ int main(int argc, char **argv) {
 		} else if (!strcmp(argv[0], "-scale")) {
 			argc--;
 			argv++;
-			if (!argc || argv[0][0] == '-') {
-				usage();
-			}
+			assertParam(argc, argv);
 			for (char *p = argv[0]; *p; p++) {
 				switch (tolower(*p)) {
 				case '1':
@@ -1327,9 +1315,7 @@ int main(int argc, char **argv) {
 		} else if (!strcmp(argv[0], "-quality")) {
 			argc--;
 			argv++;
-			if (!argc || argv[0][0] == '-') {
-				usage();
-			}
+			assertParam(argc, argv);
 			if (!strcmp(argv[0], "nearest") || !strcmp(argv[0], "linear") || !strcmp(argv[0], "best")) {
 				scale_quality = argv[0];
 			} else {
