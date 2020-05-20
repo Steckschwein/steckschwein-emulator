@@ -45,18 +45,18 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 	uint8_t outbyte = 0xff;
 
 	if (response) {
-		outbyte = response[response_counter]; //read byte
-		response[response_counter] = inbyte; // write byte to buffer
+		outbyte = response[response_counter]; //read one byte from buffer
+		response[response_counter] = inbyte; // write one byte to buffer
 		response_counter++;
 		if (response_counter == response_length) {
 
-			if (last_cmd == 0x40 + 24) { //write block
+			if (last_cmd == 0x40 + 24) { //write block if it was requested
 				uint32_t lba = cmd[1] << 24 | cmd[2] << 16 | cmd[3] << 8 | cmd[4];
 				printf("Writing LBA %d block (%d)\n", lba + mblock, mblock);
 				for (int i = 0; i < response_length; ++i) {
 					DEBUG("%x ", response[i]);
 				}
-				int res = fwrite(&block_response[2], 1, BLOCK_SIZE, sdcard_file);
+				int res = fwrite(&block_response[2], sizeof(uint8_t), BLOCK_SIZE, sdcard_file);
 				if (!res) {
 					fprintf(stderr, "Error fwrite file lba: %x, block $%x: %s\n", mblock, lba, strerror(errno));
 				}
@@ -69,32 +69,27 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 		}
 	} else if (cmd_receive_counter == 0 && inbyte == 0xff) {
 		if (!response) { // send response data
-			if (last_cmd == 0x40 + 18) { //last captured cmd is read multiblock
+			if (last_cmd == 0x40 + 18) { //last captured cmd was read multiblock
 				uint32_t lba = cmd[1] << 24 | cmd[2] << 16 | cmd[3] << 8 | cmd[4];
 				DEBUG("Reading LBA %d multiblock (%d)\n", lba + mblock, mblock);
 
-				int res = fread(&block_response[2], 1, BLOCK_SIZE, sdcard_file);
+				int res = fread(&block_response[2], sizeof(uint8_t), BLOCK_SIZE, sdcard_file);
 				if (!res) {
 					fprintf(stderr, "fread error block $%x, lba %x: %s\n", mblock, lba, strerror(errno));
+				}else {
+					if (res != BLOCK_SIZE) {
+						WARN("Warning: short read bytes %d/%d'!\n", res, BLOCK_SIZE);
+					}
+					block_response[0] = 0;
+					block_response[1] = 0xfe;
+					memset(&block_response[2 + BLOCK_SIZE + 2], 0xff, 4);
+					response = block_response;
+					response_length = 2 + BLOCK_SIZE + 2 + 2;
+					response_counter = 0; //start over
+					mblock++;
 				}
-				if (res != BLOCK_SIZE) {
-					WARN("Warning: short read bytes %d/%d'!\n", res, BLOCK_SIZE);
-				}
-				block_response[0] = 0;
-				block_response[1] = 0xfe;
-				memset(&block_response[2 + BLOCK_SIZE + 2], 0xff, 4);
-				response = block_response;
-				response_length = 2 + BLOCK_SIZE + 2 + 2;
-				response_counter = 0; //start over
-				mblock++;
 			}
 		}
-//		if (response) {
-//			outbyte = response[response_counter++];
-//			if (response_counter == response_length) {
-//				response = NULL;
-//			}
-//		}
 	} else {
 		cmd[cmd_receive_counter++] = inbyte;
 		if (cmd_receive_counter == 6) { //cmd length 6 byte
@@ -150,12 +145,16 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 				if(fs){
 					fprintf(stderr, "error fseek %s\n", strerror(errno));
 				}else{
-					int bytes_read = fread(&block_response[2], 1, BLOCK_SIZE, sdcard_file);
-					if (bytes_read != BLOCK_SIZE) {
-						WARN("Warning: short read lba %x, bytes %d/%d'!\n", lba, bytes_read, BLOCK_SIZE);
+					int res = fread(&block_response[2 + res], sizeof(uint8_t), BLOCK_SIZE - res, sdcard_file);
+					if (!res) {
+						fprintf(stderr, "fread error block lba %x: %s\n", lba, strerror(errno));
+					}else{
+						if (res != BLOCK_SIZE) {
+							WARN("Warning: short read lba %x, bytes %d/%d'!\n", lba, res, BLOCK_SIZE);
+						}
+						response = block_response;
+						response_length = 2 + BLOCK_SIZE + 2;
 					}
-					response = block_response;
-					response_length = 2 + BLOCK_SIZE + 2;
 				}
 				break;
 			}
