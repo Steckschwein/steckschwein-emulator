@@ -1810,6 +1810,7 @@ void copy_2x2_32_core1(UInt32* rgbTable, UInt16* pSrc, UInt32* pDst1, UInt32* pD
 
 #ifndef NO_ASM
 /* 6000 units -> 2500 units */
+__attribute ((noinline))
 void copy_2x2_32_core2_SSE(UInt32* rgbTable, UInt16* pSrc, UInt32* pDst1, UInt32* pDst2, int width, int hint) {
 
 #ifdef __GNUC__
@@ -2629,6 +2630,7 @@ void scanLines_32_core(UInt32* pBuf, int width, int scanLinesPct, int hint) {
 }
 
 #ifndef NO_ASM
+__attribute ((noinline))
 void scanLines_32_core_SSE(UInt32* pBuf, int width, int scanLinesPct, int hint) {
 
 #ifdef __GNUC__
