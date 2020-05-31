@@ -12,8 +12,8 @@ static uint8_t uartregisters[16];
 
 extern int errno;
 
-uint8_t *p_prg_img = NULL;
-uint8_t *p_prg_img_ix = NULL;
+uint8_t *p_prg_img;
+uint8_t *p_prg_img_ix;
 
 uint16_t prg_size;
 uint16_t *p_prg_size;
@@ -136,7 +136,7 @@ uint8_t upload_read_OK(uint8_t r) {
 void reset_upload() {
 	upload_protocol_ix = 0;
 	if (p_prg_img != NULL) {
-		free(p_prg_img); //free upon start
+		free(p_prg_img); //free
 		p_prg_img = NULL;
 		p_prg_img_ix = NULL;
 	}
