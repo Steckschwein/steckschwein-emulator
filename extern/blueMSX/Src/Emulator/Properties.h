@@ -171,7 +171,6 @@ enum {
 enum { 
     P_VIDEO_SIZEX1 = 0, 
 	P_VIDEO_SIZEX2,
-	P_VIDEO_SIZEX3,
 	P_VIDEO_SIZEX4,
     P_VIDEO_SIZEFULLSCREEN 
 };
@@ -278,6 +277,7 @@ typedef struct {
     int detectActiveMonitor;
     int captureFps;
     int captureSize;
+    int rotate;
 	D3DProperties d3d;
 } VideoProperties;
 

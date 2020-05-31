@@ -67,6 +67,7 @@ struct Video {
     DoubleT contrast;
     int deInterlace;
     int invertRGB;
+    int rotate;	// 0 - none, 1 - 90 degree clockwise
 };
 
 Video* videoCreate();

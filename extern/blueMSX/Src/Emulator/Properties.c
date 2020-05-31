@@ -205,7 +205,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->emulation.reverseMaxTime    = 15;
 
     properties->video.monitorColor          = P_VIDEO_COLOR;
-    properties->video.monitorType           = P_VIDEO_PALMON;
+    properties->video.monitorType           = P_VIDEO_PALMON;//P_VIDEO_PALSCALE2X;
     properties->video.windowSize            = P_VIDEO_SIZEX2;
     properties->video.windowSizeInitial     = properties->video.windowSize;
     properties->video.windowSizeChanged     = 0;
@@ -232,6 +232,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->video.detectActiveMonitor   = 1;
     properties->video.captureFps            = 60;
     properties->video.captureSize           = 1;
+    properties->video.rotate				= 0;//0 - none, 1 - 90 degree clockwise
 
     properties->video.d3d.aspectRatioType   = P_D3D_AR_NTSC;
     properties->video.d3d.cropType          = P_D3D_CROP_SIZE_MSX2_PLUS_8;

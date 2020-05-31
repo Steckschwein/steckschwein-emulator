@@ -821,14 +821,16 @@ static void copyMonitorPAL_2x2_16(FrameBuffer* frame, void* pDestination, int ds
     }
 }
 
-static void copyMonitorPAL_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UInt32* rgbTable, UInt32 rnd)
+
+static void copyMonitorPAL_2x2_32(Video *pVideo, FrameBuffer* frame, void* pDestination, int dstPitch, UInt32* rgbTable, UInt32 rnd)
 {
     static UInt32 rndVal = 51;
+
     UInt32* pDst1       = (UInt32*)pDestination;
     UInt32* pDst2       = pDst1 + dstPitch / (int)sizeof(UInt32);
     UInt32* pDst3       = pDst2;
-    int height          = frame->lines;
-    int srcWidth        = frame->maxWidth;
+	int height          = frame->lines;
+	int srcWidth        = frame->maxWidth;
     int h;
 
     rndVal *= 13;
@@ -842,78 +844,120 @@ static void copyMonitorPAL_2x2_32(FrameBuffer* frame, void* pDestination, int ds
         height--;
     }
 
-    for (h = 0; h < height; h++) {
-        UInt16* pSrc = frame->line[h].buffer;
-        UInt32 colCur = (rgbTable[pSrc[0]] & 0xfcfcfc) >> 2;
-        UInt32 colPrev = colCur;
-        int dstIndex = 0;
+    if(pVideo->rotate){
+		int w;
+		for (w = 0; w<srcWidth;w++) {
 
-        if (frame->line[h].doubleWidth) {
-            int width = srcWidth * 2;
-            int w;
-            for (w = 0; w < width;) {
-                UInt32 colNext;
-                UInt32 colRgb1;
-                UInt32 colRgb2;
-                UInt32 noise;
+			int dstIndex = 0;
 
-                colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
-                colRgb1 = (colPrev + 3 * colCur) & 0xfcfcfc;
+			for (h = height; h >= 0; h--) {
 
-                colPrev = colCur;
-                colCur  = colNext;
+				UInt16* pSrc = frame->line[h].buffer;
+				UInt32 colCur = (rgbTable[pSrc[0]] & 0xfcfcfc) >> 2;
+				UInt32 colPrev = colCur;
 
-                colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
-                colRgb2 = (colNext + 3 * colCur) & 0xfcfcfc;
+				UInt32 colRgb1;
+				UInt32 colRgb2;
+				UInt32 colNext;
+				UInt32 noise;
 
-                colPrev = colCur;
-                colCur  = colNext;
+				colNext = (rgbTable[pSrc[w]] & 0xfcfcfc) >> 2;
+				colRgb1 = (3 * colCur + colNext) & 0xfcfcfc;
+				colRgb2 = (4 * colNext) & 0xfcfcfc;
 
-                noise = (rnd >> 30) * 0x10101;
-                pDst2[dstIndex] = colRgb1 + noise;
-                pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
-                pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
-                dstIndex++;
-                pDst2[dstIndex] = colRgb2 + noise;
-                pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
-                pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
-                dstIndex++;
+				colCur = colNext;
 
-                rnd *= 23;
-            }
-        }
-        else {
-            int width = srcWidth;
-            int w;
-            for (w = 0; w < width;) {
-                UInt32 colRgb1;
-                UInt32 colRgb2;
-                UInt32 colNext;
-                UInt32 noise;
+				noise = (rnd >> 30) * 0x10101;
+				pDst2[dstIndex] = colRgb1 + noise;
+				pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+				pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+				dstIndex++;
+				pDst2[dstIndex] = colRgb2 + noise;
+				pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+				pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+				dstIndex++;
 
-                colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
-                colRgb1 = (3 * colCur + colNext) & 0xfcfcfc;
-                colRgb2 = (4 * colNext) & 0xfcfcfc;
-                
-                colCur = colNext;
+				rnd *= 23;
+			}
 
-                noise = (rnd >> 30) * 0x10101;
-                pDst2[dstIndex] = colRgb1 + noise;
-                pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
-                pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
-                dstIndex++;
-                pDst2[dstIndex] = colRgb2 + noise;
-                pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
-                pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
-                dstIndex++;
+			pDst3  = pDst2;
+			pDst1 += dstPitch * 2;
+			pDst2 += dstPitch * 2;
+		}
+    }else{
+		for (h = 0; h < height; h++) {
+			UInt16* pSrc = frame->line[h].buffer;
+			UInt32 colCur = (rgbTable[pSrc[0]] & 0xfcfcfc) >> 2;
+			UInt32 colPrev = colCur;
+			int dstIndex = 0;
 
-                rnd *= 23;
-            }
-        }
+			if (frame->line[h].doubleWidth) {
+				int width = srcWidth * 2;
+				int w;
+				for (w = 0; w < width;) {
+					UInt32 colNext;
+					UInt32 colRgb1;
+					UInt32 colRgb2;
+					UInt32 noise;
 
-        pDst3  = pDst2;
-        pDst1 += dstPitch * 2;
-        pDst2 += dstPitch * 2;
+					colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
+					colRgb1 = (colPrev + 3 * colCur) & 0xfcfcfc;
+
+					colPrev = colCur;
+					colCur  = colNext;
+
+					colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
+					colRgb2 = (colNext + 3 * colCur) & 0xfcfcfc;
+
+					colPrev = colCur;
+					colCur  = colNext;
+
+					noise = (rnd >> 30) * 0x10101;
+					pDst2[dstIndex] = colRgb1 + noise;
+					pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+					pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+					dstIndex++;
+					pDst2[dstIndex] = colRgb2 + noise;
+					pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+					pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+					dstIndex++;
+
+					rnd *= 23;
+				}
+			}
+			else {
+				int width = srcWidth;
+				int w;
+				for (w = 0; w < width;) {
+					UInt32 colRgb1;
+					UInt32 colRgb2;
+					UInt32 colNext;
+					UInt32 noise;
+
+					colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
+					colRgb1 = (3 * colCur + colNext) & 0xfcfcfc;
+					colRgb2 = (4 * colNext) & 0xfcfcfc;
+
+					colCur = colNext;
+
+					noise = (rnd >> 30) * 0x10101;
+					pDst2[dstIndex] = colRgb1 + noise;
+					pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+					pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+					dstIndex++;
+					pDst2[dstIndex] = colRgb2 + noise;
+					pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+					pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+					dstIndex++;
+
+					rnd *= 23;
+				}
+			}
+
+			pDst3  = pDst2;
+			pDst1 += dstPitch * 2;
+			pDst2 += dstPitch * 2;
+		}
     }
 }
 
@@ -2237,6 +2281,7 @@ static void scale2x_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch,
         return;
     }
 
+//    TODO implement rotate screen
     for (h = 0; h < srcHeight; h++) {
         UInt16* pSrc = frame->line[h].buffer;
         int width = srcWidth / 8;
@@ -2253,6 +2298,7 @@ static void scale2x_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch,
             pDst += 8;
         }
     }
+
 
     scale(2, pDestination, dstPitch, ImgSrc, srcWidth * sizeof(UInt32), sizeof(UInt32), srcWidth, srcHeight);
 }
@@ -2328,6 +2374,11 @@ void videoSetDeInterlace(Video* pVideo, int deInterlace)
     pVideo->deInterlace = deInterlace;
 }
 
+void videoSetRotation(Video* pVideo, int rotate)
+{
+    pVideo->rotate = rotate;
+}
+
 void videoSetBlendFrames(Video* pVideo, int blendFrames)
 {
     frameBufferSetBlendFrames(blendFrames);
@@ -2401,6 +2452,8 @@ void videoUpdateAll(Video* video, Properties* properties)
     videoSetScanLines(video, properties->video.scanlinesEnable, properties->video.scanlinesPct);
     videoSetColorSaturation(video, properties->video.colorSaturationEnable, properties->video.colorSaturationWidth);
     videoSetDeInterlace(video, properties->video.deInterlace);
+
+    videoSetRotation(video, properties->video.rotate);
 
     switch (properties->video.monitorColor) {
     case P_VIDEO_COLOR:
@@ -2852,8 +2905,10 @@ static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
             else           copy_1x1_32(frame, pDst, dstPitch, pVideo->pRgbTable32);
             break;
         case VIDEO_PAL_MONITOR:
-            if (zoom == 2) copyMonitorPAL_2x2_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 0);
-            else           copyPAL_1x1_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 0);
+            if (zoom == 2)
+            	copyMonitorPAL_2x2_32(pVideo, frame, pDst, dstPitch, pVideo->pRgbTable32, 0);
+            else
+            	copyPAL_1x1_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 0);
             break;
         case VIDEO_PAL_SHARP:
             if (zoom == 2) copySharpPAL_2x2_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 0);

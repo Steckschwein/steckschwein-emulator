@@ -42,7 +42,6 @@ void emscripten_main_loop(void);
 char *keymaps[] = { "en-us", "en-gb", "de", "nordic", "it", "pl", "hu", "es", "fr", "de-ch", "fr-be", "pt-br", };
 
 bool isDebuggerEnabled = false;
-bool headless = false;
 char *paste_text = NULL;
 char paste_text_data[65536];
 bool pasting_bas = false;
@@ -122,7 +121,7 @@ static void *dpyUpdateAckEvent = NULL;
 
 static SDL_Surface *surface;
 static int bitDepth;
-static int zoom = 2;
+static int zoom=1;
 static char *displayData[2] = { NULL, NULL };
 static int curDisplayData = 0;
 static int displayPitch = 0;
@@ -134,8 +133,10 @@ static UInt32 emuUsageCurrent = 0;
 
 static int doQuit = 0;
 
-#define WIDTH  320
-#define HEIGHT 240
+//int screenWidth=240;//320;
+//int screenHeight=320;//240;
+int screenWidth=320;
+int screenHeight=240;
 
 #define EVENT_UPDATE_DISPLAY 2
 #define EVENT_UPDATE_WINDOW  3
@@ -254,8 +255,8 @@ static void usage() {
 	printf("\tChoose what type of joystick to use, e.g. -joy1 SNES\n");
 	printf("-joy2 {NES | SNES}\n");
 	printf("\tChoose what type of joystick to use, e.g. -joy2 SNES\n");
-	printf("-headless\n");
-	printf("\tdisable video emulation\n");
+	printf("-rotate\n");
+	printf("\trotate screen 90 degree clockwise\n");
 #ifdef TRACE
 	printf("-trace [<address>]\n");
 	printf("\tPrint instruction trace. Optionally, a trigger address\n");
@@ -331,27 +332,30 @@ int WaitReverse() {
 }
 
 int updateEmuDisplay(int updateAll) {
+
 	int bytesPerPixel = bitDepth / 8;
+
 	char *dpyData = displayData[curDisplayData];
-	int width = zoom * WIDTH;
-	int height = zoom * HEIGHT;
-	int borderWidth;
+	int width = zoom * screenWidth;
+	int height = zoom * screenHeight;
 
 	FrameBuffer *frameBuffer = frameBufferFlipViewFrame(properties->emulation.syncMethod == P_EMU_SYNCTOVBLANKASYNC);
 	if (frameBuffer == NULL) {
 		frameBuffer = frameBufferGetWhiteNoiseFrame();
 	}
 
-	borderWidth = (320 - frameBuffer->maxWidth) * zoom / 2;
+	int borderOffset  = screenWidth > screenHeight
+			? (screenWidth - frameBuffer->maxWidth) * zoom / 2
+			: (screenHeight - frameBuffer->lines) * zoom / 2 * screenWidth;//y offset
 
-	videoRender(video, frameBuffer, bitDepth, zoom, dpyData + borderWidth * bytesPerPixel, 0, displayPitch, -1);
+	videoRender(video, frameBuffer, bitDepth, zoom, dpyData + borderOffset * bytesPerPixel, 0, displayPitch, -1);
 
-	if (borderWidth > 0) {
+	if (borderOffset > 0) {
 		int h = height;
 		while (h--) {
-			memset(dpyData, 0, borderWidth * bytesPerPixel);
-			memset(dpyData + (width - borderWidth) * bytesPerPixel, 0, borderWidth * bytesPerPixel);
-			dpyData += displayPitch;
+			memset(dpyData, 0, borderOffset * bytesPerPixel);
+//			memset(dpyData + (width - borderOffset) * bytesPerPixel, 0, borderOffset * bytesPerPixel);
+//			dpyData += displayPitch;
 		}
 	}
 	DEBUGRenderDisplay(width, height);
@@ -398,13 +402,11 @@ void createSdlSurface(int width, int height, int fullscreen) {
 }
 
 int createSdlWindow() {
-	const char *title = "Steckschwein - blueMSXlite";
+	const char *title = "Steckschwein Emulator - blueMSX";
 	int fullscreen = properties->video.windowSize == P_VIDEO_SIZEFULLSCREEN;
-	int width;
-	int height;
 
 	if (fullscreen) {
-		zoom = properties->video.fullscreen.width / WIDTH;
+		zoom = properties->video.fullscreen.width / screenWidth;
 		bitDepth = properties->video.fullscreen.bitDepth;
 	} else {
 		if (properties->video.windowSize == P_VIDEO_SIZEX1) {
@@ -417,10 +419,7 @@ int createSdlWindow() {
 		bitDepth = 32;
 	}
 
-	width = zoom * WIDTH;
-	height = zoom * HEIGHT;
-
-	createSdlSurface(width, height, fullscreen);
+	createSdlSurface(zoom * screenWidth, zoom * screenHeight, fullscreen);
 
 	// Set the window caption
 	SDL_WM_SetCaption(title, NULL);
@@ -1095,6 +1094,12 @@ int main(int argc, char **argv) {
 	memory_init();
 	mixer = mixerCreate();
 
+	//read default properties
+	properties = propCreate(0, 0, P_EMU_SYNCAUTO, "steckschwein");
+	properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
+//	properties->emulation.syncMethod = P_EMU_SYNCTOVBLANKASYNC;
+//	properties->emulation.syncMethod = P_EMU_SYNCTOVBLANK;
+
 	argc--;
 	argv++;
 
@@ -1286,8 +1291,13 @@ int main(int argc, char **argv) {
 				trace_address = 0;
 			}
 #endif
-		} else if (!strcmp(argv[0], "-headless")) {
-			headless = true;
+		} else if (!strcmp(argv[0], "-rotate")) {
+			int t = screenWidth;
+			screenWidth = screenHeight;
+			screenHeight = t;
+			properties->video.rotate = 1;
+			argc--;
+			argv++;
 		} else if (!strcmp(argv[0], "-scale")) {
 			argc--;
 			argv++;
@@ -1377,11 +1387,6 @@ int main(int argc, char **argv) {
 	}
 	SDL_ShowCursor(SDL_DISABLE);
 
-	properties = propCreate(0, 0, P_EMU_SYNCAUTO, "steckschwein");
-
-	properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
-//    properties->emulation.syncMethod = P_EMU_SYNCTOVBLANKASYNC;
-
 	video = videoCreate();
 	videoSetColors(video, properties->video.saturation, properties->video.brightness, properties->video.contrast,
 			properties->video.gamma);
@@ -1454,8 +1459,8 @@ int main(int argc, char **argv) {
 	archSoundDestroy();
 	mixerDestroy(mixer);
 	propDestroy(properties);
-	memory_destroy();
 	DEBUGFreeUI();
+	memory_destroy();
 
 	return 0;
 }
@@ -1467,12 +1472,10 @@ void emscripten_main_loop(void) {
 void*
 emulator_loop(void *param) {
 	while (!doQuit) {
-		if (!headless) {
-			SDL_Event event;
-			SDL_PollEvent(&event);
-			if (event.type == SDL_QUIT) {
-				break;
-			}
+		SDL_Event event;
+		SDL_PollEvent(&event);
+		if (event.type == SDL_QUIT) {
+			break;
 		}
 
 //		if (isDebuggerEnabled) {
