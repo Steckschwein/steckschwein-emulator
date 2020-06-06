@@ -43,7 +43,7 @@ typedef enum
 
 
 //see snes.inc
-#define JOY_CLK_MASK 1<<0
+#define JOY_CLOCK_MASK 1<<0
 #define JOY_LATCH_MASK 1<<1
 #define JOY_DATA1_MASK 1<<2
 #define JOY_DATA2_MASK 1<<3

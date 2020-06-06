@@ -23,7 +23,8 @@ CFLAGS   = -g -w -DLSB_FIRST -DNO_ASM -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -D
 #CFLAGS   +=-DDEBUG_ENABLED
 
 # production flags (performance)
-CFLAGS   = -g -w -Ofast -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror -fomit-frame-pointer
+#CPPFLAGS = -Ofast
+#CFLAGS   = -g -w -Ofast -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror -fomit-frame-pointer
 
 #CFLAGS   += -DSINGLE_THREADED -DNO_TIMERS
 #CFLAGS   += -DNO_HIRES_TIMERS
