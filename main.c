@@ -1386,6 +1386,10 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	SDL_ShowCursor(SDL_DISABLE);
+	if(SDL_EnableKeyRepeat(50, 50) < 0){
+		return 1;
+	}
+
 
 	video = videoCreate();
 	videoSetColors(video, properties->video.saturation, properties->video.brightness, properties->video.contrast,

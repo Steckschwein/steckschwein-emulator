@@ -14,6 +14,7 @@
 #include <SDL_keysym.h>
 #include <SDL_events.h>
 
+
 // VIA
 // PB0 SPICLK
 // PB1 SS1 SDCARD
@@ -31,10 +32,13 @@ void spi_init() {
 }
 
 volatile uint8_t last_keycode = 0;
+bool is_up = 1;
 
 uint8_t spi_handle_keyboard() {
 	uint8_t outbyte = last_keycode;
+//	if(is_up){
 	last_keycode = 0;
+//	}
 	return outbyte;
 }
 
@@ -43,7 +47,7 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 	static bool shift = false;
 	static uint8_t index = 0;
 
-	bool is_up = keyBrdEvent->type == SDL_KEYUP;
+	is_up = keyBrdEvent->type == SDL_KEYUP;
 
 	SDLKey keyCode = keyBrdEvent->keysym.sym;
 	switch (keyCode) {
