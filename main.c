@@ -1386,7 +1386,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	SDL_ShowCursor(SDL_DISABLE);
-	if(SDL_EnableKeyRepeat(50, 50) < 0){
+	if(SDL_EnableKeyRepeat(250, 50) < 0){
 		return 1;
 	}
 
