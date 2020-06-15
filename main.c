@@ -782,12 +782,6 @@ void emulatorSetState(EmuState state) {
 	emuState = state;
 }
 
-void actionEmuStep() {
-	if (emulatorGetState() == EMU_PAUSED) {
-		emulatorSetState(EMU_STEP);
-	}
-}
-
 void emulatorStart(const char *stateName) {
 
 	dbgEnable();
@@ -909,27 +903,9 @@ void emulatorStop() {
 
 	archEmulationStopNotification();
 
-	dbgDisable();dbgPrint();
+	dbgDisable();
+	dbgPrint();
 //    savelog();
-}
-
-void actionEmuStepBack() {
-	if (emulatorGetState() == EMU_PAUSED) {
-		emulatorSetState(EMU_STEP_BACK);
-	}
-}
-
-void actionEmuTogglePause() {
-	if (emulatorGetState() == EMU_STOPPED) {
-		emulatorStart(NULL);
-	} else if (emulatorGetState() == EMU_PAUSED) {
-		emulatorSetState(EMU_RUNNING);
-		debuggerNotifyEmulatorResume();
-	} else {
-		emulatorSetState(EMU_PAUSED);
-		debuggerNotifyEmulatorPause();
-	}
-//	archUpdateMenu(0);
 }
 
 static int emuFrameskipCounter = 0;
@@ -1389,7 +1365,6 @@ int main(int argc, char **argv) {
 	if(SDL_EnableKeyRepeat(250, 50) < 0){
 		return 1;
 	}
-
 
 	video = videoCreate();
 	videoSetColors(video, properties->video.saturation, properties->video.brightness, properties->video.contrast,

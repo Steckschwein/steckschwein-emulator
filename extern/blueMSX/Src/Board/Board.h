@@ -45,8 +45,8 @@ typedef struct {
     void* cpuRef;
     
     void   (*destroy)();
-    /*
     void   (*softReset)();
+/*
     void   (*loadState)();
     void   (*saveState)();
 */
@@ -75,6 +75,7 @@ typedef struct {
 static BoardInfo boardInfo;
 
 void boardInit(UInt32* systemTime);
+void boardReset();
 
 UInt64 boardSystemTime64();
 

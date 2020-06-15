@@ -801,6 +801,12 @@ Mixer* boardGetMixer()
     return boardMixer;
 }
 
+void boardReset()
+{
+    if (boardRunning) {
+        boardInfo.softReset();
+    }
+}
 
 void boardSetDirectory(const char* dir) {
     strcpy(baseDirectory, dir);

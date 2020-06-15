@@ -25,6 +25,19 @@ static void destroy() {
     mos6502Destroy(mos6502);
 }
 
+static void reset()
+{
+    UInt32 systemTime = boardSystemTime();
+
+//    slotManagerReset();
+
+    if (mos6502 != NULL) {
+    	mos6502Reset(mos6502, systemTime);
+    }
+//    deviceManagerReset();
+}
+
+
 static int getRefreshRate(){
     return vdpGetRefreshRate();
 }
@@ -56,12 +69,12 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
      steckschweinRam = NULL;
 
-     //r800 = r800Create(cpuFlags, slotRead, slotWrite, ioPortRead, ioPortWrite, PatchZ80, boardTimerCheckTimeout, NULL, NULL, NULL, NULL, NULL, NULL);
      mos6502 = mos6502create(boardTimerCheckTimeout);
 
      boardInfo->cpuRef           = mos6502;
 
      boardInfo->destroy          = destroy;
+     boardInfo->softReset        = reset;
      boardInfo->getRefreshRate   = getRefreshRate;
      boardInfo->getRamPage       = getRamPage;
 
