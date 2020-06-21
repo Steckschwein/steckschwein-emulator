@@ -60,8 +60,6 @@ bool save_on_exit = true;
 gif_recorder_state_t record_gif = RECORD_GIF_DISABLED;
 char *gif_path = NULL;
 uint8_t keymap = 0; // KERNAL's default
-int window_scale = 1;
-char *scale_quality = "best";
 char window_title[30];
 int32_t last_perf_update = 0;
 int32_t perf_frame_count = 0;
@@ -121,7 +119,7 @@ static void *dpyUpdateAckEvent = NULL;
 
 static SDL_Surface *surface;
 static int bitDepth;
-static int zoom=1;
+static int zoom = 1;
 static char *displayData[2] = { NULL, NULL };
 static int curDisplayData = 0;
 static int displayPitch = 0;
@@ -135,8 +133,8 @@ static int doQuit = 0;
 
 //int screenWidth=240;//320;
 //int screenHeight=320;//240;
-int screenWidth=320;
-int screenHeight=240;
+int screenWidth = 320;
+int screenHeight = 240;
 
 #define EVENT_UPDATE_DISPLAY 2
 #define EVENT_UPDATE_WINDOW  3
@@ -242,9 +240,9 @@ static void usage() {
 	printf("\tPOKE $9FB5,2 to start recording.\n");
 	printf("\tPOKE $9FB5,1 to capture a single frame.\n");
 	printf("\tPOKE $9FB5,0 to pause.\n");
-	printf("-scale {1|2|3|4}\n");
+	printf("-scale {1|2|3|full}\n");
 	printf("\tScale output to an integer multiple of 640x480\n");
-	printf("-quality {nearest|linear|best}\n");
+	printf("-quality {linear (default) | best}\n");
 	printf("\tScaling algorithm quality\n");
 	printf("-debug [<address>]\n");
 	printf("\tEnable debugger. Optionally, set a breakpoint\n");
@@ -344,9 +342,10 @@ int updateEmuDisplay(int updateAll) {
 		frameBuffer = frameBufferGetWhiteNoiseFrame();
 	}
 
-	int borderOffset  = screenWidth > screenHeight
-			? (screenWidth - frameBuffer->maxWidth) * zoom / 2
-			: (screenHeight - frameBuffer->lines) * zoom / 2 * screenWidth;//y offset
+	int borderOffset =
+			screenWidth > screenHeight ?
+					(screenWidth - frameBuffer->maxWidth) * zoom / 2 :
+					(screenHeight - frameBuffer->lines) * zoom / 2 * screenWidth; //y offset
 
 	videoRender(video, frameBuffer, bitDepth, zoom, dpyData + borderOffset * bytesPerPixel, 0, displayPitch, -1);
 
@@ -903,8 +902,7 @@ void emulatorStop() {
 
 	archEmulationStopNotification();
 
-	dbgDisable();
-	dbgPrint();
+	dbgDisable(); dbgPrint();
 //    savelog();
 }
 
@@ -1281,16 +1279,12 @@ int main(int argc, char **argv) {
 			for (char *p = argv[0]; *p; p++) {
 				switch (tolower(*p)) {
 				case '1':
-					window_scale = 1;
 					break;
 				case '2':
-					window_scale = 2;
+					properties->video.scanlinesEnable = 1;
 					break;
 				case '3':
-					window_scale = 3;
-					break;
-				case '4':
-					window_scale = 4;
+					properties->video.scanlinesEnable = 1;
 					break;
 				default:
 					usage();
@@ -1302,9 +1296,11 @@ int main(int argc, char **argv) {
 			argc--;
 			argv++;
 			assertParam(argc, argv);
-			if (!strcmp(argv[0], "nearest") || !strcmp(argv[0], "linear") || !strcmp(argv[0], "best")) {
-				scale_quality = argv[0];
-			} else {
+			if (strcmp(argv[0], "best") == 0) {
+				properties->video.monitorType = P_VIDEO_PALHQ2X;
+			} else if (strcmp(argv[0], "linear") == 0) {
+				properties->video.monitorType = P_VIDEO_PALMON;
+			}else{
 				usage();
 			}
 			argc--;
@@ -1362,7 +1358,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	SDL_ShowCursor(SDL_DISABLE);
-	if(SDL_EnableKeyRepeat(250, 50) < 0){
+	if (SDL_EnableKeyRepeat(250, 50) < 0) {
 		return 1;
 	}
 
