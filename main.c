@@ -240,7 +240,7 @@ static void usage() {
 	printf("\tPOKE $9FB5,2 to start recording.\n");
 	printf("\tPOKE $9FB5,1 to capture a single frame.\n");
 	printf("\tPOKE $9FB5,0 to pause.\n");
-	printf("-scale {1|2|3|full}\n");
+	printf("-scale {1|2|full}\n");
 	printf("\tScale output to an integer multiple of 640x480\n");
 	printf("-quality {linear (default) | best}\n");
 	printf("\tScaling algorithm quality\n");
@@ -270,6 +270,16 @@ void usage_keymap() {
 		printf("\t%s\n", keymaps[i]);
 	}
 	exit(1);
+}
+
+void archUpdateWindow() {
+	SDL_Event event;
+
+	event.type = SDL_USEREVENT;
+	event.user.code = EVENT_UPDATE_WINDOW;
+	event.user.data1 = NULL;
+	event.user.data2 = NULL;
+	SDL_PushEvent(&event);
 }
 
 void archVideoOutputChange() {
@@ -456,8 +466,18 @@ static void handleEvent(SDL_Event *event) {
 		}
 		break;
 	case SDL_KEYDOWN:
-//        shortcutCheckDown(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
-		spi_handle_keyevent(&event->key);
+//        shortcutCheckown(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
+		if (event->key.keysym.sym == SDLK_f) {
+			int keyNum;
+			Uint8 *keyBuf = SDL_GetKeyState(&keyNum);
+			if (keyBuf != NULL) {
+				if (keyBuf[SDLK_LALT]) {
+					actionFullscreenToggle();
+				}
+			}
+
+		} else
+			spi_handle_keyevent(&event->key);
 		break;
 	case SDL_KEYUP:
 //        shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
@@ -902,7 +922,7 @@ void emulatorStop() {
 
 	archEmulationStopNotification();
 
-	dbgDisable(); dbgPrint();
+	dbgDisable();dbgPrint();
 //    savelog();
 }
 
@@ -1276,19 +1296,14 @@ int main(int argc, char **argv) {
 			argc--;
 			argv++;
 			assertParam(argc, argv);
-			for (char *p = argv[0]; *p; p++) {
-				switch (tolower(*p)) {
-				case '1':
-					break;
-				case '2':
-					properties->video.scanlinesEnable = 1;
-					break;
-				case '3':
-					properties->video.scanlinesEnable = 1;
-					break;
-				default:
-					usage();
-				}
+			if (strcmp(argv[0], "1") == 0) {
+				properties->video.windowSize = P_VIDEO_SIZEX1;
+			} else if (strcmp(argv[0], "2") == 0) {
+				properties->video.windowSize = P_VIDEO_SIZEX2;
+			} else if (strcmp(argv[0], "full") == 0) {
+				properties->video.windowSize = P_VIDEO_SIZEFULLSCREEN;
+			} else {
+				usage();
 			}
 			argc--;
 			argv++;
@@ -1300,7 +1315,7 @@ int main(int argc, char **argv) {
 				properties->video.monitorType = P_VIDEO_PALHQ2X;
 			} else if (strcmp(argv[0], "linear") == 0) {
 				properties->video.monitorType = P_VIDEO_PALMON;
-			}else{
+			} else {
 				usage();
 			}
 			argc--;
@@ -1378,7 +1393,7 @@ int main(int argc, char **argv) {
 //    keyboardInit();
 
 //    emulatorInit(properties, mixer);
-//    actionInit(video, properties, mixer);
+	actionInit(video, properties, mixer);
 //    langInit();
 
 //    langSetLanguage(properties->language);

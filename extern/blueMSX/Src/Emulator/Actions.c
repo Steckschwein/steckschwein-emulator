@@ -145,7 +145,7 @@ void actionWindowSizeSmall() {
     if (state.properties->video.windowSize != P_VIDEO_SIZEX1) {
         state.properties->video.windowSize = P_VIDEO_SIZEX1;
         state.properties->video.windowSizeChanged = 1;
-//        archUpdateWindow();
+        archUpdateWindow();
     }
 }
 
@@ -154,7 +154,7 @@ void actionWindowSizeNormal() {
     if (state.properties->video.windowSize != P_VIDEO_SIZEX2) {
         state.properties->video.windowSize = P_VIDEO_SIZEX2;
         state.properties->video.windowSizeChanged = 1;
-//        archUpdateWindow();
+        archUpdateWindow();
     }
 }
 
@@ -162,7 +162,7 @@ void actionWindowSizeFullscreen() {
     if (state.properties->video.windowSize != P_VIDEO_SIZEFULLSCREEN) {
         state.properties->video.windowSize = P_VIDEO_SIZEFULLSCREEN;
         state.properties->video.windowSizeChanged = 1;
-//        archUpdateWindow();
+        archUpdateWindow();
     }
 }
 

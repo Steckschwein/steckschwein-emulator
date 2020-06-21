@@ -171,7 +171,6 @@ enum {
 enum { 
     P_VIDEO_SIZEX1 = 0, 
 	P_VIDEO_SIZEX2,
-	P_VIDEO_SIZEX4,
     P_VIDEO_SIZEFULLSCREEN 
 };
 
