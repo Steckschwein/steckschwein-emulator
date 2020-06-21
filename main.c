@@ -240,7 +240,7 @@ static void usage() {
 	printf("\tPOKE $9FB5,2 to start recording.\n");
 	printf("\tPOKE $9FB5,1 to capture a single frame.\n");
 	printf("\tPOKE $9FB5,0 to pause.\n");
-	printf("-scale {1|2|full}\n");
+	printf("-scale {1|2|full} - use ALT_L+F to toggle fullscreen\n");
 	printf("\tScale output to an integer multiple of 640x480\n");
 	printf("-quality {linear (default) | best}\n");
 	printf("\tScaling algorithm quality\n");
