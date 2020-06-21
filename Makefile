@@ -12,24 +12,21 @@ ifndef (MINGW32)
 	MINGW32=/usr/local/Cellar/mingw-w64/6.0.0_2/toolchain-i686/i686-w64-mingw32
 endif
 
-#
 # Flags
 #
-#CFLAGS   = -w -O3 -DNO_ASM -DNO_HIRES_TIMERS -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL
-#CPPFLAGS = -O3 -DNO_ASM
-
-# debugger support
-CFLAGS   = -g -w -DLSB_FIRST -DNO_ASM -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
-#CFLAGS   +=-DDEBUG_ENABLED
-
 # production flags (performance)
-#CPPFLAGS = -Ofast
-#CFLAGS   = -g -w -Ofast -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror -fomit-frame-pointer
+CPPFLAGS = -Ofast
+CFLAGS   = -g -w -Ofast -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror -fomit-frame-pointer
+
+# development flags (debugger support)
+#CFLAGS   = -g -w -DLSB_FIRST -DNO_ASM -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
+#CFLAGS   +=-DDEBUG_ENABLED
+#CPPFLAGS = -O3 -DNO_ASM
 
 #CFLAGS   += -DSINGLE_THREADED -DNO_TIMERS
 #CFLAGS   += -DNO_HIRES_TIMERS
 #CFLAGS   += -DEMU_FREQUENCY=3579545
-#CFLAGS   += -DEMU_FREQUENCY=8000000
+CFLAGS   += -DEMU_FREQUENCY=8000000
 #CFLAGS   += -DTRACE
 
 # ym3812 opl sound
@@ -186,6 +183,7 @@ SOURCE_FILES += VideoRender.c
 SOURCE_FILES += Fmopl.c
 SOURCE_FILES += Ymdeltat.c
 SOURCE_FILES += AudioMixer.c
+SOURCE_FILES += Actions.c
 SOURCE_FILES += Properties.c
 SOURCE_FILES += Board.c
 SOURCE_FILES += IoPort.c
