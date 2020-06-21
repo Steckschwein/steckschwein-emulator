@@ -473,11 +473,12 @@ static void handleEvent(SDL_Event *event) {
 			if (keyBuf != NULL) {
 				if (keyBuf[SDLK_LALT]) {
 					actionFullscreenToggle();
+					break;
 				}
 			}
 
-		} else
-			spi_handle_keyevent(&event->key);
+		}
+		spi_handle_keyevent(&event->key);
 		break;
 	case SDL_KEYUP:
 //        shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
