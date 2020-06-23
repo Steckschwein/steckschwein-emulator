@@ -95,8 +95,6 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 					actionEmuResetHard();
 					break;
 				}
-				case SDLK_x:;
-				break;
 			}
 
 			if (scancodes[keyCode]) {
