@@ -467,12 +467,19 @@ static void handleEvent(SDL_Event *event) {
 		break;
 	case SDL_KEYDOWN:
 //        shortcutCheckown(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
-		if (event->key.keysym.sym == SDLK_f) {
-			int keyNum;
-			Uint8 *keyBuf = SDL_GetKeyState(&keyNum);
-			if (keyBuf != NULL) {
-				if (keyBuf[SDLK_LALT]) {
+	{
+		int keyNum;
+		Uint8 *keyBuf = SDL_GetKeyState(&keyNum);
+		if (keyBuf != NULL) {
+			if (keyBuf[SDLK_LALT]) {
+				if (event->key.keysym.sym == SDLK_f) {
 					actionFullscreenToggle();
+					break;
+				} else if (event->key.keysym.sym == SDLK_p) {
+					actionEmuTogglePause();
+					break;
+				} else if (event->key.keysym.sym == SDLK_x) {
+					doQuit = 1;
 					break;
 				}
 			}
@@ -480,6 +487,7 @@ static void handleEvent(SDL_Event *event) {
 		}
 		spi_handle_keyevent(&event->key);
 		break;
+	}
 	case SDL_KEYUP:
 //        shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
 		spi_handle_keyevent(&event->key);
@@ -502,12 +510,14 @@ static void handleEvent(SDL_Event *event) {
 		DEBUG("joystick ball event %x b:%x t:%x s:%x\n", event->jball.which, event->jball.ball, event->jball.type,
 				event->jball.xrel);
 		break;
-	case SDL_JOYHATMOTION: /**< Joystick hat position change */
+	case SDL_JOYHATMOTION:
+		/**< Joystick hat position change */
 		handle_event(event);
 		DEBUG("joystick hat event %x b:%x t:%x s:%x\n", event->jhat.which, event->jhat.hat, event->jbutton.type,
 				event->jbutton.state);
 		break;
-	case SDL_JOYBUTTONUP: /**< Joystick button released */
+	case SDL_JOYBUTTONUP:
+		/**< Joystick button released */
 	case SDL_JOYBUTTONDOWN: /**< Joystick button pressed */
 		DEBUG("joystick button event %x b:%x t:%x s:%x\n", event->jbutton.which, event->jbutton.button,
 				event->jbutton.type, event->jbutton.state);
