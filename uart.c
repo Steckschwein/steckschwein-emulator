@@ -45,35 +45,51 @@ static struct upload_state upload_protocol[] = { //
 				{ }, //end state
 		};
 
+long getFilesize(FILE *file){
+
+	long filesize = -1L;
+	
+	if(fseek(file, 0L, SEEK_END) == EOF){
+		fprintf(stderr, "error fseek %s\n", strerror(errno));
+	}else{
+		filesize = ftell(file);
+	}
+	return filesize;
+}
+
 void loadFile(int prg_override_start, FILE *prg_file) {
 
-	fseek(prg_file, 0L, SEEK_END);
-	long filesize = ftell(prg_file);
-	if (filesize < 0) {
-		fprintf(stderr, "error file size %s\n", strerror(errno));
+	long filesize = getFilesize(prg_file);
+	if (filesize == -1L) {
+		fprintf(stderr, "invalid file size %s\n", strerror(errno));
 	} else {
-		fseek(prg_file, 0L, SEEK_SET);
+		if(fseek(prg_file, 0L, SEEK_SET) == EOF){
+			fprintf(stderr, "error fseek %s\n", strerror(errno));
+			return;
+		}
 		uint8_t offs = (prg_override_start == -1 ? 2 : 0);
 		prg_size = filesize - offs; //-offs byte, if start address is given as argument
 		p_prg_size = &prg_size;
 		p_prg_img = p_prg_img_ix = malloc(prg_size + (2 - offs)); //align memory for prg image, we always allocate 2 byte + prg. image size
 		if (p_prg_img_ix == NULL) {
 			fprintf(stderr, "out of memory\n");
+			return;
 		}
 		if (prg_override_start != -1) {
 			*(p_prg_img_ix + 0) = prg_override_start & 0xff;
 			*(p_prg_img_ix + 1) = prg_override_start >> 8 & 0xff;
 		}
-		int r = fread(p_prg_img_ix + (2 - offs), 1, prg_size, prg_file);
+		size_t r = fread((p_prg_img_ix + (2 - offs)), 1, prg_size, prg_file);
 		if (r) {
 			printf("uart() load file 0x%04x-0x%04x (size 0x%04x)\n", 
 				*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8,
 				(*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8) + prg_size, 
-				prg_size);
+				r);
 		} else {
-			fprintf(stderr, "uart() load file, start 0x%04x size 0x%04x error: %s\n",
+			fprintf(stderr, "uart() load file start 0x%04x size 0x%04x error: %s\n",
 					(*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8), strerror(errno));
 			free(p_prg_img);
+			p_prg_img = NULL;
 		}
 		bytes_available = 2;
 	}
@@ -101,7 +117,7 @@ uint8_t upload_read_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
 
 uint8_t upload_read_startAddress(uint8_t r) {
 	if (!p_prg_img && prg_path) {
-		FILE *prg_file = fopen(prg_path, "r");
+		FILE *prg_file = fopen(prg_path, "rb");
 		if (!prg_file) {
 			fprintf(stderr, "uart upload read start address - cannot open file %s, error %s\n", prg_path,
 					strerror(errno));
