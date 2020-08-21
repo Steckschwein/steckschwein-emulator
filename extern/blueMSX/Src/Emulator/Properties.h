@@ -169,9 +169,9 @@ enum {
 };
 
 enum { 
-    P_VIDEO_SIZEX1 = 0, 
+	P_VIDEO_SIZEX1 = 0,
 	P_VIDEO_SIZEX2,
-    P_VIDEO_SIZEFULLSCREEN 
+	P_VIDEO_SIZEFULLSCREEN 
 };
 
 enum { 
