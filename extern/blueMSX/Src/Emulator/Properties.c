@@ -205,7 +205,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
 
     properties->video.monitorColor          = P_VIDEO_COLOR;
     properties->video.monitorType           = P_VIDEO_PALMON;//P_VIDEO_PALSCALE2X;
-    properties->video.windowSize            = P_VIDEO_SIZEX1;//FULLSCREEN;
+    properties->video.windowSize            = P_VIDEO_SIZEX2;//default 2x
     properties->video.windowSizeInitial     = properties->video.windowSize;
     properties->video.windowSizeChanged     = 0;
     properties->video.windowX               = -1;
