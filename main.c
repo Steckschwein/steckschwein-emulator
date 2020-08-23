@@ -13,8 +13,9 @@
 #include <unistd.h>
 #include <limits.h>
 
-#include <SDL.h>
+#include <errno.h>
 
+#include <SDL.h>
 #include "cpu/fake6502.h"
 #include "disasm.h"
 #include "memory.h"
@@ -48,6 +49,8 @@ bool pasting_bas = false;
 
 uint16_t num_ram_banks = 64; // 512 KB default
 
+extern int errno;
+
 bool log_video = false;
 bool log_speed = false;
 bool log_keyboard = false;
@@ -73,6 +76,7 @@ static Mixer *mixer;
 
 unsigned char *prg_path;
 int prg_override_start = -1;
+bool checkUploadLmf = false; //check lmf of the upload file, if not changed no recurring uploads
 bool run_after_load = false;
 
 #ifdef TRACE
@@ -179,7 +183,7 @@ void machine_dump() {
 
 void machine_reset() {
 	spi_init();
-	uart_init(prg_path, prg_override_start);
+	uart_init(prg_path, prg_override_start, checkUploadLmf);
 	via1_init();
 	reset6502();
 }
@@ -205,6 +209,7 @@ static void usage() {
 	printf("-sdcard <sdcard.img>\n");
 	printf("\tSpecify SD card image (partition map + FAT32)\n");
 	printf("-upload <file>[,<load_addr>]\n");
+	printf("-lmf - check last modified of file to upload\n");
 	printf("\tEmulate serial upload of <file> \n");
 	printf("\t(.PRG file with 2 byte start address header)\n");
 	printf("\tThe override load address is hex without a prefix.\n");
@@ -1066,10 +1071,43 @@ void instructionCb(uint32_t cycles) {
 	}
 }
 
+int nextArg(int *argc, char ***argv, char *arg) {
+	int n = !strcmp(*argv[0], arg);
+	if (n) {
+		(*argc)--;
+		(*argv)++;
+	}
+	return n;
+}
+
 void assertParam(int argc, char **argv) {
 	if (!argc || argv[0][0] == '-') {
 		usage();
 	}
+}
+
+bool parseBoolean(unsigned char *s) {
+	bool b = false;
+	char *comma = strchr(s, ',');
+	if (comma) {
+		b = !strcasecmp(comma + 1, "true");
+		if (b) {
+			*comma = 0;
+		}
+	}
+	return false;
+}
+
+int parseNumber(unsigned char *s) {
+	char *comma = strchr(s, ',');
+	if (comma) {
+		int a = (uint16_t) strtol(comma + 1, NULL, 16);
+		if (errno != EINVAL) {
+			*comma = 0;
+			return a;
+		}
+	}
+	return -1;
 }
 
 int main(int argc, char **argv) {
@@ -1151,13 +1189,14 @@ int main(int argc, char **argv) {
 			}
 			argc--;
 			argv++;
-		} else if (!strcmp(argv[0], "-upload")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-upload")) {
+//		} else if (!strcmp(argv[0], "-upload")) {
 			assertParam(argc, argv);
 			prg_path = argv[0];
 			argc--;
 			argv++;
+		} else if (nextArg(&argc, &argv, "-lmf")) {
+			checkUploadLmf = true;
 		} /*else if (!strcmp(argv[0], "-run")) {
 		 argc--;
 		 argv++;
@@ -1354,11 +1393,7 @@ int main(int argc, char **argv) {
 
 	prg_override_start = -1;
 	if (prg_path) {
-		char *comma = strchr(prg_path, ',');
-		if (comma) {
-			prg_override_start = (uint16_t) strtol(comma + 1, NULL, 16);
-			*comma = 0;
-		}
+		prg_override_start = parseNumber(prg_path);
 	}
 
 	if (bas_path) {

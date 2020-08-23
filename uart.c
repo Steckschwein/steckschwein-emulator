@@ -7,10 +7,14 @@
 #include <string.h>
 #include "uart.h"
 #include "memory.h"
+#include "glue.h"
 
 static uint8_t uartregisters[16];
 
 extern int errno;
+
+bool uart_checkUploadLmf = false;
+time_t uart_file_lmf = -1;
 
 uint8_t *p_prg_img;
 uint8_t *p_prg_img_ix;
@@ -59,6 +63,7 @@ void loadFile(int prg_override_start, FILE *prg_file) {
 		p_prg_img = p_prg_img_ix = malloc(prg_size + (2 - offs)); //align memory for prg image, we always allocate 2 byte + prg. image size
 		if (p_prg_img_ix == NULL) {
 			fprintf(stderr, "out of memory\n");
+			return;
 		}
 		if (prg_override_start != -1) {
 			*(p_prg_img_ix + 0) = prg_override_start & 0xff;
@@ -66,10 +71,8 @@ void loadFile(int prg_override_start, FILE *prg_file) {
 		}
 		int r = fread(p_prg_img_ix + (2 - offs), 1, prg_size, prg_file);
 		if (r) {
-			printf("uart() load file 0x%04x-0x%04x (size 0x%04x)\n", 
-				*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8,
-				(*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8) + prg_size, 
-				prg_size);
+			printf("uart() load file from 0x%04x-0x%04x (size 0x%04x)\n", *(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8,
+					(*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8) + prg_size, prg_size);
 		} else {
 			fprintf(stderr, "uart() load file, start 0x%04x size 0x%04x error: %s\n",
 					(*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8), strerror(errno));
@@ -79,9 +82,10 @@ void loadFile(int prg_override_start, FILE *prg_file) {
 	}
 }
 
-void uart_init(unsigned char *p_prg_path, int p_prg_override_start) {
+void uart_init(unsigned char *p_prg_path, int p_prg_override_start, bool checkLmf) {
 	prg_path = p_prg_path;
 	prg_override_start = p_prg_override_start;
+	uart_checkUploadLmf = checkLmf;
 	reset_upload();
 }
 
@@ -101,6 +105,16 @@ uint8_t upload_read_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
 
 uint8_t upload_read_startAddress(uint8_t r) {
 	if (!p_prg_img && prg_path) {
+		struct stat attrib;
+		if (stat(prg_path, &attrib)) {
+			fprintf(stderr, "could not stat file %s, error was %s\n", prg_path, strerror(errno));
+			return 0;
+		}
+		if (uart_checkUploadLmf && uart_file_lmf == attrib.st_mtim.tv_sec) {
+			DEBUG (stdout, "skip upload of file %s, file has not changed\n", prg_path);
+			return 0;
+		}
+		uart_file_lmf = attrib.st_mtim.tv_sec;
 		FILE *prg_file = fopen(prg_path, "r");
 		if (!prg_file) {
 			fprintf(stderr, "uart upload read start address - cannot open file %s, error %s\n", prg_path,
@@ -111,7 +125,7 @@ uint8_t upload_read_startAddress(uint8_t r) {
 		loadFile(prg_override_start, prg_file);
 		fclose(prg_file);
 	}
-	if(p_prg_img){
+	if (p_prg_img) {
 		return upload_read_bytes(r, &p_prg_img_ix, &bytes_available);
 	}
 	return 0;

@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #define UART_REG_IER 0
 #define UART_REG_LSR 5
@@ -14,8 +15,7 @@
 #define lsr_DR 		1<<0 // data ready
 #define lsr_THRE 	1<<5 // transmitter holding register
 
-void
-uart_init(unsigned char *prg_path, int prg_override_start);
+void uart_init(unsigned char *prg_path, int prg_override_start, bool checkLastModified);
 
 uint8_t uart_read(uint8_t reg);
 void uart_write(uint8_t reg, uint8_t value);
