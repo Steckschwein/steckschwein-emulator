@@ -74,10 +74,9 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 					DEBUG("%x ", p_data[i]);
 				}
 				int res = fwrite(&block_response[2], sizeof(uint8_t), BLOCK_SIZE, sdcard_file);
-				if (!res) {
-					fprintf(stderr, "Error fwrite file lba: %x, block $%x: %s\n", mblock, lba, strerror(errno));
-				}
-				if (res != BLOCK_SIZE) {
+				if (ferror(sdcard_file)) {
+					fprintf(stderr, "Error fwrite file lba: %x, block $%x: %s\n", lba + mblock, mblock, strerror(errno));
+				}else if (res != BLOCK_SIZE) {
 					WARN("Warning: short write bytes %d/%d'!\n", res, BLOCK_SIZE);
 				}
 			}
