@@ -34,11 +34,12 @@ static uint8_t mblock = 0; //multi block counter
 
 int readBlock(uint32_t lba){
 	int res = fread(&block_response[2], sizeof(uint8_t), BLOCK_SIZE, sdcard_file);
-	if (!res) {
-		fprintf(stderr, "fread error block $%x, lba %x: %s\n", mblock, lba, strerror(errno));
+	if (ferror(sdcard_file)) {
+		fprintf(stderr, "fread error lba %x, block $%x (lba: %x) - %s\n", lba + mblock, mblock, lba, strerror(errno));
+		mblock = 0;
 	}else{
 		if (res != BLOCK_SIZE) {
-			WARN("Warning: short read lba %x, bytes %d/%d'!\n", lba, res, BLOCK_SIZE);
+			WARN("Warning: short read lba %x, block $%x (lba: %x) - %d/%d bytes!\n", lba + mblock, mblock, lba, res, BLOCK_SIZE);
 		}
 		p_data = block_response;
 		data_length = 2 + BLOCK_SIZE + 2 + 2;
@@ -69,18 +70,17 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 
 			if (last_cmd == 0x40 + 24) { //write block if it was requested
 				uint32_t lba = cmd[1] << 24 | cmd[2] << 16 | cmd[3] << 8 | cmd[4];
-				printf("Writing LBA %d block (%d)\n", lba + mblock, mblock);
+				printf("Writing lba %x, block $%x (lba: %x)\n", lba + mblock, mblock, lba);
 				for (int i = 0; i < data_length; ++i) {
 					DEBUG("%x ", p_data[i]);
 				}
 				int res = fwrite(&block_response[2], sizeof(uint8_t), BLOCK_SIZE, sdcard_file);
 				if (ferror(sdcard_file)) {
-					fprintf(stderr, "Error fwrite file lba: %x, block $%x: %s\n", lba + mblock, mblock, strerror(errno));
+					fprintf(stderr, "fwrite error lba %x, block $%x (lba: %x) - %s\n", lba + mblock, mblock, lba, strerror(errno));
 				}else if (res != BLOCK_SIZE) {
-					WARN("Warning: short write bytes %d/%d'!\n", res, BLOCK_SIZE);
+					WARN("Warning: short write lba %x, block $%x (lba: %x) - %d/%d bytes!\n", lba + mblock, mblock, lba, res, BLOCK_SIZE);
 				}
 			}
-
 			p_data = NULL;
 		}
 	} else if (cmd_receive_counter == 0 && inbyte == 0xff) {
@@ -140,6 +140,7 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 				break;
 			}
 			case 0x40 + 17: { // read block
+				mblock = 0;
 				uint32_t lba = cmd[1] << 24 | cmd[2] << 16 | cmd[3] << 8 | cmd[4];
 				block_response[0] = 0;
 				block_response[1] = 0xfe;
@@ -162,6 +163,7 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 				break;
 			}
 			case 0x40 + 25:  // write multi block
+				mblock = 0;
 				break;
 			case 0x40 + 24: { // write block
 				uint32_t lba = cmd[1] << 24 | cmd[2] << 16 | cmd[3] << 8 | cmd[4];
@@ -174,8 +176,8 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 					memset(&block_response[2 + BLOCK_SIZE + 2], 0xff, 4);
 					p_data = block_response;
 					data_length = 2 + BLOCK_SIZE + 2 + 2;
-					mblock = 0;
 				}
+				mblock = 0;
 				break;
 			}
 			case 0x40 + 55: { //CMD55 APP_CMD
