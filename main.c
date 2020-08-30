@@ -1138,10 +1138,8 @@ int main(int argc, char **argv) {
 	mixer = mixerCreate();
 
 	//read default properties
-	properties = propCreate(0, 0, P_EMU_SYNCAUTO, "steckschwein");
-	properties->emulation.syncMethod = P_EMU_SYNCFRAMES;
-//	properties->emulation.syncMethod = P_EMU_SYNCTOVBLANKASYNC;
-//	properties->emulation.syncMethod = P_EMU_SYNCTOVBLANK;
+	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANK, "steckschwein");
+	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
 
 	argc--;
 	argv++;
