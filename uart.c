@@ -3,6 +3,7 @@
 // All rights reserved. License: 2-clause BSD
 
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <errno.h>
 #include <string.h>
 #include "uart.h"
@@ -122,16 +123,22 @@ uint8_t upload_read_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
 
 uint8_t upload_read_startAddress(uint8_t r) {
 	if (!p_prg_img && prg_path) {
+		#if __MINGW32_NO__
+		struct __stat64 attrib;
+		int rc = __stat64(prg_path, &attrib);
+		#else
 		struct stat attrib;
-		if (stat(prg_path, &attrib)) {
+		int rc = stat(prg_path, &attrib);
+		#endif
+		if (rc) {
 			fprintf(stderr, "could not stat file %s, error was %s\n", prg_path, strerror(errno));
 			return 0;
 		}
-		if (uart_checkUploadLmf && uart_file_lmf == attrib.st_mtim.tv_sec) {
+		if (uart_checkUploadLmf && uart_file_lmf == attrib.st_mtime) {
 			DEBUG (stdout, "skip upload of file %s, file has not changed\n", prg_path);
 			return 0;
 		}
-		uart_file_lmf = attrib.st_mtim.tv_sec;
+		uart_file_lmf = attrib.st_mtime;
 		FILE *prg_file = fopen(prg_path, "rb");
 		if (!prg_file) {
 			fprintf(stderr, "uart upload read start address - cannot open file %s, error %s\n", prg_path,

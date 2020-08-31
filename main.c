@@ -1138,7 +1138,9 @@ int main(int argc, char **argv) {
 	mixer = mixerCreate();
 
 	//read default properties
-	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANK, "steckschwein");
+//	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANK, "Steckschwein");
+//	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
+	properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
 	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
 
 	argc--;
@@ -1382,7 +1384,7 @@ int main(int argc, char **argv) {
 	fclose(f);
 
 	if (sdcard_path) {
-		sdcard_file = fopen(sdcard_path, "r+");
+		sdcard_file = fopen(sdcard_path, "rwb");
 		if (!sdcard_file) {
 			fprintf(stderr, "Cannot open %s!\n", sdcard_path);
 			exit(1);
