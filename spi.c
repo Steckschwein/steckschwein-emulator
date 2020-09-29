@@ -32,9 +32,32 @@ void spi_init() {
 
 volatile uint8_t last_keycode = 0;
 
-uint8_t spi_handle_keyboard() {
-	uint8_t outbyte = last_keycode;
-	last_keycode = 0;
+uint8_t spi_handle_keyboard(uint8_t inbyte) {
+
+	uint8_t outbyte = 0xff;
+
+	static uint8_t cmd = 0;
+
+	if (inbyte != 0) {
+		if(cmd == 0){
+			switch (inbyte) {
+				//case 0xff;//KBD_CMD_SCAN_ON:
+				case 0xf4://KBD_CMD_SCAN_ON:
+				case 0xf5://KBD_CMD_SCAN_OFF:
+				case 0xf3://KBD_CMD_TYPEMATIC:
+				case 0xed://KBD_CMD_LEDS:
+					cmd = inbyte;
+					outbyte = 0xfa; //ack
+					break;
+			}
+		}else{
+			cmd = 0;
+			outbyte = 0xfa;
+		}
+	} else {
+		outbyte = last_keycode;
+		last_keycode = 0;
+	}
 	return outbyte;
 }
 
@@ -187,7 +210,7 @@ void dispatch_device(uint8_t port) {
 	if (is_sdcard) {
 		outbyte = spi_sdcard_handle(inbyte);
 	} else if (is_keyboard) {
-		outbyte = spi_handle_keyboard();
+		outbyte = spi_handle_keyboard(inbyte);
 	} else if (is_rtc) {
 		outbyte = spi_rtc_handle(inbyte);
 	}

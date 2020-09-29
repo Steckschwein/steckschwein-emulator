@@ -104,7 +104,6 @@
 
 #include <stdio.h>
 #include <stdint.h>
-//#include "../debugger.h"
 
 //6502 defines
 #define UNDOCUMENTED //when this is defined, undocumented opcodes are handled.
@@ -195,7 +194,7 @@ void (*loopexternal)(uint32_t cycles);
 
 void exec6502(uint32_t tickcount) {
     clockgoal6502 += tickcount;
-   
+
     while (clockticks6502 < clockgoal6502) {
         opcode = read6502(pc++);
         status |= FLAG_CONSTANT;
