@@ -182,6 +182,7 @@ void machine_dump() {
 }
 
 void machine_reset() {
+	spi_rtc_init();
 	spi_init();
 	uart_init(prg_path, prg_override_start, checkUploadLmf);
 	via1_init();
@@ -1497,6 +1498,8 @@ int main(int argc, char **argv) {
 	propDestroy(properties);
 	DEBUGFreeUI();
 	memory_destroy();
+
+	spi_rtc_destroy();
 
 	return 0;
 }

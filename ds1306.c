@@ -1,5 +1,7 @@
 #include <inttypes.h>
 #include <time.h>
+#include <stdio.h>
+#include <errno.h>
 #include "ds1306.h"
 #include "glue.h"
 
@@ -7,6 +9,25 @@ static struct tm *timestamp;
 static bool chip_select = false;
 static uint8_t nvram[96] = { 0x42, 'L', 'O', 'A', 'D', 'E', 'R', ' ', ' ', 'B',
 		'I', 'N', 1, 3, 0x37 };
+
+void spi_rtc_init(){
+	FILE *f = fopen("nvram.dump", "rb");
+	if(f != NULL){
+		fread(nvram, 1, sizeof(nvram), f);
+		fclose(f);
+	}
+}
+
+void spi_rtc_destroy(){
+	FILE *f = fopen("nvram.dump", "w+b");
+	if(f != NULL){
+		size_t r = fwrite(nvram, 1, sizeof(nvram), f);
+		if(ferror(f)){
+			fprintf(stderr, "error fwrite %s\n", strerror(errno));
+		}
+		fclose(f);
+	}
+}
 
 void spi_rtc_deselect() { // chip select /CE high
 	chip_select = false;
