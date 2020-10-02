@@ -1,32 +1,73 @@
 #include <inttypes.h>
 #include <time.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <dirent.h>
 #include <errno.h>
+#include <pwd.h>
 #include "ds1306.h"
 #include "glue.h"
 
+static const char *SW_DIR = ".sw";
+static const char *SW_NVRAM = "nvram.dat";
 static struct tm *timestamp;
 static bool chip_select = false;
-static uint8_t nvram[96] = { 0x42, 'L', 'O', 'A', 'D', 'E', 'R', ' ', ' ', 'B',
-		'I', 'N', 1, 3, 0x37 };
+static uint8_t nvram[96] = { 0x42, 'L', 'O', 'A', 'D', 'E', 'R', ' ', ' ', 'B', 'I', 'N', 1, 3, 0x37 };
 
-void spi_rtc_init(){
-	FILE *f = fopen("nvram.dump", "rb");
-	if(f != NULL){
-		fread(nvram, 1, sizeof(nvram), f);
-		fclose(f);
+char* swHomeDir() {
+	char swDir[FILENAME_MAX];
+#ifdef _WIN32
+		snprintf(swDir, FILENAME_MAX, "%s%s/%s", getenv("HOMEDRIVE"), getenv("HOMEPATH"), SW_DIR);
+	#else
+	snprintf(swDir, FILENAME_MAX, "%s/%s", getenv("HOME"), SW_DIR);
+#endif
+
+	DIR *dir = opendir(swDir);
+	if (dir == NULL || errno == ENOENT) {
+		dir = mkdir(swDir, 0755);
 	}
+	if (closedir(dir)) {
+		fprintf(stderr, "error close dir %s\n", strerror(errno));
+	}
+
+	return strdup(swDir);
 }
 
-void spi_rtc_destroy(){
-	FILE *f = fopen("nvram.dump", "w+b");
-	if(f != NULL){
+char* nvramFile() {
+	char nvramFile[FILENAME_MAX];
+	char *homeDirStr = swHomeDir();
+	snprintf(nvramFile, FILENAME_MAX, "%s/%s", homeDirStr, SW_NVRAM);
+	free(homeDirStr);
+	return strdup(nvramFile);
+}
+
+void spi_rtc_init() {
+
+	char *nvramFileStr = nvramFile();
+	FILE *f = fopen(nvramFileStr, "rb");
+	if (f != NULL) {
+		size_t r = fread(nvram, 1, sizeof(nvram), f);
+		if (ferror(f) || r != sizeof(nvram)) {
+			fprintf(stderr, "error read nvram state %s\n", strerror(errno));
+		}
+		fclose(f);
+	}
+	free(nvramFileStr);
+}
+
+void spi_rtc_destroy() {
+	char *nvramFileStr = nvramFile();
+	FILE *f = fopen(nvramFileStr, "wb");
+	if (f != NULL) {
 		size_t r = fwrite(nvram, 1, sizeof(nvram), f);
-		if(ferror(f)){
+		if (ferror(f)) {
 			fprintf(stderr, "error fwrite %s\n", strerror(errno));
 		}
 		fclose(f);
 	}
+	free(nvramFileStr);
 }
 
 void spi_rtc_deselect() { // chip select /CE high
