@@ -6,7 +6,6 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <errno.h>
-#include <pwd.h>
 #include "ds1306.h"
 #include "glue.h"
 
