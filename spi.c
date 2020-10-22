@@ -38,25 +38,37 @@ uint8_t spi_handle_keyboard(uint8_t inbyte) {
 
 	static uint8_t cmd = 0;
 
-	if (inbyte != 0) {
-		if(cmd == 0){
-			switch (inbyte) {
-				//case 0xff;//KBD_CMD_SCAN_ON:
-				case 0xf4://KBD_CMD_SCAN_ON:
-				case 0xf5://KBD_CMD_SCAN_OFF:
-				case 0xf3://KBD_CMD_TYPEMATIC:
-				case 0xed://KBD_CMD_LEDS:
-					cmd = inbyte;
-					outbyte = 0xfa; //ack
-					break;
-			}
-		}else{
-			cmd = 0;
-			outbyte = 0xfa;
+	if (inbyte != 0 && cmd == 0) {
+		switch (inbyte) {
+		//case 0xff;//KBD_CMD_SCAN_ON:
+		case 0xf4: //KBD_CMD_SCAN_ON:
+		case 0xf5: //KBD_CMD_SCAN_OFF:
+		case 0xf3: //KBD_CMD_TYPEMATIC:
+		case 0xed: //KBD_CMD_LEDS:
+			cmd = inbyte;
+			outbyte = 0xfa; //ack
+			break;
 		}
 	} else {
-		outbyte = last_keycode;
-		last_keycode = 0;
+		switch (cmd) {
+		case 0xf3: //KBD_CMD_TYPEMATIC:
+		{
+			unsigned int delay = (((inbyte >> 5) & 0x03) + 1) * 250;
+			unsigned int interval = 1000 / (30 - (inbyte & 0x1c));
+
+			if (SDL_EnableKeyRepeat(delay, interval)) {
+				fprintf(stderr, "could not set keyboard delay/rate\n");
+				outbyte = 0xff;
+			} else {
+				outbyte = 0xfa;
+			}
+			break;
+		}
+		default:
+			outbyte = last_keycode;
+			last_keycode = 0;
+		}
+		cmd = 0;
 	}
 	return outbyte;
 }
