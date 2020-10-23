@@ -1005,7 +1005,7 @@ void trace() {
 }
 
 void hookCharOut() {
-	if (echo_mode != ECHO_MODE_NONE && (pc == 0xfff0 || pc == 0xffb3)) {
+	if (echo_mode != ECHO_MODE_NONE && (pc == 0xfff7 || pc == 0xffb3)) {
 		//@see jumptables, bios fff0, kernel $ffb3
 		uint8_t c = a;
 		if (echo_mode == ECHO_MODE_COOKED) {

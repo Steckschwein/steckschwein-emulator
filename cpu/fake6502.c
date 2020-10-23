@@ -107,12 +107,12 @@
 
 //6502 defines
 #define UNDOCUMENTED //when this is defined, undocumented opcodes are handled.
-                     //otherwise, they're simply treated as NOPs.
+//otherwise, they're simply treated as NOPs.
 
 //#define NES_CPU      //when this is defined, the binary-coded decimal (BCD)
-                     //status flag is not honored by ADC and SBC. the 2A03
-                     //CPU in the Nintendo Entertainment System does not
-                     //support BCD operation.
+//status flag is not honored by ADC and SBC. the 2A03
+//CPU in the Nintendo Entertainment System does not
+//support BCD operation.
 
 #define FLAG_CARRY     0x01
 #define FLAG_ZERO      0x02
@@ -125,11 +125,9 @@
 
 #define BASE_STACK     0x100
 
-
 //6502 CPU registers
 uint16_t pc;
 uint8_t sp, a, x, y, status;
-
 
 //helper variables
 uint32_t instructions = 0; //keep track of total instructions executed
@@ -150,42 +148,48 @@ static void (*addrtable[256])();
 static void (*optable[256])();
 
 static uint16_t getvalue() {
-    if (addrtable[opcode] == acc) return((uint16_t)a);
-        else return((uint16_t)read6502(ea));
+	if (addrtable[opcode] == acc)
+		return ((uint16_t) a);
+	else
+		return ((uint16_t) read6502(ea));
 }
 
-__attribute__((unused)) static uint16_t getvalue16() {
-    return((uint16_t)read6502(ea) | ((uint16_t)read6502(ea+1) << 8));
+__attribute__((unused))  static uint16_t getvalue16() {
+	return ((uint16_t) read6502(ea) | ((uint16_t) read6502(ea + 1) << 8));
 }
 
 static void putvalue(uint16_t saveval) {
-    if (addrtable[opcode] == acc) a = (uint8_t)(saveval & 0x00FF);
-        else write6502(ea, (saveval & 0x00FF));
+	if (addrtable[opcode] == acc)
+		a = (uint8_t) (saveval & 0x00FF);
+	else
+		write6502(ea, (saveval & 0x00FF));
 }
 
 #include "instructions.h"
 #include "65c02.h"
 #include "tables.h"
 
-uint32_t mos6502clockticks(){
+uint32_t mos6502clockticks() {
 	return clockticks6502;
 }
-uint32_t mos6502instructions(){
+uint32_t mos6502instructions() {
 	return instructions;
 }
 
 void nmi6502() {
-    push16(pc);
-    push8(status);
-    status |= FLAG_INTERRUPT;
-    pc = (uint16_t)read6502(0xFFFA) | ((uint16_t)read6502(0xFFFB) << 8);
+	push16(pc);
+	push8(status);
+	status |= FLAG_INTERRUPT;
+	pc = (uint16_t) read6502(0xFFFA) | ((uint16_t) read6502(0xFFFB) << 8);
 }
 
 void irq6502() {
-    push16(pc);
-    push8(status & ~FLAG_BREAK);
-    status |= FLAG_INTERRUPT;
-    pc = (uint16_t)read6502(0xFFFE) | ((uint16_t)read6502(0xFFFF) << 8);
+	if (!(status & FLAG_INTERRUPT)) {
+		push16(pc);
+		push8(status & ~FLAG_BREAK);
+		status |= FLAG_INTERRUPT;
+		pc = (uint16_t) read6502(0xFFFE) | ((uint16_t) read6502(0xFFFF) << 8);
+	}
 }
 
 uint8_t callexternal = 0;
@@ -193,62 +197,67 @@ uint8_t callexternal = 0;
 void (*loopexternal)(uint32_t cycles);
 
 void exec6502(uint32_t tickcount) {
-    clockgoal6502 += tickcount;
+	clockgoal6502 += tickcount;
 
-    while (clockticks6502 < clockgoal6502) {
-        opcode = read6502(pc++);
-        status |= FLAG_CONSTANT;
+	while (clockticks6502 < clockgoal6502) {
+		opcode = read6502(pc++);
+		status |= FLAG_CONSTANT;
 
-        penaltyop = 0;
-        penaltyaddr = 0;
+		penaltyop = 0;
+		penaltyaddr = 0;
 
-        (*addrtable[opcode])();
-        (*optable[opcode])();
+		(*addrtable[opcode])();
+		(*optable[opcode])();
 
-        uint32_t cycles = clockticks6502;
+		uint32_t cycles = clockticks6502;
 
-        clockticks6502 += ticktable[opcode];
-        if (penaltyop && penaltyaddr) clockticks6502++;
+		clockticks6502 += ticktable[opcode];
+		if (penaltyop && penaltyaddr)
+			clockticks6502++;
 
-        instructions++;
+		instructions++;
 
-        cycles = clockticks6502 - cycles;
+		cycles = clockticks6502 - cycles;
 
-        if (callexternal) (*loopexternal)(cycles);
-    }
+		if (callexternal)
+			(*loopexternal)(cycles);
+	}
 }
 
 void step6502() {
-    opcode = read6502(pc++);
-    status |= FLAG_CONSTANT;
+	opcode = read6502(pc++);
+	status |= FLAG_CONSTANT;
 
-    penaltyop = 0;
-    penaltyaddr = 0;
+	penaltyop = 0;
+	penaltyaddr = 0;
 
-    (*addrtable[opcode])();
-    (*optable[opcode])();
+	(*addrtable[opcode])();
+	(*optable[opcode])();
 
-    uint32_t cycles = clockticks6502;
+	uint32_t cycles = clockticks6502;
 
-    clockticks6502 += ticktable[opcode];
-    if (penaltyop && penaltyaddr) clockticks6502++;
-    clockgoal6502 = clockticks6502;
+	clockticks6502 += ticktable[opcode];
+	if (penaltyop && penaltyaddr)
+		clockticks6502++;
+	clockgoal6502 = clockticks6502;
 
-    instructions++;
+	instructions++;
 
-    if(instructions == 0xFFFFFFFF){
-    	printf("ins cnt overflow\n");
-    }
-    cycles = clockticks6502 - cycles;
+	if (instructions == 0xFFFFFFFF) {
+		printf("ins cnt overflow\n");
+	}
+	cycles = clockticks6502 - cycles;
 
-    if (callexternal) (*loopexternal)(cycles);
+	if (callexternal)
+		(*loopexternal)(cycles);
 }
 
 void hookexternal(void *funcptr) {
-    if (funcptr != (void *)NULL) {
-        loopexternal = funcptr;
-        callexternal = 1;
-    } else callexternal = 0;
+	if (funcptr != (void*) NULL) {
+		loopexternal = funcptr;
+		callexternal = 1;
+	} else
+		callexternal = 0;
 }
 
 //  Fixes from http://6502.org/tutorials/65c02opcodes.html
