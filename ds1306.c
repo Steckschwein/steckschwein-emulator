@@ -25,7 +25,11 @@ char* swHomeDir() {
 
 	DIR *dir = opendir(swDir);
 	if (dir == NULL || errno == ENOENT) {
+		#if defined(_WIN32)
+		dir = _mkdir(swDir);
+		#else
 		dir = mkdir(swDir, 0755);
+		#endif
 	}
 	if (closedir(dir)) {
 		fprintf(stderr, "error close dir %s\n", strerror(errno));
