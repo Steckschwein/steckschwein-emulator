@@ -102,6 +102,7 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
      mixerReset(boardGetMixer());
 
      ym3812 = ym3812Create(boardGetMixer());
+
      //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
      //slotManagerCreate();
 
