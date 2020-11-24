@@ -204,6 +204,7 @@ void DEBUGSetBreakPoint(int newBreakPoint) {
 void DEBUGBreakToDebugger(void) {	// So now stop, as we've done it.
 	currentPC = pc;					// Update current PC
 	dbgPause();
+	emulatorSyncScreen();
 	boardOnBreakpoint(pc);
 }
 
