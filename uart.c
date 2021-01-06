@@ -6,15 +6,21 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <string.h>
+#include <time.h>
+
 #include "uart.h"
 #include "memory.h"
 #include "glue.h"
+
+#define UART_CHECK_UPLOAD_INTERVAL_SECONDS 3
 
 static uint8_t uartregisters[16];
 
 extern int errno;
 
 bool uart_checkUploadLmf = false;
+clock_t uart_checkUploadLmfTs = 0;
+
 time_t uart_file_lmf = -1;
 
 uint8_t *p_prg_img;
@@ -122,7 +128,8 @@ uint8_t upload_read_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
 }
 
 uint8_t upload_read_startAddress(uint8_t r) {
-	if (!p_prg_img && prg_path) {
+    
+    if (!p_prg_img && prg_path && (uart_checkUploadLmfTs + UART_CHECK_UPLOAD_INTERVAL_SECONDS < (uart_checkUploadLmfTs = clock()))) {
 		#if __MINGW32_NO__
 		struct __stat64 attrib;
 		int rc = __stat64(prg_path, &attrib);
