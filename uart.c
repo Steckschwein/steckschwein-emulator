@@ -81,24 +81,24 @@ void loadFile(int prg_override_start, FILE *prg_file) {
 		uint8_t offs = (prg_override_start == -1 ? 2 : 0);
 		prg_size = filesize - offs; //-offs byte, if start address is given as argument
 		p_prg_size = &prg_size;
-		p_prg_img = p_prg_img_ix = malloc(prg_size + (2 - offs)); //align memory for prg image, we always allocate 2 byte + prg. image size
-		if (p_prg_img_ix == NULL) {
+		p_prg_img = p_prg_img_ix = malloc(2 + prg_size); //align memory for prg image, we always allocate 2 byte start address + prg. image size
+		if (p_prg_img == NULL) {
 			fprintf(stderr, "out of memory\n");
 			return;
 		}
 		if (prg_override_start != -1) {
-			*(p_prg_img_ix + 0) = prg_override_start & 0xff;
-			*(p_prg_img_ix + 1) = prg_override_start >> 8 & 0xff;
+			*(p_prg_img + 0) = prg_override_start & 0xff;
+			*(p_prg_img + 1) = prg_override_start >> 8 & 0xff;
 		}
-		size_t r = fread((p_prg_img_ix + (2 - offs)), 1, prg_size, prg_file);
+		size_t r = fread((p_prg_img + (2 - offs)), 1, filesize, prg_file);
 		if (r) {
-			printf("uart() load file 0x%04x-0x%04x (size 0x%04x)\n", 
-				*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8,
-				(*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8) + prg_size, 
-				r);
+			printf("uart() load program to 0x%04x-0x%04x (size 0x%04x / read 0x%04x)\n", 
+				*(p_prg_img + 0) | *(p_prg_img + 1) << 8,
+				(*(p_prg_img + 0) | *(p_prg_img + 1) << 8) + prg_size, 
+				prg_size, r);
 		} else {
 			fprintf(stderr, "uart() load file start 0x%04x size 0x%04x error: %s\n",
-					(*(p_prg_img_ix + 0) | *(p_prg_img_ix + 1) << 8), strerror(errno));
+					(*(p_prg_img + 0) | *(p_prg_img + 1) << 8), strerror(errno));
 			free(p_prg_img);
 			p_prg_img = NULL;
 		}
