@@ -64,7 +64,7 @@ uint8_t spi_handle_keyboard(uint8_t inbyte) {
 			}
 			break;
 		}
-		default:
+		default://output captured keycode
 			outbyte = last_keycode;
 			last_keycode = 0;
 		}
@@ -235,4 +235,9 @@ void spi_step() {
 	uint8_t port = via1_pb_get_out();	//PB
 
 	dispatch_device(port);
+
+	if(last_keycode != 0){
+		boardSetInt(0x08);
+	}
+
 }
