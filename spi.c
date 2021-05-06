@@ -40,13 +40,17 @@ uint8_t spi_handle_keyboard(uint8_t inbyte) {
 
 	if (inbyte != 0 && cmd == 0) {
 		switch (inbyte) {
-		//case 0xff;//KBD_CMD_SCAN_ON:
+		case 0xff: //KBD_CMD_RESET:
 		case 0xf4: //KBD_CMD_SCAN_ON:
 		case 0xf5: //KBD_CMD_SCAN_OFF:
 		case 0xf3: //KBD_CMD_TYPEMATIC:
 		case 0xed: //KBD_CMD_LEDS:
 			cmd = inbyte;
-			outbyte = 0xfa; //ack
+			outbyte = 0xfa; //ack KBD_CMD_ACK
+			break;
+		case 0x01: // KBD_HOST_CMD_KBD_STATUS
+		case 0x02: // KBD_HOST_CMD_CMD_STATUS
+			outbyte = 0xaa; //cmd eot - TODO emulate command state response - we always send 0xaa to signal end of transmission
 			break;
 		}
 	} else {
@@ -64,7 +68,7 @@ uint8_t spi_handle_keyboard(uint8_t inbyte) {
 			}
 			break;
 		}
-		default://output captured keycode
+		default: //output captured keycode
 			outbyte = last_keycode;
 			last_keycode = 0;
 		}
@@ -236,8 +240,7 @@ void spi_step() {
 
 	dispatch_device(port);
 
-	if(last_keycode != 0){
+	if (last_keycode != 0) {
 		boardSetInt(0x08);
 	}
-
 }
