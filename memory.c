@@ -13,16 +13,16 @@
 #include "memory.h"
 
 uint8_t ctrl_port;
-uint8_t* RAM;
-uint8_t* ROM;
+uint8_t* ram;
+uint8_t* rom;
 
 #define DEVICE_EMULATOR (0x9fb0)
 
 void
 memory_init()
 {
-	RAM = malloc(RAM_SIZE);
-	ROM = malloc(ROM_SIZE);
+	ram = malloc(RAM_SIZE);
+	rom = malloc(ROM_SIZE);
 	ctrl_port = 0;
 }
 
@@ -31,8 +31,8 @@ uint8_t memory_get_ctrlport(){
 }
 
 void memory_destroy(){
-	free(RAM);
-	free(ROM);
+	free(ram);
+	free(rom);
 }
 
 //
@@ -52,7 +52,7 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 
 	if (address < 0x0200)
 	{ // RAM
-		return RAM[address];
+		return ram[address];
 	}
 	else if (address < 0x0280) { // I/O
 		// TODO I/O map?
@@ -82,7 +82,7 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 		}
 	} else {
 		if (address < 0xe000 || (ctrl_port & 1)){
-			return RAM[address];// RAM
+			return ram[address];// RAM
 		}
 		/* bank select upon ctrl_port - see steckos/asminc/system.inc
 			BANK_SEL0 = 0010
@@ -92,7 +92,7 @@ real_read6502(uint16_t address, bool debugOn, uint8_t bank)
 			BANK2 = 0100
 			BANK3 = 0110
 		*/
-		return ROM[(address & 0x1fff) | ((ctrl_port & 0x06)<<12)];
+		return rom[(address & 0x1fff) | ((ctrl_port & 0x06)<<12)];
 	}
 }
 
@@ -101,7 +101,7 @@ write6502(uint16_t address, uint8_t value)
 {
 //	printf("write6502 %x %x\n", address, value);
 	if (address < 0x0200) { // RAM
-		RAM[address] = value;
+		ram[address] = value;
 	} else if (address < 0x0280) { // I/O
 		if (address  < 0x210) // UART at $0200
 		{
@@ -135,11 +135,11 @@ write6502(uint16_t address, uint8_t value)
 			emu_write(address & 0xf, value);
 		}
 */
-	// } else if (address < 0xe000) { // RAM
-		// RAM[address] = value;
+	// } else if (address < 0xe000) { // ram
+		// ram[address] = value;
 	} else {
 		// Writes go to ram, regardless if ROM active or not
-		RAM[address] = value;
+		ram[address] = value;
 	}
 }
 
@@ -150,7 +150,7 @@ write6502(uint16_t address, uint8_t value)
 void
 memory_save(FILE *f, bool dump_ram, bool dump_bank)
 {
-	fwrite(RAM, sizeof(uint8_t), RAM_SIZE, f);
+	fwrite(ram, sizeof(uint8_t), RAM_SIZE, f);
 }
 
 

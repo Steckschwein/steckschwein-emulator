@@ -458,7 +458,7 @@ static void DEBUGRenderCode(int lines, int initialPC) {
 
 		DEBUGAddress(DBG_ASMX, y, currentPCBank, initialPC, col_label);
 
-		int size = disasm(initialPC, RAM, buffer, sizeof(buffer), true, currentPCBank);	// Disassemble code
+		int size = disasm(initialPC, ram, buffer, sizeof(buffer), true, currentPCBank);	// Disassemble code
 		// Output assembly highlighting PC
 		DEBUGString(dbgSurface, DBG_ASMX + 8, y, buffer, initialPC == pc ? col_highlight : col_data);
 		initialPC += size;									// Forward to next

@@ -19,9 +19,12 @@ CPPFLAGS = -Ofast
 CFLAGS   = -g -w -Ofast -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror -fomit-frame-pointer
 
 # development flags (debugger support)
-#CFLAGS   = -g -w -DLSB_FIRST -DNO_ASM -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
 #CPPFLAGS = -DNO_ASM
+#CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
+#CFLAGS	+=-fstack-protector -fstack-protector-strong -fstack-protector-all
 #CFLAGS   +=-DDEBUG_ENABLED
+# Videorenderer.c segfault inline asm, we disable it entirely
+CFLAGS   +=-DNO_ASM
 
 #CFLAGS   += -DSINGLE_THREADED -DNO_TIMERS
 #CFLAGS   += -DNO_HIRES_TIMERS
@@ -33,7 +36,7 @@ CFLAGS   += -DEMU_FREQUENCY=8000000
 # ym3812 opl sound
 CPPFLAGS +=-DBUILD_YM3812
 
-LIBS     = -lSDL -lm#-lz -lGL
+LIBS     = -lSDL -lm -lz -lGL
 TARGET   = steckschwein-emu
 
 SRCS        = $(SOURCE_FILES)

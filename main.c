@@ -75,7 +75,7 @@ uint16_t trace_address = 0;
 static Mixer *mixer;
 
 unsigned char *prg_path;
-int prg_override_start = -1;
+
 bool checkUploadLmf = false; //check lmf of the upload file, if not changed no recurring uploads
 bool run_after_load = false;
 
@@ -181,7 +181,7 @@ void machine_dump() {
 	printf("Dumped system to %s.\n", filename);
 }
 
-void machine_reset() {
+void machine_reset(int prg_override_start) {
 	spi_rtc_init();
 	spi_init();
 	uart_init(prg_path, prg_override_start, checkUploadLmf);
@@ -197,11 +197,11 @@ void machine_paste(char *s) {
 }
 
 static void usage() {
-	printf("\nSteckschwein Emulator  (C)2019 Michael Steil, Thomas Woinke\n");
+	printf("\nSteckschwein Emulator (C)2019 Michael Steil, Thomas Woinke\n");
 	printf("All rights reserved. License: 2-clause BSD\n\n");
 	printf("Usage: steckschwein-emu [option] ...\n\n");
-	printf("-rom <rom.bin>\n");
-	printf("\tOverride KERNAL/BASIC/* ROM file.\n");
+	printf("-rom <rom.bin>[,<load_addr>]\n");
+	printf("\tbios ROM file.\n");
 	printf("-ram <ramsize>\n");
 	printf("\tSpecify RAM size in KB (8, 16, 32, ..., 64).\n");
 	printf("\tThe default is 64.\n");
@@ -1040,7 +1040,7 @@ void hookKernelPrgLoad(FILE *prg_file, int prg_override_start) {
 			if (start >= 0xe000) {
 				fprintf(stderr, "invalid program start address %x, will override kernel!\n", start);
 			} else {
-				uint16_t end = start + fread(RAM + start, 1, RAM_SIZE - start, prg_file);
+				uint16_t end = start + fread(ram + start, 1, RAM_SIZE - start, prg_file);
 			}
 			fclose(prg_file);
 			prg_file = NULL;
@@ -1073,7 +1073,7 @@ void instructionCb(uint32_t cycles) {
 }
 
 int nextArg(int *argc, char ***argv, char *arg) {
-	int n = !strcmp(*argv[0], arg);
+	int n = argc && !strncmp(*argv[0], arg, strlen(*argv[0]));
 	if (n) {
 		(*argc)--;
 		(*argv)++;
@@ -1104,7 +1104,7 @@ int parseNumber(unsigned char *s) {
 	if (comma) {
 		int a = (uint16_t) strtol(comma + 1, NULL, 16);
 		if (errno != EINVAL) {
-			*comma = 0;
+			*comma = 0;	//terminate string
 			return a;
 		}
 	}
@@ -1129,11 +1129,9 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "could not determine current work directory\n");
 		return 1;
 	}
-
 	// This causes the emulator to load ROM data from the executable's directory when
 	// no ROM file is specified on the command line.
-	strncpy(rom_path + strlen(rom_path), "/rom.bin",
-	PATH_MAX - strlen(rom_path));
+	strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
 
 	memory_init();
 	mixer = mixerCreate();
@@ -1148,33 +1146,25 @@ int main(int argc, char **argv) {
 	argv++;
 
 	while (argc > 0) {
-		if (!strcmp(argv[0], "-rom")) {
-			argc--;
-			argv++;
+		if (nextArg(&argc, &argv, "-rom")) {
 			assertParam(argc, argv);
 			rom_path = argv[0];
-			argc--;
-			argv++;
-		} else if (!strcmp(argv[0], "-ram")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-ram")) {
+			usage();	//not supported yet
 			assertParam(argc, argv);
 			int kb = atoi(argv[0]);
 			bool found = false;
 			for (int cmp = 8; cmp <= 64; cmp *= 2) {
 				if (kb == cmp) {
 					found = true;
+					break;
 				}
 			}
 			if (!found) {
 				usage();
 			}
 			num_ram_banks = kb / 8;
-			argc--;
-			argv++;
-		} else if (!strcmp(argv[0], "-keymap")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-keymap")) {
 			if (!argc || argv[0][0] == '-') {
 				usage_keymap();
 			}
@@ -1188,19 +1178,13 @@ int main(int argc, char **argv) {
 			if (!found) {
 				usage_keymap();
 			}
-			argc--;
-			argv++;
 		} else if (nextArg(&argc, &argv, "-upload")) {
 //		} else if (!strcmp(argv[0], "-upload")) {
 			assertParam(argc, argv);
 			prg_path = argv[0];
-			argc--;
-			argv++;
 		} else if (nextArg(&argc, &argv, "-lmf")) {
 			checkUploadLmf = true;
 		} /*else if (!strcmp(argv[0], "-run")) {
-		 argc--;
-		 argv++;
 		 run_after_load = true;
 		 } */else if (!strcmp(argv[0], "-bas")) {
 			argc--;
@@ -1209,16 +1193,10 @@ int main(int argc, char **argv) {
 			bas_path = argv[0];
 			argc--;
 			argv++;
-		} else if (!strcmp(argv[0], "-sdcard")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-sdcard")) {
 			assertParam(argc, argv);
 			sdcard_path = argv[0];
-			argc--;
-			argv++;
-		} else if (!strcmp(argv[0], "-echo")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-echo")) {
 			if (argc && argv[0][0] != '-') {
 				if (!strcmp(argv[0], "raw")) {
 					echo_mode = ECHO_MODE_RAW;
@@ -1230,9 +1208,7 @@ int main(int argc, char **argv) {
 			} else {
 				echo_mode = ECHO_MODE_COOKED;
 			}
-		} else if (!strcmp(argv[0], "-log")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-log")) {
 			assertParam(argc, argv);
 			for (char *p = argv[0]; *p; p++) {
 				switch (tolower(*p)) {
@@ -1249,11 +1225,7 @@ int main(int argc, char **argv) {
 					usage();
 				}
 			}
-			argc--;
-			argv++;
-		} else if (!strcmp(argv[0], "-dump")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-dump")) {
 			assertParam(argc, argv);
 			dump_cpu = false;
 			dump_ram = false;
@@ -1279,53 +1251,38 @@ int main(int argc, char **argv) {
 			}
 			argc--;
 			argv++;
-		} else if (!strcmp(argv[0], "-gif")) {
+		} else if (nextArg(&argc, &argv, "-gif")) {
 			argc--;
 			argv++;
+			assertParam(argc, argv);
 			// set up for recording
 			record_gif = RECORD_GIF_PAUSED;
-			assertParam(argc, argv);
 			gif_path = argv[0];
 			argv++;
 			argc--;
-		} else if (!strcmp(argv[0], "-debug")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-debug")) {
 			isDebuggerEnabled = true;
 			if (argc && argv[0][0] != '-') {
 				DEBUGSetBreakPoint((uint16_t) strtol(argv[0], NULL, 16));
 				argc--;
 				argv++;
 			}
-		} else if (!strcmp(argv[0], "-joy1")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-joy1")) {
+			assertParam(argc, argv);
 			if (!strcmp(argv[0], "NES")) {
 				joy1_mode = NES;
-				argc--;
-				argv++;
 			} else if (!strcmp(argv[0], "SNES")) {
 				joy1_mode = SNES;
-				argc--;
-				argv++;
 			}
-
-		} else if (!strcmp(argv[0], "-joy2")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-joy2")) {
+			assertParam(argc, argv);
 			if (!strcmp(argv[0], "NES")) {
 				joy2_mode = NES;
-				argc--;
-				argv++;
 			} else if (!strcmp(argv[0], "SNES")) {
 				joy2_mode = SNES;
-				argc--;
-				argv++;
 			}
 #ifdef TRACE
-		} else if (!strcmp(argv[0], "-trace")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-trace")) {
 			if (argc && argv[0][0] != '-') {
 				trace_mode = false;
 				trace_address = (uint16_t) strtol(argv[0], NULL, 16);
@@ -1341,47 +1298,45 @@ int main(int argc, char **argv) {
 			screenWidth = screenHeight;
 			screenHeight = t;
 			properties->video.rotate = 1;
-			argc--;
-			argv++;
-		} else if (!strcmp(argv[0], "-scale")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-scale")) {
 			assertParam(argc, argv);
-			if (strcmp(argv[0], "1") == 0) {
+			if (strncmp(argv[0], "1", 1) == 0) {
 				properties->video.windowSize = P_VIDEO_SIZEX1;
-			} else if (strcmp(argv[0], "2") == 0) {
+			} else if (strncmp(argv[0], "2", 1) == 0) {
 				properties->video.windowSize = P_VIDEO_SIZEX2;
-			} else if (strcmp(argv[0], "full") == 0) {
+			} else if (strncmp(argv[0], "full", 4) == 0) {
 				properties->video.windowSize = P_VIDEO_SIZEFULLSCREEN;
 			} else {
 				usage();
 			}
-			argc--;
-			argv++;
-		} else if (!strcmp(argv[0], "-quality")) {
-			argc--;
-			argv++;
+		} else if (nextArg(&argc, &argv, "-quality")) {
 			assertParam(argc, argv);
-			if (strcmp(argv[0], "best") == 0) {
+			if (!strcmp(argv[0], "best")) {
 				properties->video.monitorType = P_VIDEO_PALHQ2X;
-			} else if (strcmp(argv[0], "linear") == 0) {
+			} else if (!strcmp(argv[0], "linear")) {
 				properties->video.monitorType = P_VIDEO_PALMON;
 			} else {
 				usage();
 			}
-			argc--;
-			argv++;
 		} else {
 			usage();
 		}
+		argc--;
+		argv++;
 	}
 
+	int rom_override_start = parseNumber(rom_path);
 	FILE *f = fopen(rom_path, "rb");
 	if (!f) {
 		fprintf(stderr, "Cannot open %s!\n", rom_path);
 		exit(1);
 	}
-	int rom_size = fread(ROM, 1, ROM_SIZE, f);
+	if (rom_override_start == -1) {
+		int rom_size = fread(rom, 1, ROM_SIZE, f);
+	} else {
+		int size = fread(ram + rom_override_start, 1, RAM_SIZE - rom_override_start, f);
+		write6502(0x230, 1);	//rom off
+	}
 	fclose(f);
 
 	if (sdcard_path) {
@@ -1392,7 +1347,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	prg_override_start = -1;
+	int prg_override_start = -1;
 	if (prg_path) {
 		prg_override_start = parseNumber(prg_path);
 	}
@@ -1452,7 +1407,7 @@ int main(int argc, char **argv) {
 //    uartIoSetType(properties->ports.Com.type, properties->ports.Com.fileName);
 //    ykIoSetMidiInType(properties->sound.YkIn.type, properties->sound.YkIn.fileName);
 
-	machine_reset();
+	machine_reset(prg_override_start);
 
 	emulatorRestartSound();
 

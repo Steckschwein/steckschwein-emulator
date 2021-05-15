@@ -78,8 +78,7 @@ static BoardTimer* breakpointTimer;
 //static BoardInfo boardInfo;
 static UInt32 boardRamSize;
 static UInt32 boardVramSize;
-static int boardRunning = 1;//1 - run
-
+static int boardRunning = 0;
 
 static int     ramMaxStates;
 static int     ramStateCur;

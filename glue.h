@@ -49,8 +49,8 @@ void actionEmuStepBack();
 
 extern uint8_t a, x, y, sp, status;
 extern uint16_t pc;
-extern uint8_t* RAM;
-extern uint8_t* ROM;
+extern uint8_t* ram;
+extern uint8_t* rom;
 
 extern bool isDebuggerEnabled;
 extern bool log_video;

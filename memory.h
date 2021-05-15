@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define ROM_BANK_SIZE (2*1024)
+
 #define ROM_SIZE (32*1024)
 #define RAM_SIZE (64*1024)
 
