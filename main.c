@@ -1149,8 +1149,9 @@ int main(int argc, char **argv) {
 		if (nextArg(&argc, &argv, "-rom")) {
 			assertParam(argc, argv);
 			rom_path = argv[0];
+			argc--;
+			argv++;
 		} else if (nextArg(&argc, &argv, "-ram")) {
-			usage();	//not supported yet
 			assertParam(argc, argv);
 			int kb = atoi(argv[0]);
 			bool found = false;
@@ -1182,13 +1183,13 @@ int main(int argc, char **argv) {
 //		} else if (!strcmp(argv[0], "-upload")) {
 			assertParam(argc, argv);
 			prg_path = argv[0];
+			argc--;
+			argv++;
 		} else if (nextArg(&argc, &argv, "-lmf")) {
 			checkUploadLmf = true;
 		} /*else if (!strcmp(argv[0], "-run")) {
 		 run_after_load = true;
-		 } */else if (!strcmp(argv[0], "-bas")) {
-			argc--;
-			argv++;
+		 } */else if (nextArg(&argc, &argv, "-bas")) {
 			assertParam(argc, argv);
 			bas_path = argv[0];
 			argc--;
@@ -1196,6 +1197,8 @@ int main(int argc, char **argv) {
 		} else if (nextArg(&argc, &argv, "-sdcard")) {
 			assertParam(argc, argv);
 			sdcard_path = argv[0];
+			argc--;
+			argv++;
 		} else if (nextArg(&argc, &argv, "-echo")) {
 			if (argc && argv[0][0] != '-') {
 				if (!strcmp(argv[0], "raw")) {
@@ -1252,8 +1255,6 @@ int main(int argc, char **argv) {
 			argc--;
 			argv++;
 		} else if (nextArg(&argc, &argv, "-gif")) {
-			argc--;
-			argv++;
 			assertParam(argc, argv);
 			// set up for recording
 			record_gif = RECORD_GIF_PAUSED;
@@ -1268,18 +1269,20 @@ int main(int argc, char **argv) {
 				argv++;
 			}
 		} else if (nextArg(&argc, &argv, "-joy1")) {
-			assertParam(argc, argv);
-			if (!strcmp(argv[0], "NES")) {
+			if (nextArg(&argc, &argv, "NES")) {
 				joy1_mode = NES;
-			} else if (!strcmp(argv[0], "SNES")) {
+			} else if (nextArg(&argc, &argv, "SNES")) {
 				joy1_mode = SNES;
+			}else{
+				usage();
 			}
 		} else if (nextArg(&argc, &argv, "-joy2")) {
-			assertParam(argc, argv);
-			if (!strcmp(argv[0], "NES")) {
+			if (nextArg(&argc, &argv, "NES")) {
 				joy2_mode = NES;
-			} else if (!strcmp(argv[0], "SNES")) {
+			} else if (nextArg(&argc, &argv, "SNES")) {
 				joy2_mode = SNES;
+			}else{
+				usage();
 			}
 #ifdef TRACE
 		} else if (nextArg(&argc, &argv, "-trace")) {
@@ -1293,27 +1296,25 @@ int main(int argc, char **argv) {
 				trace_address = 0;
 			}
 #endif
-		} else if (!strcmp(argv[0], "-rotate")) {
+		} else if (nextArg(&argc, &argv, "-rotate")) {
 			int t = screenWidth;
 			screenWidth = screenHeight;
 			screenHeight = t;
 			properties->video.rotate = 1;
 		} else if (nextArg(&argc, &argv, "-scale")) {
-			assertParam(argc, argv);
-			if (strncmp(argv[0], "1", 1) == 0) {
+			if (nextArg(&argc, &argv, "1")) {
 				properties->video.windowSize = P_VIDEO_SIZEX1;
-			} else if (strncmp(argv[0], "2", 1) == 0) {
+			} else if (nextArg(&argc, &argv, "2")) {
 				properties->video.windowSize = P_VIDEO_SIZEX2;
-			} else if (strncmp(argv[0], "full", 4) == 0) {
+			} else if (nextArg(&argc, &argv, "full")) {
 				properties->video.windowSize = P_VIDEO_SIZEFULLSCREEN;
 			} else {
 				usage();
 			}
 		} else if (nextArg(&argc, &argv, "-quality")) {
-			assertParam(argc, argv);
-			if (!strcmp(argv[0], "best")) {
+			if (nextArg(&argc, &argv, "best")) {
 				properties->video.monitorType = P_VIDEO_PALHQ2X;
-			} else if (!strcmp(argv[0], "linear")) {
+			} else if (nextArg(&argc, &argv, "linear")) {
 				properties->video.monitorType = P_VIDEO_PALMON;
 			} else {
 				usage();
@@ -1321,8 +1322,6 @@ int main(int argc, char **argv) {
 		} else {
 			usage();
 		}
-		argc--;
-		argv++;
 	}
 
 	int rom_override_start = parseNumber(rom_path);
