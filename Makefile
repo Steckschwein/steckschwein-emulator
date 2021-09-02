@@ -1,7 +1,7 @@
 #
 # Comment out if verbose comilation is wanted
 #
-SILENT = @
+#SILENT = @
 
 #
 # windows 10 build
@@ -12,16 +12,17 @@ ifndef (MINGW32)
 	MINGW32=/usr/local/Cellar/mingw-w64/6.0.0_2/toolchain-i686/i686-w64-mingw32
 endif
 
+
 # Flags
 #
+CFLAGS=$(shell sdl-config $(SDL_PREFIX) --cflags)
+LDFLAGS=$(shell sdl-config $(SDL_PREFIX) --libs)
+
 # production flags (performance)
-CPPFLAGS = -Ofast
-CFLAGS   = -g -w -Ofast -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror -fomit-frame-pointer
+#CFLAGS   += -g -w -Ofast -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror -fomit-frame-pointer
 
 # development flags (debugger support)
-#CPPFLAGS = -DNO_ASM
-#CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
-#CFLAGS	+=-fstack-protector -fstack-protector-strong -fstack-protector-all
+CFLAGS   += -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
 #CFLAGS   +=-DDEBUG_ENABLED
 # Videorenderer.c segfault inline asm, we disable it entirely
 CFLAGS   +=-DNO_ASM
@@ -34,7 +35,7 @@ CFLAGS   += -DEMU_FREQUENCY=8000000
 #CFLAGS   += -DTRACE
 
 # ym3812 opl sound
-CPPFLAGS +=-DBUILD_YM3812
+CFLAGS +=-DBUILD_YM3812
 
 LIBS     = -lSDL -lm -lz -lGL
 TARGET   = steckschwein-emu
@@ -56,22 +57,22 @@ else
 	# the Windows SDL path on macOS installed through ./configure --prefix=... && make && make install
 	WIN_SDL=~/tmp/sdl-win32
 endif
-SDL_CFLAGS := $(shell sdl-config $(SDL_PREFIX) --cflags)
-SDL_LDFLAGS := $(shell sdl-config $(SDL_PREFIX) --libs)
-CFLAGS += $(SDL_CFLAGS)
-CPPFLAGS += $(SDL_CFLAGS)
-LDFLAGS += $(SDL_LDFLAGS)
+
+ifeq ($(CROSS_COMPILE_WINDOWS),1)
+	SDLCONFIG=$(WIN_SDL)/bin/sdl-config
+else
+	SDLCONFIG=sdl-config
+endif
 
 ifdef CROSS_COMPILE_WINDOWS
 	CFLAGS+=-Wno-error=deprecated-declarations
 #	CFLAGS+=-Wno-error=incompatible-pointer-types
 	CFLAGS+=-Wno-error=maybe-uninitialized
 #	CFLAGS+=-DENABLE_VRAM_DECAY \
-	CFLAGS+=-D_REENTRAN
+	CFLAGS+=-D_REENTRANT
 else
 	CFLAGS+=-std=c99
 endif
-
 
 ifeq ($(MAC_STATIC),1)
 	LDFLAGS=/usr/local/lib/libSDL.a -lm -liconv -Wl,-framework,CoreAudio -Wl,-framework,AudioToolbox -Wl,-framework,ForceFeedback -lobjc -Wl,-framework,CoreVideo -Wl,-framework,Cocoa -Wl,-framework,Carbon -Wl,-framework,IOKit -Wl,-weak_framework,QuartzCore -Wl,-weak_framework,Metal
@@ -85,12 +86,14 @@ endif
 
 ifdef EMSCRIPTEN
 	LDFLAGS+=--shell-file webassembly/steckschwein-emu-template.html
-	#LDFLAGS+=--preload-file rom.bin
- 	#LDFLAGS+=-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
+	LDFLAGS+=--preload-file rom.bin
+	LDFLAGS+=-s TOTAL_MEMORY=32MB
+	LDFLAGS+=-s ASSERTIONS=1
+ 	LDFLAGS+=-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
 	# To the Javascript runtime exported functions
 	LDFLAGS+=-s EXPORTED_FUNCTIONS='["_j2c_reset", "_j2c_paste", "_j2c_start_audio", _main]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'
 
-	OUTPUT=steckschwein-emu.html
+	TARGET=steckschwein-emu.html
 endif
 
 ifneq ("$(wildcard ./rom_labels.h)","")
@@ -100,9 +103,12 @@ endif
 #
 # Tools
 #
-CC    = $(SILENT)gcc
-CXX   = $(SILENT)g++
+#CC    = $(SILENT)gcc
+#CXX   = $(SILENT)g++
 LD    = $(SILENT)g++
+#CC    = $(SILENT)emcc
+#CXX   = $(SILENT)emcc
+#LD    = $(SILENT)emcc
 RM    = $(SILENT)-rm -f
 RMDIR = $(SILENT)-rm -rf
 MKDIR = $(SILENT)-mkdir
@@ -220,23 +226,23 @@ $(OUTPUT_DIR):
 	$(ECHO) Creating directory $@...
 	$(MKDIR) $(OUTPUT_DIR)
 
-$(OUTPUT_DIR)/%.o: %.c  $(HEADER_FILES)
+$(OUTPUT_DIR)/%.o: %.c
 	$(ECHO) Compiling $<...
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
+	$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
 
-$(OUTPUT_DIR)/%.o: %.cc  $(HEADER_FILES)
-	$(ECHO) Compiling $<...
-	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
+#$(OUTPUT_DIR)/%.o: %.cc
+#	$(ECHO) Compiling $<...
+#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
 
-$(OUTPUT_DIR)/%.o: %.cpp  $(HEADER_FILES)
-	$(ECHO) Compiling $<...
-	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
+#$(OUTPUT_DIR)/%.o: %.cpp
+#	$(ECHO) Compiling $<...
+#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
 
-$(OUTPUT_DIR)/%.o: %.cxx  $(HEADER_FILES)
-	$(ECHO) Compiling $<...
-	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
+#$(OUTPUT_DIR)/%.o: %.cxx
+#	$(ECHO) Compiling $<...
+#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
 
-$(OUTPUT_DIR)/%.res: %.rc $(HEADER_FILES)
+$(OUTPUT_DIR)/%.res: %.rc
 	$(ECHO) Compiling $<...
 	$(RC) $(CPPFLAGS) $(INCLUDE) -o $@ -i $<
 

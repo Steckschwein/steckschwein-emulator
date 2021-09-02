@@ -798,6 +798,15 @@ int isEmuSingleStep() {
 	return emuSingleStep;
 }
 
+void emulatorResume() {
+	if (emuState == EMU_SUSPENDED) {
+		emuSysTime = 0;
+
+		emuState = EMU_RUNNING;
+		archUpdateEmuDisplay(0);
+	}
+}
+
 void emulatorSetState(EmuState state) {
 	if (state == EMU_RUNNING) {
 		archSoundResume();
@@ -893,15 +902,6 @@ void emulatorStart(const char *stateName) {
 		emuState = EMU_RUNNING;
 	}
 #endif
-}
-
-void emulatorResume() {
-	if (emuState == EMU_SUSPENDED) {
-		emuSysTime = 0;
-
-		emuState = EMU_RUNNING;
-		archUpdateEmuDisplay(0);
-	}
 }
 
 void emulatorStop() {

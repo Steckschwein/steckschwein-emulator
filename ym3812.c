@@ -24,26 +24,6 @@ struct YM3812 {
 	Int32 buffer[AUDIO_MONO_BUFFER_SIZE];
 };
 
-static void onTimeout1(void* ptr, UInt32 time)
-{
-    YM3812* ym3812 = (YM3812*)ptr;
-
-    ym3812->timerRunning1 = 0;
-    if (OPLTimerOver(ym3812->opl, 0)) {
-        ym3812TimerStart(ym3812, 0, 1);
-    }
-}
-
-static void onTimeout2(void* ptr, UInt32 time)
-{
-    YM3812* ym3812 = (YM3812*)ptr;
-
-    ym3812->timerRunning2 = 0;
-    if (OPLTimerOver(ym3812->opl, 1)) {
-        ym3812TimerStart(ym3812, 1, 1);
-    }
-}
-
 void ym3812TimerStart(void* ptr, int timer, int start)
 {
     YM3812* ym3812 = (YM3812*)ptr;
@@ -81,6 +61,26 @@ void ym3812TimerStart(void* ptr, int timer, int start)
                 ym3812->timerRunning2 = 0;
             }
         }
+    }
+}
+
+static void onTimeout1(void* ptr, UInt32 time)
+{
+    YM3812* ym3812 = (YM3812*)ptr;
+
+    ym3812->timerRunning1 = 0;
+    if (OPLTimerOver(ym3812->opl, 0)) {
+        ym3812TimerStart(ym3812, 0, 1);
+    }
+}
+
+static void onTimeout2(void* ptr, UInt32 time)
+{
+    YM3812* ym3812 = (YM3812*)ptr;
+
+    ym3812->timerRunning2 = 0;
+    if (OPLTimerOver(ym3812->opl, 1)) {
+        ym3812TimerStart(ym3812, 1, 1);
     }
 }
 

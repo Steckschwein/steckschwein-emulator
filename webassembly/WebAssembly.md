@@ -1,8 +1,8 @@
 ## WebAssembly/HTML5 Support
-The Commander X16 emulator supports a HTML/WebAssembly build target using the [Emscripten compiler](https://emscripten.org/).
+The Steckschwein emulator supports a HTML/WebAssembly build target using the [Emscripten compiler](https://emscripten.org/).
 
 ## Demo
-[HTML X16 Emulator Demo](https://sebastianvog.github.io/x16-emulator/x16emu.html)
+[HTML Steckschwein Emulator Demo](https://)
 ## Installation
 Follow installation steps from [here](https://emscripten.org/docs/getting_started/downloads.html#)
 
