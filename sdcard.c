@@ -165,7 +165,7 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 			case 0x40 + 25:  // write multi block
 				mblock = 0;
 				break;
-			case 0x40 + 24: { // write block
+			case 0x40 + 24: { // write block (0x18)
 				uint32_t lba = cmd[1] << 24 | cmd[2] << 16 | cmd[3] << 8 | cmd[4];
 				int fs = fseek(sdcard_file, lba * BLOCK_SIZE, SEEK_SET);
 				if(fs){

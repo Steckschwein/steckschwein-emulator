@@ -15,14 +15,11 @@ endif
 
 # Flags
 #
-CFLAGS=$(shell sdl-config $(SDL_PREFIX) --cflags)
-LDFLAGS=$(shell sdl-config $(SDL_PREFIX) --libs)
-
 # production flags (performance)
-#CFLAGS   += -g -w -Ofast -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror -fomit-frame-pointer
+CFLAGS   = -g -w -Ofast -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror -fomit-frame-pointer
 
 # development flags (debugger support)
-CFLAGS   += -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
+CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
 #CFLAGS   +=-DDEBUG_ENABLED
 # Videorenderer.c segfault inline asm, we disable it entirely
 CFLAGS   +=-DNO_ASM
@@ -36,13 +33,6 @@ CFLAGS   += -DEMU_FREQUENCY=8000000
 
 # ym3812 opl sound
 CFLAGS +=-DBUILD_YM3812
-
-LIBS     = -lSDL -lm -lz -lGL
-TARGET   = steckschwein-emu
-
-SRCS        = $(SOURCE_FILES)
-OBJS        = $(patsubst %.rc,%.res,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cc,%.o,$(patsubst %.c,%.o,$(filter %.c %.cc %.cpp %.cxx %.rc,$(SRCS)))))))
-OUTPUT_OBJS = $(addprefix $(OUTPUT_DIR)/, $(OBJS))
 
 #
 # SDL specific flags
@@ -61,7 +51,7 @@ endif
 ifeq ($(CROSS_COMPILE_WINDOWS),1)
 	SDLCONFIG=$(WIN_SDL)/bin/sdl-config
 else
-	SDLCONFIG=sdl-config
+	SDLCONFIG=/usr/bin/sdl-config
 endif
 
 ifdef CROSS_COMPILE_WINDOWS
@@ -84,6 +74,19 @@ ifeq ($(CROSS_COMPILE_WINDOWS),1)
 	LDFLAGS+=-static-libgcc -static-libstdc++ -mconsole -Wl,--subsystem,console
 endif
 
+SDL_CFLAGS=$(shell $(SDLCONFIG) $(SDL_PREFIX) --cflags)
+SDL_LDFLAGS=$(shell $(SDLCONFIG) $(SDL_PREFIX) --libs)
+
+CFLAGS+=-Ipopel $(SDL_CFLAGS) -Ipups
+LDFLAGS+=$(SDL_LDFLAGS)
+
+LIBS     = -lSDL -lm -lz -lGL
+TARGET   = steckschwein-emu
+
+SRCS        = $(SOURCE_FILES)
+OBJS        = $(patsubst %.rc,%.res,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cc,%.o,$(patsubst %.c,%.o,$(filter %.c %.cc %.cpp %.cxx %.rc,$(SRCS)))))))
+OUTPUT_OBJS = $(addprefix $(OUTPUT_DIR)/, $(OBJS))
+
 ifdef EMSCRIPTEN
 	LDFLAGS+=--shell-file webassembly/steckschwein-emu-template.html
 	LDFLAGS+=--preload-file rom.bin
@@ -97,7 +100,7 @@ ifdef EMSCRIPTEN
 endif
 
 ifneq ("$(wildcard ./rom_labels.h)","")
-HEADERS+=rom_labels.h
+	HEADERS+=rom_labels.h
 endif
 
 #
@@ -209,7 +212,7 @@ all: $(OUTPUT_DIR) $(TARGET)
 
 $(TARGET): $(OUTPUT_OBJS)
 	$(ECHO) Linking $@... $(LD) $(LDFLAGS) -o $@ $(OUTPUT_OBJS) $(LIBS)
-	$(LD) $(LDFLAGS) -o $@ $(OUTPUT_OBJS) $(LIBS)
+	$(SILENT)$(LD) $(LDFLAGS) -o $@ $(OUTPUT_OBJS) $(LIBS)
 
 clean: clean_$(TARGET)
 
@@ -228,7 +231,7 @@ $(OUTPUT_DIR):
 
 $(OUTPUT_DIR)/%.o: %.c
 	$(ECHO) Compiling $<...
-	$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
+	$(SILENT)$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
 
 #$(OUTPUT_DIR)/%.o: %.cc
 #	$(ECHO) Compiling $<...
@@ -244,7 +247,7 @@ $(OUTPUT_DIR)/%.o: %.c
 
 $(OUTPUT_DIR)/%.res: %.rc
 	$(ECHO) Compiling $<...
-	$(RC) $(CPPFLAGS) $(INCLUDE) -o $@ -i $<
+	$(SILENT)$(RC) $(CPPFLAGS) $(INCLUDE) -o $@ -i $<
 
 # WebASssembly/emscripten target
 #
