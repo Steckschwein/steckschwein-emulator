@@ -1339,7 +1339,7 @@ int main(int argc, char **argv) {
 	fclose(f);
 
 	if (sdcard_path) {
-		sdcard_file = fopen(sdcard_path, "rwb");
+		sdcard_file = fopen(sdcard_path, "r+b");
 		if (!sdcard_file) {
 			fprintf(stderr, "Cannot open %s!\n", sdcard_path);
 			exit(1);
