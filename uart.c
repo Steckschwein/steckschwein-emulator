@@ -106,6 +106,15 @@ void loadFile(int prg_override_start, FILE *prg_file) {
 	}
 }
 
+void reset_upload() {
+	upload_protocol_ix = 0;
+	if (p_prg_img != NULL) {
+		free(p_prg_img); //free
+		p_prg_img = NULL;
+		p_prg_img_ix = NULL;
+	}
+}
+
 void uart_init(unsigned char *p_prg_path, int p_prg_override_start, bool checkLmf) {
 	prg_path = p_prg_path;
 	prg_override_start = p_prg_override_start;
@@ -176,15 +185,6 @@ uint8_t upload_read_OK(uint8_t r) {
 		return lsr_THRE;
 	}
 	return lsr_DR;
-}
-
-void reset_upload() {
-	upload_protocol_ix = 0;
-	if (p_prg_img != NULL) {
-		free(p_prg_img); //free
-		p_prg_img = NULL;
-		p_prg_img_ix = NULL;
-	}
 }
 
 void upload_write_OK(uint8_t r, uint8_t v) {

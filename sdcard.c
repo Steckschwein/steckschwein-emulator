@@ -173,9 +173,8 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 				}else{
 					block_response[0] = 0;
 					block_response[1] = 0xfe;
-					memset(&block_response[2 + BLOCK_SIZE + 2], 0xff, 4);
 					p_data = block_response;
-					data_length = 2 + BLOCK_SIZE + 2 + 2;
+					data_length = 2 + BLOCK_SIZE + 2;
 				}
 				mblock = 0;
 				break;

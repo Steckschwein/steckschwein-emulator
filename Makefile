@@ -1,7 +1,7 @@
 #
 # Comment out if verbose comilation is wanted
 #
-#SILENT = @
+SILENT = @
 
 #
 # windows 10 build
@@ -19,7 +19,7 @@ endif
 CFLAGS   = -g -w -Ofast -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror -fomit-frame-pointer
 
 # development flags (debugger support)
-CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
+#CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
 #CFLAGS   +=-DDEBUG_ENABLED
 # Videorenderer.c segfault inline asm, we disable it entirely
 CFLAGS   +=-DNO_ASM
@@ -34,6 +34,7 @@ CFLAGS   += -DEMU_FREQUENCY=8000000
 # ym3812 opl sound
 CFLAGS +=-DBUILD_YM3812
 
+LDFLAGS=
 #
 # SDL specific flags
 #
@@ -51,8 +52,14 @@ endif
 ifeq ($(CROSS_COMPILE_WINDOWS),1)
 	SDLCONFIG=$(WIN_SDL)/bin/sdl-config
 else
-	SDLCONFIG=/usr/bin/sdl-config
+	SDLCONFIG=sdl-config
 endif
+
+SDL_CFLAGS=$(shell $(SDLCONFIG) $(SDL_PREFIX) --cflags)
+SDL_LDFLAGS=$(shell $(SDLCONFIG) $(SDL_PREFIX) --libs) -lm
+
+CFLAGS+=$(SDL_CFLAGS)
+LDFLAGS+=$(SDL_LDFLAGS)
 
 ifdef CROSS_COMPILE_WINDOWS
 	CFLAGS+=-Wno-error=deprecated-declarations
@@ -74,13 +81,7 @@ ifeq ($(CROSS_COMPILE_WINDOWS),1)
 	LDFLAGS+=-static-libgcc -static-libstdc++ -mconsole -Wl,--subsystem,console
 endif
 
-SDL_CFLAGS=$(shell $(SDLCONFIG) $(SDL_PREFIX) --cflags)
-SDL_LDFLAGS=$(shell $(SDLCONFIG) $(SDL_PREFIX) --libs)
-
-CFLAGS+=-Ipopel $(SDL_CFLAGS) -Ipups
-LDFLAGS+=$(SDL_LDFLAGS)
-
-LIBS     = -lSDL -lm -lz -lGL
+LIBS     = -lz
 TARGET   = steckschwein-emu
 
 SRCS        = $(SOURCE_FILES)
@@ -94,7 +95,7 @@ ifdef EMSCRIPTEN
 	LDFLAGS+=-s ASSERTIONS=1
  	LDFLAGS+=-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
 	# To the Javascript runtime exported functions
-	LDFLAGS+=-s EXPORTED_FUNCTIONS='["_j2c_reset", "_j2c_paste", "_j2c_start_audio", _main]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'
+	LDFLAGS+=-s EXPORTED_FUNCTIONS='["_j2c_reset", "_j2c_paste", "_j2c_start_audio", _main]' -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'
 
 	TARGET=steckschwein-emu.html
 endif
@@ -106,12 +107,6 @@ endif
 #
 # Tools
 #
-#CC    = $(SILENT)gcc
-#CXX   = $(SILENT)g++
-LD    = $(SILENT)g++
-#CC    = $(SILENT)emcc
-#CXX   = $(SILENT)emcc
-#LD    = $(SILENT)emcc
 RM    = $(SILENT)-rm -f
 RMDIR = $(SILENT)-rm -rf
 MKDIR = $(SILENT)-mkdir
@@ -211,8 +206,8 @@ SOURCE_FILES += javascript_interface.c
 all: $(OUTPUT_DIR) $(TARGET)
 
 $(TARGET): $(OUTPUT_OBJS)
-	$(ECHO) Linking $@... $(LD) $(LDFLAGS) -o $@ $(OUTPUT_OBJS) $(LIBS)
-	$(SILENT)$(LD) $(LDFLAGS) -o $@ $(OUTPUT_OBJS) $(LIBS)
+	$(ECHO) Linking $@... $(CC) $(LDFLAGS) -o $@ $(OUTPUT_OBJS) $(LIBS)
+	$(SILENT)$(CC) -o $@ $(OUTPUT_OBJS) $(LDFLAGS) $(LIBS)
 
 clean: clean_$(TARGET)
 
@@ -220,7 +215,7 @@ clean_$(TARGET):
 	$(ECHO) Cleaning files ...
 	$(RMDIR) -rf $(OUTPUT_DIR)
 	$(RM) -f $(TARGET)
-#	rm -f *.o cpu/*.o extern/src/*.o steckschwein-emu steckschwein-emu.exe steckschwein-emu.js steckschwein-emu.wasm steckschwein-emu.data steckschwein-emu.worker.js steckschwein-emu.html steckschwein-emu.html.mem
+	$(RM) -f *.o cpu/*.o extern/src/*.o steckschwein-emu.js steckschwein-emu.wasm steckschwein-emu.data steckschwein-emu.worker.js steckschwein-emu.html steckschwein-emu.html.mem
 
 cpu/tables.h cpu/mnemonics.h: cpu/buildtables.py cpu/6502.opcodes cpu/65c02.opcodes
 	cd cpu && python buildtables.py

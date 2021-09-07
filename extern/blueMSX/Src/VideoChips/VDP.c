@@ -28,7 +28,7 @@
 #include "VDP.h"
 #include "V9938.h"
 #include "Board.h"
-//#include "IoPort.h"
+#include "IoPort.h"
 //#include "SaveState.h"
 //#include "DeviceManager.h"
 #include "DebugDeviceManager.h"
