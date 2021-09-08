@@ -16,10 +16,10 @@ endif
 # Flags
 #
 # production flags (performance)
-CFLAGS   = -g -w -Ofast -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror -fomit-frame-pointer
+CFLAGS   = -g -w -O3 -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror -fomit-frame-pointer
 
 # development flags (debugger support)
-#CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -DUSE_SDL -Wall -Werror
+#CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror
 #CFLAGS   +=-DDEBUG_ENABLED
 # Videorenderer.c segfault inline asm, we disable it entirely
 CFLAGS   +=-DNO_ASM
@@ -55,11 +55,8 @@ else
 	SDLCONFIG=sdl-config
 endif
 
-SDL_CFLAGS=$(shell $(SDLCONFIG) $(SDL_PREFIX) --cflags)
-SDL_LDFLAGS=$(shell $(SDLCONFIG) $(SDL_PREFIX) --libs) -lm
-
-CFLAGS+=$(SDL_CFLAGS)
-LDFLAGS+=$(SDL_LDFLAGS)
+CFLAGS+=$(shell $(SDLCONFIG) $(SDL_PREFIX) --cflags) #-I/usr/include/SDL
+LDFLAGS+=$(shell $(SDLCONFIG) $(SDL_PREFIX) --libs) -lm
 
 ifdef CROSS_COMPILE_WINDOWS
 	CFLAGS+=-Wno-error=deprecated-declarations
@@ -81,7 +78,7 @@ ifeq ($(CROSS_COMPILE_WINDOWS),1)
 	LDFLAGS+=-static-libgcc -static-libstdc++ -mconsole -Wl,--subsystem,console
 endif
 
-LIBS     = -lz
+LIBS     = #-lz
 TARGET   = steckschwein-emu
 
 SRCS        = $(SOURCE_FILES)
@@ -89,6 +86,8 @@ OBJS        = $(patsubst %.rc,%.res,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(
 OUTPUT_OBJS = $(addprefix $(OUTPUT_DIR)/, $(OBJS))
 
 ifdef EMSCRIPTEN
+	CFLAGS+=-s USE_SDL=1
+	LDFLAGS+=-s USE_SDL=1	
 	LDFLAGS+=--shell-file webassembly/steckschwein-emu-template.html
 	LDFLAGS+=--preload-file rom.bin
 	LDFLAGS+=-s TOTAL_MEMORY=32MB
@@ -120,22 +119,21 @@ EXTERN_BLUEMSX_DIR=$(ROOT_DIR)/extern/blueMSX
 #
 # Include paths
 #
-INCLUDE =
-INCLUDE += -I$(ROOT_DIR)
-INCLUDE += -I$(ROOT_DIR)/extern/include
-INCLUDE += -I$(ROOT_DIR)/extern/src
+CFLAGS += -I$(ROOT_DIR)
+CFLAGS += -I$(ROOT_DIR)/extern/include
+CFLAGS += -I$(ROOT_DIR)/extern/src
 # blue msx include stuff
-INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Arch
-INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Board
-INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Common
-INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Cpu
-INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Debugger
-INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Emulator
-INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Memory
-INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/Sdl
-INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/SoundChips
-INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/VideoChips
-INCLUDE += -I$(EXTERN_BLUEMSX_DIR)/Src/VideoRender
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Arch
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Board
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Common
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Cpu
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Debugger
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Emulator
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Memory
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Sdl
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/SoundChips
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/VideoChips
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/VideoRender
 
 #vpath % $(ROOT_DIR)
 vpath % $(ROOT_DIR)/cpu
@@ -216,7 +214,8 @@ clean_$(TARGET):
 	$(RMDIR) -rf $(OUTPUT_DIR)
 	$(RM) -f $(TARGET)
 	$(RM) -f *.o cpu/*.o extern/src/*.o steckschwein-emu.js steckschwein-emu.wasm steckschwein-emu.data steckschwein-emu.worker.js steckschwein-emu.html steckschwein-emu.html.mem
-
+	$(RM) -f extern/blueMSX/objs/*.o 
+	
 cpu/tables.h cpu/mnemonics.h: cpu/buildtables.py cpu/6502.opcodes cpu/65c02.opcodes
 	cd cpu && python buildtables.py
 

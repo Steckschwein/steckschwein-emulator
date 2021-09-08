@@ -74,7 +74,7 @@ uint16_t trace_address = 0;
 
 static Mixer *mixer;
 
-unsigned char *prg_path;
+extern unsigned char *prg_path; //extern - also used in uart
 
 bool checkUploadLmf = false; //check lmf of the upload file, if not changed no recurring uploads
 bool run_after_load = false;

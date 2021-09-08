@@ -6,7 +6,7 @@
 #define _VIA_H_
 
 #include <stdint.h>
-#include <sdcard.h>
+#include "sdcard.h"
 #include <SDL_joystick.h>
 #include <SDL_events.h>
 
