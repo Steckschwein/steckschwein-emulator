@@ -20,6 +20,8 @@
 
 extern bool isDebuggerEnabled;
 
+void emulatorStart(const char *stateName);
+
 typedef enum {
 	ECHO_MODE_NONE,
 	ECHO_MODE_RAW,

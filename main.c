@@ -197,7 +197,7 @@ void machine_paste(char *s) {
 }
 
 static void usage() {
-	printf("\nSteckschwein Emulator (C)2019 Michael Steil, Thomas Woinke\n");
+	printf("\nSteckschwein Emulator (C)2019 Michael Steil, Thomas Woinke, Marko Lauke\n");
 	printf("All rights reserved. License: 2-clause BSD\n\n");
 	printf("Usage: steckschwein-emu [option] ...\n\n");
 	printf("-rom <rom.bin>[,<load_addr>]\n");
@@ -1174,13 +1174,15 @@ int main(int argc, char **argv) {
 				if (!strcmp(argv[0], keymaps[i])) {
 					found = true;
 					keymap = i;
+					break;
 				}
 			}
 			if (!found) {
 				usage_keymap();
 			}
+			argc--;
+			argv++;
 		} else if (nextArg(&argc, &argv, "-upload")) {
-//		} else if (!strcmp(argv[0], "-upload")) {
 			assertParam(argc, argv);
 			prg_path = argv[0];
 			argc--;
@@ -1435,12 +1437,6 @@ int main(int argc, char **argv) {
     }
 #endif
 
-//#ifdef __EMSCRIPTEN__
-//	emscripten_set_main_loop(emscripten_main_loop, 0, 1);
-//#else
-//	emulator_loop(NULL);
-//#endif
-
 	// For stop threads before destroy.
 	// Clean up.
 	if (SDL_WasInit(SDL_INIT_EVERYTHING)) {
@@ -1536,3 +1532,9 @@ emulator_loop(void *param) {
 
 	return 0;
 }
+
+//#ifdef __EMSCRIPTEN__
+//	emscripten_set_main_loop(emscripten_main_loop, 0, 1);
+//#else
+//	emulator_loop(NULL);
+//#endif

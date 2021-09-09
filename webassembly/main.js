@@ -48,12 +48,10 @@ if (layouts.includes(lang)) {
     lang = 'en-us';
 }
 
-
-
 var Module = {
     preRun: [
         function() { //Set the keyboard handling element (it's document by default). Keystrokes are stopped from propagating by emscripten, maybe there's an option to disable this?
-            ENV.SDL_EMSCRIPTEN_KEYBOARD_ELEMENT = "#canvas";
+    //        ENV.SDL_EMSCRIPTEN_KEYBOARD_ELEMENT = "#canvas";
         }
     ],
     postRun: [
@@ -61,8 +59,11 @@ var Module = {
             canvas.focus();
         }
     ],
+	logReadFiles: 1,
+	
     arguments: [ //set key map to user's lang
-        '-keymap', lang
+        '-keymap', lang,
+//        '-rom', 'bios.bin'
     ],
     print: (function() {
 
@@ -76,7 +77,6 @@ var Module = {
         if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
 
         logOutput("[error] " + text);
-
 
     },
     canvas: (function() {
@@ -124,8 +124,6 @@ var Module = {
 };
 
 
-
-
 Module.setStatus('Downloading file...');
 logOutput('Downloading file...');
 
@@ -162,7 +160,6 @@ function runCode() {
     enableAudio(true);
     Module.ccall("j2c_paste", "void", ["string"], ['\nNEW\n' + code.value + '\nRUN\n']);
     canvas.focus();
-
 }
 
 function closeFs() {

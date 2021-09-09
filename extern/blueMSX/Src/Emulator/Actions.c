@@ -32,8 +32,8 @@
 #include "Debugger.h"
 #include "VideoManager.h"
 #include "VDP.h"
-
 #include "ArchVideoIn.h"
+#include "glue.h"
 
 #include <stdio.h>
 #include <stdlib.h>
