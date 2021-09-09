@@ -1,6 +1,5 @@
 #include "Steckschwein.h"
 #include "MOS6502.h"
-//test
 #include "VDP.h"
 #include "ym3812.h"
 

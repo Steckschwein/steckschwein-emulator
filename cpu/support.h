@@ -73,4 +73,3 @@ void reset6502() {
     sp = 0xFD;
     status |= FLAG_CONSTANT;
 }
-

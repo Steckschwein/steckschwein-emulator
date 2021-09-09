@@ -4,6 +4,8 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include "Actions.h"
+#include "Board.h"
 #include "spi.h"
 #include "sdcard.h"
 #include "via.h"

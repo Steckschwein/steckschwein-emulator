@@ -51,7 +51,7 @@ if (layouts.includes(lang)) {
 var Module = {
     preRun: [
         function() { //Set the keyboard handling element (it's document by default). Keystrokes are stopped from propagating by emscripten, maybe there's an option to disable this?
-    //        ENV.SDL_EMSCRIPTEN_KEYBOARD_ELEMENT = "#canvas";
+            ENV.SDL_EMSCRIPTEN_KEYBOARD_ELEMENT = "#canvas";
         }
     ],
     postRun: [
@@ -59,6 +59,7 @@ var Module = {
             canvas.focus();
         }
     ],
+    //onAbort: 
 	logReadFiles: 1,
 	
     arguments: [ //set key map to user's lang

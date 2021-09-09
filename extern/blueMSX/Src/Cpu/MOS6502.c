@@ -1,4 +1,5 @@
 #include "MOS6502.h"
+#include "EmulatorDebugger.h"
 #include "cpu/fake6502.h"
 #include "glue.h"
 
@@ -53,10 +54,9 @@ void mos6502Execute(MOS6502 *mos6502) {
 			}
 		}
 #endif
-
 		step6502();
 		mos6502->systemTime = clockticks6502;
-
+		DEBUG ("mos6502Execute %p %x\n", mos6502, mos6502->systemTime);
 	}
 }
 

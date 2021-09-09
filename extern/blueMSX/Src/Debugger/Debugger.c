@@ -28,9 +28,9 @@
 
 #include "Debugger.h"
 #include "DebugDeviceManager.h"
-#include "glue.h"
-//#include "Actions.h"
-//#include "Board.h"
+#include "Emulator.h"
+#include "Actions.h"
+#include "Board.h"
 #include <stdlib.h>
 
 struct BlueDebugger {

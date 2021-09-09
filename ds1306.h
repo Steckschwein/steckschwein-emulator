@@ -25,7 +25,6 @@
 
 #define	RTC_USER_RAM_BASE	0x20
 
-
 void spi_rtc_init();
 void spi_rtc_destroy();
 

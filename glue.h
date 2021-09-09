@@ -44,8 +44,6 @@ typedef enum {
 } gif_recorder_state_t;
 
 
-typedef enum { EMU_RUNNING, EMU_PAUSED, EMU_STOPPED, EMU_SUSPENDED, EMU_STEP, EMU_STEP_BACK } EmuState;
-
 void actionEmuTogglePause();
 void actionEmuStepBack();
 
@@ -64,7 +62,7 @@ extern char *gif_path;
 extern uint8_t keymap;
 
 extern void machine_dump();
-extern void machine_reset();
+extern void machine_reset(int prg_override_start);
 extern void machine_paste();
 extern void init_audio();
 

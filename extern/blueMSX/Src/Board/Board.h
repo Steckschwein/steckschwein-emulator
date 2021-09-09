@@ -82,6 +82,8 @@ UInt64 boardSystemTime64();
 void boardSetFrequency(int frequency);
 int  boardGetRefreshRate();
 
+void boardSetFdcTimingEnable(int enable);
+
 void boardSetBreakpoint(UInt16 address);
 void boardClearBreakpoint(UInt16 address);
 

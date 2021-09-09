@@ -23,13 +23,20 @@
 #include "uart.h"
 #include "spi.h"
 #include "sdcard.h"
+#include "ds1306.h"
 #include "glue.h"
 #include "joystick.h"
+#include "Board.h"
+#include "Emulator.h"
+#include "Debugger.h"
 #include "EmulatorDebugger.h"
 #include "Properties.h"
-//#include "ArchSound.h"
+#include "Actions.h"
+#include "ArchSound.h"
+#include "ArchNotifications.h"
 #include "ArchEvent.h"
 #include "ArchThread.h"
+#include "ArchTimer.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -602,6 +609,7 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
 #ifdef SINGLE_THREADED
 	emuExitFlag |= archPollEvent();
 #endif
+	DEBUG(stdout, "WaitForSync %x\n", emuExitFlag);
 
 	if (((++kbdPollCnt & 0x03) >> 1) == 0) {
 //       archPollInput();
@@ -923,7 +931,6 @@ void emulatorStop() {
 	archThreadDestroy(emuThread);
 //    archMidiEnable(0);
 //    machineDestroy(machine);
-	archThreadDestroy(emuThread);
 #ifndef WII
 	archEventDestroy(emuSyncEvent);
 #endif

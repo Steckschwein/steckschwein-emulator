@@ -15,6 +15,7 @@
 #include "extern/blueMSX/Src/SoundChips/Fmopl.h"
 #include "AudioMixer.h"
 #include "Board.h"
+#include "IoPort.h"
 
 /* Type definitions */
 typedef struct YM3812 YM3812;
@@ -22,5 +23,6 @@ typedef struct YM3812 YM3812;
 YM3812* ym3812Create();
 UInt8 ym3812Read(YM3812* ym3812, UInt16 ioPort);
 void ym3812Write(YM3812* ym3812, UInt16 ioPort, UInt8 value);
+void ym3812Destroy(YM3812* ym3812);
 
 #endif

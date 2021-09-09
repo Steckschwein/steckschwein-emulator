@@ -10,6 +10,8 @@
 // *******************************************************************************************
 
 #include "Debugger.h"
+#include "Board.h"
+#include "Emulator.h"
 #include "EmulatorDebugger.h"
 
 #include <stdbool.h>
@@ -24,6 +26,7 @@
 #include "glue.h"
 #include "memory.h"
 #include "rendertext.h"
+#include "cpu/fake6502.h"
 
 static void DEBUGHandleKeyEvent(SDLKey key, int isShift);
 

@@ -26,7 +26,7 @@
 ******************************************************************************
 */
 #include "VideoManager.h"
-//#include "ArchNotifications.h"
+#include "ArchNotifications.h"
 //#include "SaveState.h"
 #include <stdlib.h>
 #include <string.h>

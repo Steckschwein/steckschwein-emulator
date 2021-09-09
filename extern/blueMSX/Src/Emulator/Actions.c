@@ -33,7 +33,8 @@
 #include "VideoManager.h"
 #include "VDP.h"
 #include "ArchVideoIn.h"
-#include "glue.h"
+#include "ArchNotifications.h"
+#include "Emulator.h"
 
 #include <stdio.h>
 #include <stdlib.h>
