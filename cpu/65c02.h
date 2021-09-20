@@ -192,17 +192,33 @@ static void smb7() {
     putvalue(result);
 }
 
+static void bbsr_X(uint8_t bit, uint8_t predicate) {
 
-static void bbs7() {
     value = getvalue();
-    if (value & 0b10000000) {
-    
+    if ((value & (1<<bit)) == (predicate<<bit)) {
 	    oldpc = pc;
 	    pc += reladdr;
-	    if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502 += 2; //check if jump crossed a page boundary
-		else clockticks6502++;
-    }   
+	    if ((oldpc & 0xFF00) != (pc & 0xFF00)) clockticks6502++; //if branch crossed a page boundary, +1 cl
+    }
 }
+
+static void bbr0() { bbsr_X(0, 0); }
+static void bbr1() { bbsr_X(1, 0); }
+static void bbr2() { bbsr_X(2, 0); }
+static void bbr3() { bbsr_X(3, 0); }
+static void bbr4() { bbsr_X(4, 0); }
+static void bbr5() { bbsr_X(5, 0); }
+static void bbr6() { bbsr_X(6, 0); }
+static void bbr7() { bbsr_X(7, 0); }
+
+static void bbs0() { bbsr_X(0, 1); }
+static void bbs1() { bbsr_X(1, 1); }
+static void bbs2() { bbsr_X(2, 1); }
+static void bbs3() { bbsr_X(3, 1); }
+static void bbs4() { bbsr_X(4, 1); }
+static void bbs5() { bbsr_X(5, 1); }
+static void bbs6() { bbsr_X(6, 1); }
+static void bbs7() { bbsr_X(7, 1); }
 
 // *******************************************************************************************
 //
