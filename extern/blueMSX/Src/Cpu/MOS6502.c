@@ -23,7 +23,6 @@ void mos6502Reset(MOS6502 *mos6502, UInt32 cpuTime) {
 void mos6502SetInt(MOS6502 *mos6502) {
 	DEBUG ("mos6502SetInt %p\n", mos6502);
 	mos6502->intState = INT_LOW;
-	irq6502();
 }
 
 void mos6502Execute(MOS6502 *mos6502) {
@@ -54,6 +53,9 @@ void mos6502Execute(MOS6502 *mos6502) {
 			}
 		}
 #endif
+		if(mos6502->intState == INT_LOW){
+			irq6502();
+		}
 		step6502();
 		mos6502->systemTime = clockticks6502;
 		DEBUG ("mos6502Execute %p %x\n", mos6502, mos6502->systemTime);

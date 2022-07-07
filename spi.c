@@ -73,6 +73,7 @@ uint8_t spi_handle_keyboard(uint8_t inbyte) {
 		default: //output captured keycode
 			outbyte = last_keycode;
 			last_keycode = 0;
+			boardClearInt(0x08);
 		}
 		cmd = 0;
 	}
