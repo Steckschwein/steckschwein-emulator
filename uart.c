@@ -14,6 +14,23 @@
 
 #define UART_CHECK_UPLOAD_INTERVAL_SECONDS 3
 
+/**
+
+# serial loopback
+$ socat -d -d pty,link=/tmp/ssw_uart0,raw,echo=0 pty,link=/tmp/ssw_emu_uart0,raw,echo=0 &
+2022/09/17 12:02:50 socat[2554893] N PTY is /dev/pts/32
+2022/09/17 12:02:50 socat[2554893] N PTY is /dev/pts/33
+2022/09/17 12:02:50 socat[2554893] N starting data transfer loop with FDs [5,5] and [7,7]
+
+# host device
+$ cat /tmp/ssw_emu_uart0 & # im emu mit open("/tmp/ssw... 
+
+# emulator device
+$ echo "Hallo Thomas... some serial" > /tmp/ssw_uart0 
+Hallo Thomas... some serial
+
+*/
+
 static uint8_t uartregisters[16];
 
 extern int errno;
