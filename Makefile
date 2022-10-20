@@ -24,7 +24,7 @@ CFLAGS   = -g -w -O3 -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -
 # Videorenderer.c segfault inline asm, we disable it entirely
 CFLAGS   +=-DNO_ASM
 
-#CFLAGS   += -DSINGLE_THREADED 
+#CFLAGS   += -DSINGLE_THREADED
 #CFLAGS   += -DNO_TIMERS
 #CFLAGS   += -DNO_HIRES_TIMERS
 #CFLAGS   += -DEMU_FREQUENCY=3579545
@@ -34,6 +34,9 @@ CFLAGS   += -DEMU_FREQUENCY=8000000
 
 # ym3812 opl sound
 CFLAGS +=-DBUILD_YM3812
+
+# switch compile ssw 2.0 architecture
+CFLAGS +=-DSSW2_0
 
 LDFLAGS=
 #
@@ -98,7 +101,7 @@ ifdef EMSCRIPTEN
 #	LDFLAGS+=-s EXIT_RUNTIME=1
  	LDFLAGS+=-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
 	# To the Javascript runtime exported functions
-	LDFLAGS+=-s EXPORTED_FUNCTIONS='["_SDL_SetTimer", "_SDL_WaitEvent", "_SDL_KillThread", "_SDL_CreateSemaphore", "_SDL_DestroySemaphore", "_SDL_SemPost", "_SDL_SemWait", "_j2c_reset", "_j2c_paste", "_j2c_start_audio", _main]' 
+	LDFLAGS+=-s EXPORTED_FUNCTIONS='["_SDL_SetTimer", "_SDL_WaitEvent", "_SDL_KillThread", "_SDL_CreateSemaphore", "_SDL_DestroySemaphore", "_SDL_SemPost", "_SDL_SemWait", "_j2c_reset", "_j2c_paste", "_j2c_start_audio", _main]'
 	LDFLAGS+=-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'
 #	LDFLAGS+=-s LLD_REPORT_UNDEFINED
 #	LDFLAGS+=-s ERROR_ON_UNDEFINED_SYMBOLS=0
@@ -219,8 +222,8 @@ clean_$(TARGET):
 	$(RMDIR) -rf $(OUTPUT_DIR)
 	$(RM) -f $(TARGET)
 	$(RM) -f *.o cpu/*.o extern/src/*.o steckschwein-emu.js steckschwein-emu.wasm steckschwein-emu.data steckschwein-emu.worker.js steckschwein-emu.html steckschwein-emu.html.mem
-	$(RM) -f extern/blueMSX/objs/*.o 
-	
+	$(RM) -f extern/blueMSX/objs/*.o
+
 cpu/tables.h cpu/mnemonics.h: cpu/buildtables.py cpu/6502.opcodes cpu/65c02.opcodes
 	cd cpu && python buildtables.py
 

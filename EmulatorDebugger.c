@@ -499,7 +499,12 @@ static int DEBUGRenderRegisters(void) {
 	DEBUGNumber(DBG_DATX, yc++, y, 2, col_data);
 	yc++;
 
+#ifdef SSW2_0
+	DEBUGNumber(DBG_DATX, yc++, 0, 4, col_data);
+#else
 	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(), 4, col_data);
+#endif
+
 	DEBUGNumber(DBG_DATX, yc++, pc, 4, col_data);
 	DEBUGNumber(DBG_DATX, yc++, sp | 0x100, 4, col_data);
 	yc++;

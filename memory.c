@@ -12,7 +12,15 @@
 
 #include "memory.h"
 
+#ifdef SSW2_0
+uint8_t ctrl_reg0;
+uint8_t ctrl_reg1;
+uint8_t ctrl_reg2;
+uint8_t ctrl_reg3;
+#else
 uint8_t ctrl_port;
+#endif
+
 uint8_t *ram;
 uint8_t *rom;
 
@@ -21,12 +29,17 @@ uint8_t *rom;
 void memory_init() {
 	ram = malloc(RAM_SIZE);
 	rom = malloc(ROM_SIZE);
+#ifdef SSW2_0
+#else
 	ctrl_port = 0;
+#endif
 }
 
+#ifndef SSW2_0
 uint8_t memory_get_ctrlport() {
 	return ctrl_port;
 }
+#endif
 
 void memory_destroy() {
 	free(ram);
@@ -43,8 +56,10 @@ uint8_t read6502(uint16_t address) {
 }
 
 uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
-//	printf("read6502 %x %x\n", address, bank);
 
+#ifdef SSW2_0
+#else
+//	printf("read6502 %x %x\n", address, bank);
 	if (address < 0x0200) { // RAM
 		return ram[address];
 	} else if (address < 0x0280) { // I/O
@@ -71,6 +86,7 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
 		if (address < 0xe000 || (ctrl_port & 1)) {
 			return ram[address]; // RAM
 		}
+
 		/* bank select upon ctrl_port - see steckos/asminc/system.inc
 		 BANK_SEL0 = 0010
 		 BANK_SEL1 = 0100
@@ -81,9 +97,13 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
 		 */
 		return rom[(address & 0x1fff) | ((ctrl_port & 0x06) << 12)];
 	}
+#endif
 }
 
 void write6502(uint16_t address, uint8_t value) {
+
+#ifdef SSW2_0
+#else
 //	printf("write6502 %x %x\n", address, value);
 	if (address < 0x0200) { // RAM
 		ram[address] = value;
@@ -122,6 +142,7 @@ void write6502(uint16_t address, uint8_t value) {
 		// Writes go to ram, regardless if ROM active or not
 		ram[address] = value;
 	}
+#endif
 }
 
 //

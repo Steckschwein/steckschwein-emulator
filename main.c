@@ -1273,6 +1273,7 @@ int main(int argc, char **argv) {
 		} else if (nextArg(&argc, &argv, "-debug")) {
 			isDebuggerEnabled = true;
 			if (argc && argv[0][0] != '-') {
+				printf("debug, break at $%x\n", strtol(argv[0], NULL, 16));
 				DEBUGSetBreakPoint((uint16_t) strtol(argv[0], NULL, 16));
 				argc--;
 				argv++;
