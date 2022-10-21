@@ -36,7 +36,7 @@ CFLAGS   += -DEMU_FREQUENCY=8000000
 CFLAGS +=-DBUILD_YM3812
 
 # switch compile ssw 2.0 architecture
-# CFLAGS +=-DSSW2_0
+CFLAGS +=-DSSW2_0
 
 LDFLAGS=
 #

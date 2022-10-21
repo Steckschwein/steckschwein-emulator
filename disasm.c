@@ -36,8 +36,8 @@ int disasm(uint16_t pc, uint8_t *RAM, char *line, unsigned int max_line, bool de
 		length = 2;
 		if (isBBx){
 			length = 3;
-			snprintf(line, max_line, mnemonic, real_read6502(pc+1, debugOn, bank));
-			snprintf(line, max_line, mnemonic, pc+2 + (int8_t)real_read6502(pc+2, debugOn, bank));
+			printf("%s 0x%x\n", mnemonic, real_read6502(pc+1, debugOn, bank));
+			snprintf(line, max_line, mnemonic, real_read6502(pc+1, debugOn, bank), pc+2 + (int8_t)real_read6502(pc+2, debugOn, bank));
 		}else if (isBranch) {
 			snprintf(line, max_line, mnemonic, pc+2 + (int8_t)real_read6502(pc+1, debugOn, bank));
 		} else {
