@@ -12,14 +12,7 @@
 
 #include "memory.h"
 
-#ifdef SSW2_0
-uint8_t ctrl_reg0;
-uint8_t ctrl_reg1;
-uint8_t ctrl_reg2;
-uint8_t ctrl_reg3;
-#else
-uint8_t ctrl_port;
-#endif
+uint8_t ctrl_port[] = {0,0,0,0};
 
 uint8_t *ram;
 uint8_t *rom;
@@ -30,16 +23,18 @@ void memory_init() {
 	ram = malloc(RAM_SIZE);
 	rom = malloc(ROM_SIZE);
 #ifdef SSW2_0
+	ctrl_port[0] = 0x01;
+	ctrl_port[1] = 0x02;
+	ctrl_port[2] = 0x80;
+	ctrl_port[3] = 0x81;
 #else
-	ctrl_port = 0;
+	ctrl_port[0] = 0x00;
 #endif
 }
 
-#ifndef SSW2_0
-uint8_t memory_get_ctrlport() {
-	return ctrl_port;
+uint8_t memory_get_ctrlport(uint8_t reg) {
+	return ctrl_port[reg & 0x03];
 }
-#endif
 
 void memory_destroy() {
 	free(ram);
@@ -56,10 +51,35 @@ uint8_t read6502(uint16_t address) {
 }
 
 uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
+	DEBUG("read6502 %x %x\n", address, bank);
+
 
 #ifdef SSW2_0
+	if (address >= 0x0200) {// I/O
+		if (address < 0x210) // UART at $0200
+		{
+			return uart_read(address & 0xf);
+		} else if (address < 0x0220) // VIA at $0210
+		{
+			return via1_read(address & 0xf);
+		} else if (address < 0x0230) // VDP at $0220
+		{
+			return ioPortRead(NULL, address);
+		} else if (address < 0x0240) // latch/cpld regs at $0x0230
+		{
+			#ifdef SSW2_0
+				return 0;
+			#else
+				return ctrl_port;
+			#endif
+		} else if (address < 0x0250) // OPL2 at $0240
+		{
+			return ioPortRead(NULL, address);
+		} else {
+			return emu_read(address & 0xf);
+		}
+	}
 #else
-//	printf("read6502 %x %x\n", address, bank);
 	if (address < 0x0200) { // RAM
 		return ram[address];
 	} else if (address < 0x0280) { // I/O
@@ -83,11 +103,11 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
 			return emu_read(address & 0xf);
 		}
 	} else {
-		if (address < 0xe000 || (ctrl_port & 1)) {
+		if (address < 0xe000 || (ctrl_port[0] & 1)) {
 			return ram[address]; // RAM
 		}
 
-		/* bank select upon ctrl_port - see steckos/asminc/system.inc
+		/* bank select upon ctrl_port[0] - see steckos/asminc/system.inc
 		 BANK_SEL0 = 0010
 		 BANK_SEL1 = 0100
 		 BANK0 = 0000
@@ -95,16 +115,17 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
 		 BANK2 = 0100
 		 BANK3 = 0110
 		 */
-		return rom[(address & 0x1fff) | ((ctrl_port & 0x06) << 12)];
+		return rom[(address & 0x1fff) | ((ctrl_port[0] & 0x06) << 12)];
 	}
 #endif
 }
 
 void write6502(uint16_t address, uint8_t value) {
+	DEBUG("write6502 %x %x\n", address, value);
 
 #ifdef SSW2_0
+
 #else
-//	printf("write6502 %x %x\n", address, value);
 	if (address < 0x0200) { // RAM
 		ram[address] = value;
 	} else if (address < 0x0280) { // I/O
@@ -120,8 +141,8 @@ void write6502(uint16_t address, uint8_t value) {
 			return;
 		} else if (address < 0x0240) // latch at $0x0230
 				{
-			ctrl_port = value;
-			DEBUG ("ctrl_port %x\n", ctrl_port);
+			ctrl_port[0] = value;
+			DEBUG ("ctrl_port %x\n", ctrl_port[0]);
 		} else if (address < 0x0250) // OPL2 at $0240
 				{
 			ioPortWrite(NULL, address, value);

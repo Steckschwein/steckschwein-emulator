@@ -226,6 +226,6 @@ static void bbs7() { bbsr_X(7, 1); }
 //
 // *******************************************************************************************
 #include "EmulatorDebugger.h"
-static void stp() {
+static void dbg() {
 	DEBUGBreakToDebugger();                          // Invoke debugger.
 }

@@ -474,9 +474,9 @@ static void DEBUGRenderCode(int lines, int initialPC) {
 //									Render Register Display
 //
 // *******************************************************************************************
-
-static char *labels[] = { "NV-BDIZC", "", "", "A", "X", "Y", "", "CTL", "PC", "SP", "", "BRK", "", "VDS", "VRL",
-		"VRH", "VRP", NULL };
+static char *labels[] = { "NV-BDIZC", "", "", "A", "X", "Y", "", "", "PC", "SP", "", "BRK", "",
+	"BR0", "BR1", "BR2", "BR3",
+	NULL };
 
 static int DEBUGRenderRegisters(void) {
 	int n = 0, yc = 0;
@@ -499,26 +499,15 @@ static int DEBUGRenderRegisters(void) {
 	DEBUGNumber(DBG_DATX, yc++, y, 2, col_data);
 	yc++;
 
-#ifdef SSW2_0
-	DEBUGNumber(DBG_DATX, yc++, 0, 4, col_data);
-#else
-	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(), 4, col_data);
-#endif
-
-	DEBUGNumber(DBG_DATX, yc++, pc, 4, col_data);
-	DEBUGNumber(DBG_DATX, yc++, sp | 0x100, 4, col_data);
-	yc++;
-
 	DEBUGNumber(DBG_DATX, yc++, breakPoint & 0xFFFF, 4, col_data);
 	yc++;
 
-//	getDebugInfo();
-//	DEBUGNumber(DBG_DATX, yc++, video_read(0, true) | (video_read(1, true)<<8) | (video_read(2, true)<<16), 2, col_data);
-//	DEBUGNumber(DBG_DATX, yc++, video_read(3, true), 2, col_data);
-//	DEBUGNumber(DBG_DATX, yc++, video_read(4, true), 2, col_data);
-//	DEBUGNumber(DBG_DATX, yc++, video_read(5, true), 2, col_data);
+	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(0), 2, col_data);
+	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(1), 2, col_data);
+	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(2), 2, col_data);
+	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(3), 2, col_data);
 
-	return n; 									// Number of code display lines
+	return n;// Number of code display lines
 }
 
 // *******************************************************************************************

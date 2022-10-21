@@ -240,8 +240,8 @@ void DEBUGWrite(SDL_Surface *renderer, int x, int y, int ch, SDL_Color colour) {
 	if (!textureInitialized) {
 		DEBUGInitChars(renderer);
 	}
-//	SDL_SetTextureColorMod(fontTexture, colour.r, colour.g, colour.b);
-//	SDL_SetColors(renderer, colour,)
+	// SDL_SetTextureColorMod(fontTexture, colour.r, colour.g, colour.b);
+	// SDL_SetColors(renderer, colour,)
 	ch -= 0x20;
 	SDL_Rect srcRect = { ch * CHAR_WIDTH, 0, CHAR_WIDTH, CHAR_HEIGHT };
 	SDL_Rect dstRect = { x * (CHAR_WIDTH + 1) + xPos, y * (CHAR_HEIGHT + 1) + yPos, CHAR_WIDTH, CHAR_HEIGHT };
