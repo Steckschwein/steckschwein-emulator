@@ -462,7 +462,7 @@ static void DEBUGRenderCode(int lines, int initialPC) {
 
 		DEBUGAddress(DBG_ASMX, y, currentPCBank, initialPC, col_label);
 
-		int size = disasm(initialPC, ram, buffer, sizeof(buffer), true, currentPCBank);	// Disassemble code
+		int size = disasm(initialPC, buffer, sizeof(buffer), true, currentPCBank);	// Disassemble code
 		// Output assembly highlighting PC
 		DEBUGString(dbgSurface, DBG_ASMX + 8, y, buffer, initialPC == pc ? col_highlight : col_data);
 		initialPC += size;									// Forward to next
@@ -497,6 +497,10 @@ static int DEBUGRenderRegisters(void) {
 	DEBUGNumber(DBG_DATX, yc++, a, 2, col_data);
 	DEBUGNumber(DBG_DATX, yc++, x, 2, col_data);
 	DEBUGNumber(DBG_DATX, yc++, y, 2, col_data);
+	yc += 2;
+
+	DEBUGNumber(DBG_DATX, yc++, pc, 4, col_data);
+	DEBUGNumber(DBG_DATX, yc++, sp | 0x100, 4, col_data);
 	yc++;
 
 	DEBUGNumber(DBG_DATX, yc++, breakPoint & 0xFFFF, 4, col_data);
@@ -521,7 +525,7 @@ static void DEBUGRenderStack(int bytesCount) {
 	int y = 0;
 	while (y < bytesCount) {
 		DEBUGNumber(DBG_STCK, y, data & 0xFFFF, 4, col_label);
-		int byte = real_read6502((data++) & 0xFFFF, false, 0);
+		int byte = real_read6502((data++) & 0xFFFF, true, 0);
 		DEBUGNumber(DBG_STCK + 5, y, byte, 2, col_data);
 		DEBUGWrite(dbgSurface, DBG_STCK + 9, y, byte, col_data);
 		y++;

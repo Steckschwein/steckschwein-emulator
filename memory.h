@@ -10,8 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define BANK_SIZE 14 // 14 bit $4000
 #define ROM_SIZE (32*1024)
-
 #ifdef SSW2_0
 #define RAM_SIZE (512*1024)
 #else
@@ -21,7 +21,7 @@
 uint8_t read6502(uint16_t address);
 uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank);
 
-uint8_t memory_get_ctrlport(uint8_t reg);
+uint8_t memory_get_ctrlport(uint16_t address);
 
 void memory_init();
 void memory_save(FILE *f, bool dump_ram, bool dump_bank);

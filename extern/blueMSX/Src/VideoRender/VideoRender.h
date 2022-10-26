@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -33,22 +33,22 @@
 
 struct Properties;
 
-typedef enum { 
-    VIDEO_GREEN, 
-    VIDEO_COLOR, 
+typedef enum {
+    VIDEO_GREEN,
+    VIDEO_COLOR,
     VIDEO_BLACKWHITE,
     VIDEO_AMBER
 } VideoColorMode;
 
-typedef enum { 
+typedef enum {
     VIDEO_PAL_FAST,
     VIDEO_PAL_MONITOR,
     VIDEO_PAL_SHARP,
-    VIDEO_PAL_SHARP_NOISE,  
-    VIDEO_PAL_BLUR, 
+    VIDEO_PAL_SHARP_NOISE,
+    VIDEO_PAL_BLUR,
     VIDEO_PAL_BLUR_NOISE,
 	VIDEO_PAL_SCALE2X,
-    VIDEO_PAL_HQ2X,
+    VIDEO_PAL_HQ2X
 } VideoPalMode;
 
 typedef struct Video Video;
@@ -89,6 +89,6 @@ void videoSetColors(Video* video, int saturation, int brightness, int contrast, 
 void videoSetScanLines(Video* video, int enable, int scanLinesPct);
 void videoSetColorSaturation(Video* video, int enable, int width);
 
-void videoUpdateAll(Video* video, struct Properties* properties); 
+void videoUpdateAll(Video* video, struct Properties* properties);
 
 #endif

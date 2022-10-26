@@ -54,8 +54,6 @@ char *paste_text = NULL;
 char paste_text_data[65536];
 bool pasting_bas = false;
 
-uint16_t num_ram_banks = 64; // 512 KB default
-
 extern int errno;
 
 bool log_video = false;
@@ -1171,7 +1169,6 @@ int main(int argc, char **argv) {
 			if (!found) {
 				usage();
 			}
-			num_ram_banks = kb / 8;
 		} else if (nextArg(&argc, &argv, "-keymap")) {
 			if (!argc || argv[0][0] == '-') {
 				usage_keymap();
@@ -1316,6 +1313,8 @@ int main(int argc, char **argv) {
 				properties->video.windowSize = P_VIDEO_SIZEX1;
 			} else if (nextArg(&argc, &argv, "2")) {
 				properties->video.windowSize = P_VIDEO_SIZEX2;
+			} else if (nextArg(&argc, &argv, "3")) {
+				properties->video.windowSize = P_VIDEO_SIZEX3;
 			} else if (nextArg(&argc, &argv, "full")) {
 				properties->video.windowSize = P_VIDEO_SIZEFULLSCREEN;
 			} else {

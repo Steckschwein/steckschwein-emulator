@@ -80,4 +80,4 @@ bbs5 zprel 2 $df
 bbs6 zprel 2 $ef
 bbs7 zprel 2 $ff
 
-dbg imp 1 $db
+stp imp 1 $db

@@ -121,6 +121,7 @@ ValueNamePair MonitorTypePair[] = {
 ValueNamePair WindowSizePair[] = {
     { P_VIDEO_SIZEX1,               "small" },
     { P_VIDEO_SIZEX2,               "normal" },
+    { P_VIDEO_SIZEX3,               "big" },
     { P_VIDEO_SIZEFULLSCREEN,       "fullscreen" },
     { -1,                           "" },
 };

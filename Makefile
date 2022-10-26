@@ -20,7 +20,7 @@ CFLAGS   = -g -w -O3 -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -
 
 # development flags (debugger support)
 CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror
-#CFLAGS   +=-DDEBUG_ENABLED
+# CFLAGS   +=-DDEBUG_ENABLED
 # Videorenderer.c segfault inline asm, we disable it entirely
 CFLAGS   +=-DNO_ASM
 
