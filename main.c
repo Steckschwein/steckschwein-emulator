@@ -207,20 +207,6 @@ static void usage() {
 	printf("\nSteckschwein Emulator (C)2019 Michael Steil, Thomas Woinke, Marko Lauke\n");
 	printf("All rights reserved. License: 2-clause BSD\n\n");
 	printf("Usage: steckschwein-emu [option] ...\n\n");
-	printf("-rom <rom.bin>[,<load_addr>]\n");
-	printf("\tbios ROM file.\n");
-	printf("-ram <ramsize>\n");
-	printf("\tSpecify RAM size in KB (8, 16, 32, ..., 64).\n");
-	printf("\tThe default is 64.\n");
-	printf("-keymap <keymap>\n");
-	printf("\tEnable a specific keyboard layout decode table.\n");
-	printf("-sdcard <sdcard.img>\n");
-	printf("\tSpecify SD card image (partition map + FAT32)\n");
-	printf("-upload <file>[,<load_addr>]\n");
-	printf("-lmf - check last modified of file to upload\n");
-	printf("\tEmulate serial upload of <file> \n");
-	printf("\t(.PRG file with 2 byte start address header)\n");
-	printf("\tThe override load address is hex without a prefix.\n");
 
 	/*
 	 printf("-prg <app.prg>[,<load_addr>]\n");
@@ -236,6 +222,11 @@ static void usage() {
 	 printf("\tStart the -prg/-bas program using RUN or SYS, depending\n");
 	 printf("\ton the load address.\n");
 	 */
+	printf("-debug [<address>]\n");
+	printf("\tEnable debugger. Optionally, set a breakpoint\n");
+	printf("-dump {C|R|B|V}...\n");
+	printf("\tConfigure system dump: (C)PU, (R)AM, (B)anked-RAM, (V)RAM\n");
+	printf("\tMultiple characters are possible, e.g. -dump CV ; Default: RB\n");
 	printf("-echo [{iso|raw}]\n");
 	printf("\tPrint all KERNAL output to the host's stdout.\n");
 	printf("\tBy default, everything but printable ASCII characters get\n");
@@ -244,35 +235,45 @@ static void usage() {
 	printf("\t\"raw\" will not do any substitutions.\n");
 	printf("\tWith the BASIC statement \"LIST\", this can be used\n");
 	printf("\tto detokenize a BASIC program.\n");
-	printf("-log {K|S|V}...\n");
-	printf("\tEnable logging of (K)eyboard, (S)peed, (V)ideo.\n");
-	printf("\tMultiple characters are possible, e.g. -log KS\n");
 	printf("-gif <file.gif>[,wait]\n");
 	printf("\tRecord a gif for the video output.\n");
 	printf("\tUse ,wait to start paused.\n");
 	printf("\tPOKE $9FB5,2 to start recording.\n");
 	printf("\tPOKE $9FB5,1 to capture a single frame.\n");
 	printf("\tPOKE $9FB5,0 to pause.\n");
-	printf("-scale {1|2|full} - use ALT_L+F to toggle fullscreen\n");
-	printf("\tScale output to an integer multiple of 640x480\n");
-	printf("-quality {linear (default) | best}\n");
-	printf("\tScaling algorithm quality\n");
-	printf("-debug [<address>]\n");
-	printf("\tEnable debugger. Optionally, set a breakpoint\n");
-	printf("-dump {C|R|B|V}...\n");
-	printf("\tConfigure system dump: (C)PU, (R)AM, (B)anked-RAM, (V)RAM\n");
-	printf("\tMultiple characters are possible, e.g. -dump CV ; Default: RB\n");
 	printf("-joy1 {NES | SNES}\n");
 	printf("\tChoose what type of joystick to use, e.g. -joy1 SNES\n");
 	printf("-joy2 {NES | SNES}\n");
 	printf("\tChoose what type of joystick to use, e.g. -joy2 SNES\n");
+	printf("-keymap <keymap>\n");
+	printf("\tEnable a specific keyboard layout decode table.\n");
+	printf("-lmf\n");
+  printf("\tcheck last modified of file to upload\n");
+	printf("-log {K|S|V}...\n");
+	printf("\tEnable logging of (K)eyboard, (S)peed, (V)ideo.\n");
+	printf("\tMultiple characters are possible, e.g. -log KS\n");
+	printf("-quality {linear (default) | best}\n");
+	printf("\tScaling algorithm quality\n");
+	printf("-ram <ramsize>\n");
+	printf("\tSpecify RAM size in KB (8, 16, 32, ..., 64).\n");
+	printf("\tThe default is 64.\n");
+	printf("-rom <rom.bin>[,<load_addr>]\n");
+	printf("\tbios ROM file.\n");
 	printf("-rotate\n");
 	printf("\trotate screen 90 degree clockwise\n");
+	printf("-sdcard <sdcard.img>\n");
+	printf("\tSpecify SD card image (partition map + FAT32)\n");
+	printf("-scale {1|2|full} - use ALT_L+F to toggle fullscreen\n");
+	printf("\tScale output to an integer multiple of 640x480\n");
 #ifdef TRACE
 	printf("-trace [<address>]\n");
 	printf("\tPrint instruction trace. Optionally, a trigger address\n");
 	printf("\tcan be specified.\n");
 #endif
+	printf("-upload <file>[,<load_addr>]\n");
+	printf("\tEmulate serial upload of <file> \n");
+	printf("\t(.PRG file with 2 byte start address header)\n");
+	printf("\tThe override load address is hex without a prefix.\n");
 	printf("\n");
 	exit(1);
 }
