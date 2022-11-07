@@ -18,10 +18,10 @@ static uint8_t nvram[96] = { 0x42, 'L', 'O', 'A', 'D', 'E', 'R', ' ', ' ', 'B', 
 char* swHomeDir() {
 	char swDir[FILENAME_MAX];
     #if __MINGW32_NO__
-		snprintf(swDir, FILENAME_MAX, "%s%s/%s", getenv("HOMEDRIVE"), getenv("HOME"), SW_DIR);
+        snprintf(swDir, FILENAME_MAX, "%s%s/%s", getenv("HOMEDRIVE"), getenv("HOME"), SW_DIR);
 	#else
-	snprintf(swDir, FILENAME_MAX, "%s/%s", getenv("HOME"), SW_DIR);
-#endif
+        snprintf(swDir, FILENAME_MAX, "%s/%s", getenv("HOME"), SW_DIR);
+    #endif
 
 	DIR *dir = opendir(swDir);
 	if (dir == NULL || errno == ENOENT) {
@@ -53,7 +53,7 @@ void spi_rtc_init() {
 	if (f != NULL) {
 		size_t r = fread(nvram, 1, sizeof(nvram), f);
 		if (ferror(f) || r != sizeof(nvram)) {
-			fprintf(stderr, "error read nvram state %s\n", strerror(errno));
+			fprintf(stderr, "error read nvram state: %s\n", strerror(errno));
 		}
 		fclose(f);
 	}

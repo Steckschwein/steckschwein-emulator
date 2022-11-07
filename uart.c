@@ -23,12 +23,11 @@ $ socat -d -d pty,link=/tmp/ssw_uart0,raw,echo=0 pty,link=/tmp/ssw_emu_uart0,raw
 2022/09/17 12:02:50 socat[2554893] N starting data transfer loop with FDs [5,5] and [7,7]
 
 # host device
-$ cat /tmp/ssw_emu_uart0 & # im emu mit open("/tmp/ssw... 
+$ cat /tmp/ssw_emu_uart0 & # im emu mit open("/tmp/ssw...
 
 # emulator device
-$ echo "Hallo Thomas... some serial" > /tmp/ssw_uart0 
+$ echo "Hallo Thomas... some serial" > /tmp/ssw_uart0
 Hallo Thomas... some serial
-
 */
 
 static uint8_t uartregisters[16];
@@ -76,7 +75,7 @@ static struct upload_state upload_protocol[] = { //
 long getFilesize(FILE *file){
 
 	long filesize = -1L;
-	
+
 	if(fseek(file, 0L, SEEK_END) == EOF){
 		fprintf(stderr, "error fseek %s\n", strerror(errno));
 	}else{
@@ -109,9 +108,9 @@ void loadFile(int prg_override_start, FILE *prg_file) {
 		}
 		size_t r = fread((p_prg_img + (2 - offs)), 1, filesize, prg_file);
 		if (r) {
-			printf("uart() load program to 0x%04x-0x%04x (size 0x%04x / read 0x%04x)\n", 
+			printf("uart() load program to 0x%04x-0x%04x (size 0x%04x / read 0x%04x)\n",
 				*(p_prg_img + 0) | *(p_prg_img + 1) << 8,
-				(*(p_prg_img + 0) | *(p_prg_img + 1) << 8) + prg_size, 
+				(*(p_prg_img + 0) | *(p_prg_img + 1) << 8) + prg_size,
 				prg_size, r);
 		} else {
 			fprintf(stderr, "uart() load file start 0x%04x size 0x%04x error: %s\n",
@@ -154,7 +153,7 @@ uint8_t upload_read_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
 }
 
 uint8_t upload_read_startAddress(uint8_t r) {
-    
+
     if (!p_prg_img && prg_path && (uart_checkUploadLmfTs + UART_CHECK_UPLOAD_INTERVAL_SECONDS < (uart_checkUploadLmfTs = clock()))) {
 		#if __MINGW32_NO__
 		struct __stat64 attrib;
