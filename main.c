@@ -188,10 +188,9 @@ void machine_dump() {
 	printf("Dumped system to %s.\n", filename);
 }
 
-void machine_reset(int prg_override_start) {
+void machine_reset() {
 	spi_rtc_init();
 	spi_init();
-	uart_init(prg_path, prg_override_start, checkUploadLmf);
 	via1_init();
 	reset6502();
 }
@@ -1140,9 +1139,6 @@ int main(int argc, char **argv) {
 	// no ROM file is specified on the command line.
 	strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
 
-	memory_init();
-	mixer = mixerCreate();
-
 	//read default properties
 //	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANK, "Steckschwein");
 //	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
@@ -1333,6 +1329,8 @@ int main(int argc, char **argv) {
 		}
 	}
 
+  memory_init();
+
 	int rom_override_start = parseNumber(rom_path);
 	FILE *f = fopen(rom_path, "rb");
 	if (!f) {
@@ -1400,6 +1398,12 @@ int main(int argc, char **argv) {
 
 	dpyUpdateAckEvent = archEventCreate(0);
 
+  if(uart_init(prg_path, prg_override_start, checkUploadLmf)){
+    return 1;
+  }
+
+	mixer = mixerCreate();
+
 //    keyboardInit();
 
 //    emulatorInit(properties, mixer);
@@ -1415,7 +1419,7 @@ int main(int argc, char **argv) {
 //    uartIoSetType(properties->ports.Com.type, properties->ports.Com.fileName);
 //    ykIoSetMidiInType(properties->sound.YkIn.type, properties->sound.YkIn.fileName);
 
-	machine_reset(prg_override_start);
+	machine_reset();
 
 	emulatorRestartSound();
 
@@ -1434,15 +1438,17 @@ int main(int argc, char **argv) {
 #ifndef SINGLE_THREADED	//on multi-threaded the main thread will loop here
     SDL_Event event;//While the user hasn't quit
     while(!doQuit){
-        SDL_WaitEvent(&event);
-		if( event.type == SDL_QUIT ) {
-			doQuit = 1;
-		}
-		else {
-			handleEvent(&event);
-		}
+      SDL_WaitEvent(&event);
+      if( event.type == SDL_QUIT ) {
+        doQuit = 1;
+      }
+      else {
+  			handleEvent(&event);
+	  	}
     }
 #endif
+
+  uart_destroy();
 
 	// For stop threads before destroy.
 	// Clean up.
@@ -1454,9 +1460,9 @@ int main(int argc, char **argv) {
 	mixerDestroy(mixer);
 	propDestroy(properties);
 	DEBUGFreeUI();
-	memory_destroy();
-
 	spi_rtc_destroy();
+
+	memory_destroy();
 
 	return 0;
 }
