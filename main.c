@@ -27,6 +27,7 @@
 #include "glue.h"
 #include "joystick.h"
 #include "Board.h"
+#include "Machine.h"
 #include "Emulator.h"
 #include "Debugger.h"
 #include "EmulatorDebugger.h"
@@ -54,7 +55,10 @@ char *paste_text = NULL;
 char paste_text_data[65536];
 bool pasting_bas = false;
 
-uint16_t num_ram_banks = 64; // 512 KB default
+#define RAM_SIZE (64*1024)
+#define ROM_SIZE (32*1024)
+
+uint32_t ram_size = RAM_SIZE; // 64 KB default
 
 extern int errno;
 
@@ -723,7 +727,19 @@ static void emulatorThread() {
 		reversePeriod = 50;
 		reverseBufferCnt = properties->emulation.reverseMaxTime * 1000 / reversePeriod;
 	}
-	success = boardRun(mixer, frequency, reversePeriod, reverseBufferCnt, WaitForSync);
+
+  Machine* machine = machineCreate(properties->emulation.machineName);
+  if (machine == NULL) {
+    // archShowStartEmuFailDialog();
+    archEmulationStopNotification();
+    emuState = EMU_STOPPED;
+    archEmulationStartFailure();
+    return;
+  }
+
+  boardSetMachine(machine);
+
+	success = boardRun(machine, mixer, frequency, reversePeriod, reverseBufferCnt, WaitForSync);
 
 	//the emu loop
 	//ledSetAll(0);
@@ -1141,9 +1157,6 @@ int main(int argc, char **argv) {
 	// no ROM file is specified on the command line.
 	strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
 
-	memory_init();
-	mixer = mixerCreate();
-
 	//read default properties
 //	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANK, "Steckschwein");
 //	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
@@ -1163,7 +1176,7 @@ int main(int argc, char **argv) {
 			assertParam(argc, argv);
 			int kb = atoi(argv[0]);
 			bool found = false;
-			for (int cmp = 8; cmp <= 64; cmp *= 2) {
+			for (int cmp = 8; cmp <= 512; cmp <<= 2) {
 				if (kb == cmp) {
 					found = true;
 					break;
@@ -1172,7 +1185,7 @@ int main(int argc, char **argv) {
 			if (!found) {
 				usage();
 			}
-			num_ram_banks = kb / 8;
+			ram_size = kb / 8;
 		} else if (nextArg(&argc, &argv, "-keymap")) {
 			if (!argc || argv[0][0] == '-') {
 				usage_keymap();
@@ -1333,6 +1346,9 @@ int main(int argc, char **argv) {
 			usage();
 		}
 	}
+
+	memory_init();
+	mixer = mixerCreate();
 
 	int rom_override_start = parseNumber(rom_path);
 	FILE *f = fopen(rom_path, "rb");
