@@ -42,7 +42,7 @@ void
 j2c_reset()
 {
 	printf("SDL_KillThread\n");
-	machine_reset();
+  machine_reset();
 }
 
 void

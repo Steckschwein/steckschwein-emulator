@@ -2,6 +2,7 @@
 #include "MOS6502.h"
 #include "VDP.h"
 #include "ym3812.h"
+#include "uart.h"
 
 UInt8* steckschweinRam;
 static UInt32          steckschweinRamSize;
@@ -9,9 +10,16 @@ static UInt32          steckschweinRamStart;
 
 static MOS6502* mos6502;
 static YM3812* ym3812;
+// TODO manage as array
+UartIO* uartIo0x220;
+UartIO* uartIo0x250;
 //static DS1306 *ds1306;
 
 static void destroy() {
+
+  uart_destroy(uartIo0x250);
+  uart_destroy(uartIo0x220);
+
 	ym3812Destroy(ym3812);
 
 //	rtcDestroy(ds1306);
@@ -63,7 +71,7 @@ static UInt32 getTimeTrace(int offset) {
 
 int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
-     int success;
+     int success = 0;
      int i;
 
      steckschweinRam = NULL;
@@ -102,6 +110,10 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
      ym3812 = ym3812Create(boardGetMixer());
 
+    if((uartIo0x220 = uart_create(0x220)) == NULL)
+      return success;
+    if((uartIo0x250 = uart_create(0x250)) == NULL)
+      return success;
      //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
      //slotManagerCreate();
 

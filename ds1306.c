@@ -53,7 +53,7 @@ void spi_rtc_init() {
 	if (f != NULL) {
 		size_t r = fread(nvram, 1, sizeof(nvram), f);
 		if (ferror(f) || r != sizeof(nvram)) {
-			fprintf(stderr, "error read nvram state: %s\n", strerror(errno));
+      fprintf(stderr, "error read nvram state: %s\n", strerror(errno));
 		}
 		fclose(f);
 	}

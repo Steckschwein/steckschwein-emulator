@@ -21,12 +21,13 @@ void mos6502Reset(MOS6502 *mos6502, UInt32 cpuTime) {
 }
 
 void mos6502SetInt(MOS6502 *mos6502) {
-	DEBUG ("mos6502SetInt %p\n", mos6502);
+       // DEBUG ("mos6502SetInt %p\n", mos6502);
 	mos6502->intState = INT_LOW;
 }
 
 void mos6502Execute(MOS6502 *mos6502) {
-    static SystemTime lastRefreshTime = 0;
+
+  static SystemTime lastRefreshTime = 0;
 
 	while (!mos6502->terminate) {
 
@@ -35,10 +36,10 @@ void mos6502Execute(MOS6502 *mos6502) {
 				mos6502->timerCb(NULL);
 			}
 		}
-        if (mos6502->systemTime - lastRefreshTime > 222 * 3) {
-            lastRefreshTime = mos6502->systemTime;
-            mos6502->systemTime += 20 * 3;
-        }
+    if (mos6502->systemTime - lastRefreshTime > 222 * 3) {
+        lastRefreshTime = mos6502->systemTime;
+        mos6502->systemTime += 20 * 3;
+    }
 
 #ifdef ENABLE_BREAKPOINTS
 		if (mos6502->breakpointCount > 0) {
@@ -58,22 +59,23 @@ void mos6502Execute(MOS6502 *mos6502) {
 		}
 		step6502();
 		mos6502->systemTime = clockticks6502;
-		DEBUG ("mos6502Execute %p %x\n", mos6502, mos6502->systemTime);
+    // DEBUG ("mos6502Execute() %p %x %d\n", mos6502, mos6502->systemTime, mos6502->terminate);
 	}
+  DEBUG ("mos6502Execute exit() %p %x\n", mos6502, mos6502->systemTime);
 }
 
 void mos6502ClearInt(MOS6502 *mos6502) {
-	DEBUG ("mos6502ClearInt %p\n", mos6502);
+       // DEBUG ("mos6502ClearInt %p\n", mos6502);
 	mos6502->intState = INT_HIGH;
 }
 
 void mos6502SetTimeoutAt(MOS6502 *mos6502, SystemTime time) {
-//	DEBUG ("mos6502SetTimeoutAt %p\n", mos6502);
+  // DEBUG ("mos6502SetTimeoutAt %p\n", mos6502);
 	mos6502->timeout = time;
 }
 
 void mos6502SetBreakpoint(MOS6502 *mos6502, UInt16 address) {
-	DEBUG ("mos6502SetBreakpoint %p\n", mos6502);
+  // DEBUG ("mos6502SetBreakpoint %p\n", mos6502);
 #ifdef ENABLE_BREAKPOINTS
 	if (mos6502->breakpoints[address] == 0) {
 		mos6502->breakpoints[address] = 1;
@@ -91,6 +93,7 @@ void mos6502ClearBreakpoint(MOS6502 *mos6502, UInt16 address) {
 }
 
 void mos6502StopExecution(MOS6502 *mos6502) {
+  DEBUG("mos6502StopExecution()\n");
 	mos6502->terminate = 1;
 }
 

@@ -30,68 +30,98 @@ $ echo "Hallo Thomas... some serial" > /tmp/ssw_uart0
 Hallo Thomas... some serial
 */
 
-static uint8_t uartregisters[16];
-
 extern int errno;
 
-int masterfd = -1;
+#define DEVICE_LINK "ttySSW_%#4x"
 
-char* device_link = "ttySSW_0x220";
+typedef struct UartIO {
 
-int uart_init(unsigned char *prg_path, int prg_override_start, bool checkLastModified){
+    int masterfd;
+
+    uint16_t ioPort;
+    uint8_t uartregisters[16];
+
+    UartType type;
+    int  uartReady;
+
+    char* device_link;
+
+    void (*recvCallback)(uint8_t);
+};
+
+void recvCallback(uint8_t v){
+
+}
+
+UartIO* uart_create(uint16_t ioPort){
 
    // get the master fd
-  masterfd = open("/dev/ptmx", O_RDWR | O_NOCTTY);
+  int masterfd = open("/dev/ptmx", O_RDWR | O_NOCTTY);
   if(masterfd < 0){
     perror("getpt");
-    return 1;
+    return NULL;
   }
 
   if(grantpt(masterfd) < 0)
   {
     perror("grantpt");
-    return 1;
+    return NULL;
   }
 
   if(unlockpt(masterfd) < 0)
   {
     perror("unlockpt");
-    return 1;
+    return NULL;
   }
 
   char slavepath[64];
   if(ptsname_r(masterfd, slavepath, sizeof(slavepath)) < 0)
   {
     perror("ptsname_r");
-    return 1;
+    return NULL;
   }
 
-  printf("using %s\n", slavepath);
+  char* device_name = (char*)malloc(32*sizeof(char));
+  snprintf(device_name, 32*sizeof(char), DEVICE_LINK, ioPort);
+  printf("i/o port %#4x mapped to %s (%s)\n", ioPort, device_name, slavepath);
 
-  if(unlink(device_link)){
+  if(unlink(device_name)){
     errno = 0;//ignore, but reset errno
   }
-  if(symlink(slavepath, device_link)){
+  if(symlink(slavepath, device_name)){
     perror("symlink");
-    return 1;
+    return NULL;
   }
-  return 0;
+
+  UartIO* uart = malloc(sizeof(UartIO));
+  uart->ioPort = ioPort;
+  uart->masterfd = masterfd;
+  uart->type = UART_HOST;
+  uart->device_link = device_name;
+  uart->recvCallback = recvCallback;
+
+  return uart;
 }
 
-uint8_t uart_read(uint8_t reg) {
-	return uartregisters[reg];
+uint8_t uart_read(UartIO* uartIO, uint8_t reg) {
+       return uartIO->uartregisters[reg];
 }
 
-void uart_write(uint8_t reg, uint8_t value) {
-//	printf("uart w %x %x\n", reg, value);
-	uartregisters[reg] = value;
+void uart_write(UartIO* uartIO, uint8_t reg, uint8_t value) {
+//     printf("uart w %x %x\n", reg, value);
+       uartIO->uartregisters[reg] = value;
 }
 
-void uart_destroy() {
+void uart_destroy(UartIO* uartIO) {
 
-  unlink(device_link);
-
-  if(masterfd != -1) {
-    close(masterfd);
+  printf("uart_destroy()\n");
+  if(uartIO != NULL){
+    printf("unlink %s\n", uartIO->device_link);
+    unlink(uartIO->device_link);
+    if(uartIO->masterfd != -1) {
+      close(uartIO->masterfd);
+    }
+    free(uartIO->device_link);
+    free(uartIO);
   }
 }

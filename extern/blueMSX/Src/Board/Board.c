@@ -289,6 +289,23 @@ void boardCaptureInit()
     }
 }
 
+void boardCaptureStop() {
+    boardTimerRemove(cap.timer);
+    // go back to idle state
+    cap.state = CAPTURE_IDLE;
+}
+
+void boardCaptureDestroy()
+{
+    boardCaptureStop();
+
+    if (cap.timer != NULL) {
+        boardTimerDestroy(cap.timer);
+        cap.timer = NULL;
+    }
+    cap.state = CAPTURE_IDLE;
+}
+
 //------------------------------------------------------
 
 
@@ -334,10 +351,12 @@ static void onFdcDone(void* ref, UInt32 time)
 
 static void doSync(UInt32 time, int breakpointHit)
 {
+    DEBUG("doSync() %d %d %d  \n", time, breakpointHit, skipSync);
     int execTime = 10;
     if (!skipSync) {
         execTime = syncToRealClock(fdcActive, breakpointHit);
     }
+    DEBUG("doSync() execTime %d\n", execTime);
     if (execTime == -99) {
         boardInfo.stop(boardInfo.cpuRef);
         return;
@@ -541,7 +560,7 @@ typedef struct BoardTimer {
 
 static BoardTimer* timerList = NULL;
 static UInt32 timeAnchor;
-static int    timeoutCheckBreak;
+static int timeoutCheckBreak;
 
 #define MAX_TIME  (2 * 1368 * 313)
 #define TEST_TIME 0x7fffffff
@@ -652,14 +671,16 @@ void boardTimerCheckTimeout(void* usrDefinedCb)
         if (timer->timeout - timeAnchor > currentTime - timeAnchor) {
             break;
         }
-
         boardTimerRemove(timer);
+        DEBUG("boardTimerCheckTimeout(0) %p\n", timer->ref);
         timer->callback(timer->ref, timer->timeout);
+        DEBUG("boardTimerCheckTimeout(1) %p\n", timer->ref);
     }
 
     timeAnchor = boardSystemTime();
 
     boardInfo.setCpuTimeout(boardInfo.cpuRef, timerList->next->timeout);
+    DEBUG("boardTimerCheckTimeout() end\n");
 }
 
 UInt64 boardSystemTime64() {
@@ -691,10 +712,10 @@ void boardInit(UInt32* systemTime)
 }
 
 int boardRun(Mixer* mixer,
-			 int frequency,
-             int reversePeriod,
-             int reverseBufferCnt,
-             int (*syncCallback)(int, int))
+              int frequency,
+              int reversePeriod,
+              int reverseBufferCnt,
+              int (*syncCallback)(int, int))
 {
     int loadState = 0;
     int success = 1;
@@ -713,7 +734,7 @@ int boardRun(Mixer* mixer,
 
     boardSetFrequency(frequency);
 
-	boardRunning = 1;
+         boardRunning = 1;
     memset(&boardInfo, 0, sizeof(boardInfo));
 
     VdpSyncMode vdpSyncMode = VDP_SYNC_AUTO;
@@ -741,6 +762,7 @@ int boardRun(Mixer* mixer,
         }
 
         boardTimerAdd(syncTimer, boardSystemTime() + 1);
+        boardTimerAdd(mixerTimer, boardSystemTime() + boardFrequency() / 50);
 
         if (boardPeriodicCallback != NULL) {
             periodicTimer = boardTimerCreate(boardPeriodicCallback, periodicRef);
@@ -758,7 +780,7 @@ int boardRun(Mixer* mixer,
             periodicTimer = NULL;
         }
 
-        //boardCaptureDestroy();
+        boardCaptureDestroy();
 
         boardInfo.destroy();
 
@@ -770,7 +792,11 @@ int boardRun(Mixer* mixer,
         }
         if (stateTimer != NULL) {
             boardTimerDestroy(stateTimer);
+            // memZipFileSystemDestroy();
         }
+    }
+    else {
+        boardCaptureStop();
     }
 
     boardRunning = 0;

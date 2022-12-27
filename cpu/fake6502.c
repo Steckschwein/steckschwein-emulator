@@ -1,3 +1,4 @@
+#include "glue.h"^M
 /* Fake6502 CPU emulator core v1.1 *******************
  * (c)2011 Mike Chambers (miker00lz@gmail.com)       *
  *****************************************************
@@ -244,7 +245,7 @@ void step6502() {
 	instructions++;
 
 	if (instructions == 0xFFFFFFFF) {
-		printf("ins cnt overflow\n");
+    DEBUG("ins cnt overflow\n");
 	}
 	cycles = clockticks6502 - cycles;
 

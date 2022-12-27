@@ -131,7 +131,12 @@ void reset_upload() {
 	}
 }
 
+int uart_create(uint16_t ioPort){
+
+}
+
 void uart_init(unsigned char *p_prg_path, int p_prg_override_start, bool checkLmf) {
+  uart_create(0x220);
 	prg_path = p_prg_path;
 	prg_override_start = p_prg_override_start;
 	uart_checkUploadLmf = checkLmf;

@@ -5,6 +5,7 @@
 #ifndef _GLUE_H_
 #define _GLUE_H_
 
+#include <uart.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -17,6 +18,7 @@
 #endif
 
 #define EMU_FREQUENCY 3579545
+// #define EMU_FREQUENCY 8000000
 
 extern bool isDebuggerEnabled;
 
@@ -46,6 +48,9 @@ typedef enum {
 
 void actionEmuTogglePause();
 void actionEmuStepBack();
+
+extern UartIO* uartIo0x220;
+extern UartIO* uartIo0x250;
 
 extern uint8_t a, x, y, sp, status;
 extern uint16_t pc;

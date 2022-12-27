@@ -15,9 +15,13 @@
 #define lsr_DR 		1<<0 // data ready
 #define lsr_THRE 	1<<5 // transmitter holding register
 
-int uart_init(unsigned char *prg_path, int prg_override_start, bool checkLastModified);
+typedef enum {UART_NONE, UART_FILE, UART_HOST } UartType;
 
-uint8_t uart_read(uint8_t reg);
-void uart_write(uint8_t reg, uint8_t value);
+typedef struct UartIO UartIO;
+
+UartIO* uart_create(uint16_t ioPort);
+
+uint8_t uart_read(UartIO* uartIO, uint8_t reg);
+void uart_write(UartIO* uartIO, uint8_t reg, uint8_t value);
 
 #endif

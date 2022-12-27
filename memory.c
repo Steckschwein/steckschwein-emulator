@@ -48,10 +48,11 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
 	if (address < 0x0200) { // RAM
 		return ram[address];
 	} else if (address < 0x0280) { // I/O
-		// TODO I/O map?
+               // TODO I/O mapper
 		if (address < 0x210) // UART at $0200
 				{
-			return uart_read(address & 0xf);
+          // TODO FIXME api
+                       return uart_read(uartIo0x220, address & 0xf);
 		} else if (address < 0x0220) // VIA at $0210
 				{
 			return via1_read(address & 0xf);
@@ -90,7 +91,8 @@ void write6502(uint16_t address, uint8_t value) {
 	} else if (address < 0x0280) { // I/O
 		if (address < 0x210) // UART at $0200
 				{
-			return uart_write(address & 0xf, value);
+      // TODO FIXME api
+                       return uart_write(uartIo0x220, address & 0xf, value);
 		} else if (address < 0x0220) // VIA at $0210
 				{
 			return via1_write(address & 0xf, value);
