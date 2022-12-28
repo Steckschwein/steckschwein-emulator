@@ -29,7 +29,7 @@ static void destroy() {
     ioPortUnregister(0x2e);
     deviceManagerDestroy();
     */
-    mos6502Destroy(mos6502);
+  mos6502Destroy(mos6502);
 }
 
 static void reset()
@@ -72,6 +72,7 @@ static UInt32 getTimeTrace(int offset) {
 int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
      int success = 0;
+
      int i;
 
      steckschweinRam = NULL;
@@ -112,8 +113,11 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
     if((uartIo0x220 = uart_create(0x220)) == NULL)
       return success;
+    printf("link %s\n", uartIo0x220->device_link);
+
     if((uartIo0x250 = uart_create(0x250)) == NULL)
       return success;
+    printf("link %s\n", uartIo0x250->device_link);
      //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
      //slotManagerCreate();
 

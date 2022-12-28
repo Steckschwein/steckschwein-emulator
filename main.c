@@ -1446,8 +1446,6 @@ int main(int argc, char **argv) {
     }
 #endif
 
-  uart_destroy();
-
 	// For stop threads before destroy.
 	// Clean up.
 	if (SDL_WasInit(SDL_INIT_EVERYTHING)) {

@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
@@ -33,21 +34,6 @@ Hallo Thomas... some serial
 extern int errno;
 
 #define DEVICE_LINK "ttySSW_%#4x"
-
-typedef struct UartIO {
-
-    int masterfd;
-
-    uint16_t ioPort;
-    uint8_t uartregisters[16];
-
-    UartType type;
-    int  uartReady;
-
-    char* device_link;
-
-    void (*recvCallback)(uint8_t);
-};
 
 void recvCallback(uint8_t v){
 
@@ -81,12 +67,12 @@ UartIO* uart_create(uint16_t ioPort){
     return NULL;
   }
 
-  char* device_name = (char*)malloc(32*sizeof(char));
+  char* device_name = (char*)calloc(32, sizeof(char));
   snprintf(device_name, 32*sizeof(char), DEVICE_LINK, ioPort);
   printf("i/o port %#4x mapped to %s (%s)\n", ioPort, device_name, slavepath);
 
-  if(unlink(device_name)){
-    errno = 0;//ignore, but reset errno
+  if(unlink(device_name)){//will fail if not exist already
+    errno = 0;//but reset errno
   }
   if(symlink(slavepath, device_name)){
     perror("symlink");
@@ -103,25 +89,27 @@ UartIO* uart_create(uint16_t ioPort){
   return uart;
 }
 
-uint8_t uart_read(UartIO* uartIO, uint8_t reg) {
-       return uartIO->uartregisters[reg];
+uint8_t uart_read(UartIO* uart, uint8_t reg) {
+       return uart->uartregisters[reg];
 }
 
-void uart_write(UartIO* uartIO, uint8_t reg, uint8_t value) {
+void uart_write(UartIO* uart, uint8_t reg, uint8_t value) {
 //     printf("uart w %x %x\n", reg, value);
-       uartIO->uartregisters[reg] = value;
+       uart->uartregisters[reg] = value;
 }
 
-void uart_destroy(UartIO* uartIO) {
+void uart_destroy(UartIO* uart) {
 
   printf("uart_destroy()\n");
-  if(uartIO != NULL){
-    printf("unlink %s\n", uartIO->device_link);
-    unlink(uartIO->device_link);
-    if(uartIO->masterfd != -1) {
-      close(uartIO->masterfd);
+  if(uart){
+    if(uart->device_link){
+      printf("unlink %s\n", uart->device_link);
+      unlink(uart->device_link);
+      free(uart->device_link);
     }
-    free(uartIO->device_link);
-    free(uartIO);
+    if(uart->masterfd != -1) {
+      close(uart->masterfd);
+    }
+    free(uart);
   }
 }

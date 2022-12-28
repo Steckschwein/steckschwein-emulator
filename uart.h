@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 #define UART_REG_IER 0
@@ -17,11 +18,26 @@
 
 typedef enum {UART_NONE, UART_FILE, UART_HOST } UartType;
 
-typedef struct UartIO UartIO;
+typedef struct{
+
+    int masterfd;
+
+    uint16_t ioPort;
+    uint8_t uartregisters[16];
+
+    UartType type;
+    int  uartReady;
+
+    char* device_link;
+
+    void (*recvCallback)(uint8_t);
+} UartIO;
 
 UartIO* uart_create(uint16_t ioPort);
 
-uint8_t uart_read(UartIO* uartIO, uint8_t reg);
-void uart_write(UartIO* uartIO, uint8_t reg, uint8_t value);
+void uart_destroy(UartIO* uart);
+
+uint8_t uart_read(UartIO* uart, uint8_t reg);
+void uart_write(UartIO* uart, uint8_t reg, uint8_t value);
 
 #endif
