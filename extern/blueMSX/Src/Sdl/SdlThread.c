@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -29,36 +29,36 @@
 #include <SDL.h>
 #include <stdlib.h>
 
-static int threadEntry(void* data) 
+static int threadEntry(void* data)
 {
     void (*entryPoint)() = data;
 
     entryPoint();
-    
+
     return 0;
 }
 
 
-void* archThreadCreate(void (*entryPoint)(), int priority) { 
+void* archThreadCreate(void (*entryPoint)(), int priority) {
     SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, entryPoint);
     return sdlThread;
 }
 
-void archThreadJoin(void* thread, int timeout) 
+void archThreadJoin(void* thread, int timeout)
 {
     SDL_Thread* sdlThread = (SDL_Thread*)thread;
 
     SDL_WaitThread(sdlThread, NULL);
 }
 
-void  archThreadDestroy(void* thread) 
+void  archThreadDestroy(void* thread)
 {
     SDL_Thread* sdlThread = (SDL_Thread*)thread;
 
     SDL_KillThread(sdlThread);
 }
 
-void archThreadSleep(int milliseconds) 
+void archThreadSleep(int milliseconds)
 {
     SDL_Delay(milliseconds);
 }

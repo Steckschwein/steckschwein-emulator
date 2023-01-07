@@ -99,8 +99,6 @@ void uart_write(UartIO* uart, uint8_t reg, uint8_t value) {
 }
 
 void uart_destroy(UartIO* uart) {
-
-  printf("uart_destroy()\n");
   if(uart){
     if(uart->device_link){
       printf("unlink %s\n", uart->device_link);

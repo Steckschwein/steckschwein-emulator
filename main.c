@@ -796,21 +796,12 @@ int timerCallback(void *timer) {
 	return 1;
 }
 
-EmuState emulatorGetState() {
-	return emuState;
-}
-
 int isEmuSingleStep() {
 	return emuSingleStep;
 }
 
-void emulatorResume() {
-	if (emuState == EMU_SUSPENDED) {
-		emuSysTime = 0;
-
-		emuState = EMU_RUNNING;
-		archUpdateEmuDisplay(0);
-	}
+EmuState emulatorGetState(){
+   return emuState;
 }
 
 void emulatorSetState(EmuState state) {
@@ -831,6 +822,15 @@ void emulatorSetState(EmuState state) {
 		}
 	}
 	emuState = state;
+}
+
+void emulatorResume() {
+	if (emuState == EMU_SUSPENDED) {
+		emuSysTime = 0;
+
+		emuState = EMU_RUNNING;
+		archUpdateEmuDisplay(0);
+	}
 }
 
 void emulatorStart(const char *stateName) {
@@ -886,7 +886,7 @@ void emulatorStart(const char *stateName) {
 #else
 	emuThread = archThreadCreate(emulatorThread, THREAD_PRIO_HIGH);
 
-	archEventWait(emuStartEvent, 1000);
+	archEventWait(emuStartEvent, 3000);
 
 	if (emulationStartFailure) {
 		archEmulationStopNotification();
@@ -914,22 +914,21 @@ void emulatorStop() {
 	if (emuState == EMU_STOPPED) {
 		return;
 	}
-
 	debuggerNotifyEmulatorStop();
 
 	emuState = EMU_STOPPED;
 
 	do {
-    archThreadSleep(10);
+    archThreadSleep(1);
 	} while (!emuSuspendFlag);
 
 	emuExitFlag = 1;
 
 	archSoundSuspend();
 	archThreadJoin(emuThread, 3000);
-	archThreadDestroy(emuThread);
+	//archThreadDestroy(emuThread);
 //    archMidiEnable(0);
-  // machineDestroy(machine);
+  //machineDestroy(machine);
 #ifndef WII
 	archEventDestroy(emuSyncEvent);
 #endif
@@ -945,7 +944,7 @@ void emulatorStop() {
 
 	archEmulationStopNotification();
 
-       dbgDisable();
+  dbgDisable();
   dbgPrint();
 //    savelog();
 }
@@ -1141,10 +1140,7 @@ int main(int argc, char **argv) {
 	strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
 
 	//read default properties
-//	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANK, "Steckschwein");
-//	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
-	properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
-	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
+	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANKASYNC, "Steckschwein");
 
 	argc--;
 	argv++;
@@ -1446,21 +1442,22 @@ int main(int argc, char **argv) {
     }
 #endif
 
-	// For stop threads before destroy.
-	// Clean up.
-	if (SDL_WasInit(SDL_INIT_EVERYTHING)) {
-		SDL_Quit();
-	}
-
   emulatorStop();
 
 	videoDestroy(video);
   propDestroy(properties);
 	archSoundDestroy();
 	mixerDestroy(mixer);
-	DEBUGFreeUI();
 	spi_rtc_destroy();
 	memory_destroy();
+
+	DEBUGFreeUI();
+
+	// For stop threads before destroy.
+	// Clean up.
+	if (SDL_WasInit(SDL_INIT_EVERYTHING)) {
+		SDL_Quit();
+	}
 
 	return 0;
 }

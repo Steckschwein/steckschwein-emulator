@@ -7,7 +7,6 @@
 
 #include <uart.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdbool.h>
 
 #define WARN(...) fprintf(stderr, __VA_ARGS__)

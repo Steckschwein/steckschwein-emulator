@@ -734,7 +734,7 @@ int boardRun(Mixer* mixer,
 
     boardSetFrequency(frequency);
 
-         boardRunning = 1;
+    boardRunning = 1;
     memset(&boardInfo, 0, sizeof(boardInfo));
 
     VdpSyncMode vdpSyncMode = VDP_SYNC_AUTO;
