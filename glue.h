@@ -49,7 +49,7 @@ typedef enum {
 void actionEmuTogglePause();
 void actionEmuStepBack();
 
-extern UartIO* uartIo0x220;
+extern UartIO* uartIo0x200;
 extern UartIO* uartIo0x250;
 
 extern uint8_t a, x, y, sp, status;

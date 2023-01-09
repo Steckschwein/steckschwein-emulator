@@ -11,14 +11,14 @@ static UInt32          steckschweinRamStart;
 static MOS6502* mos6502;
 static YM3812* ym3812;
 // TODO manage as array
-UartIO* uartIo0x220;
+UartIO* uartIo0x200;
 UartIO* uartIo0x250;
 //static DS1306 *ds1306;
 
 static void destroy() {
 
+  uart_destroy(uartIo0x200);
   uart_destroy(uartIo0x250);
-  uart_destroy(uartIo0x220);
 
 	ym3812Destroy(ym3812);
 
@@ -111,13 +111,12 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
      ym3812 = ym3812Create(boardGetMixer());
 
-    if((uartIo0x220 = uart_create(0x220)) == NULL)
+    if((uartIo0x200 = uart_create(0x200)) == NULL)
       return success;
-    printf("link %s\n", uartIo0x220->device_link);
 
     if((uartIo0x250 = uart_create(0x250)) == NULL)
       return success;
-    printf("link %s\n", uartIo0x250->device_link);
+
      //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
      //slotManagerCreate();
 

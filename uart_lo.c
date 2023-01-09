@@ -1,9 +1,9 @@
-// Commander X16 Emulator
-// Copyright (c) 2019 Michael Steil
-// All rights reserved. License: 2-clause BSD
+#include <ArchThread.h>
+#include <Emulator.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <termios.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -33,42 +33,88 @@ Hallo Thomas... some serial
 
 extern int errno;
 
-#define DEVICE_LINK "ttySSW_%#4x"
+#define DEVICE_LINK_TPL "ttySSW_%#4x"
+#define DEVICE_UART_MAX 2
+
+UartIO *a_uartIo[DEVICE_UART_MAX];
+
+static short deviceIndex = 0;
 
 void recvCallback(uint8_t v){
 
 }
 
+void receiveLoop(){
+
+  UartIO *uartIo = a_uartIo[deviceIndex++];
+  if(!uartIo)
+    return;
+
+  char bufin = 'O';
+  int c;
+  struct termios params;
+
+  // TODO adjust slave with uart register settings
+  int fd = open(uartIo->device_link, O_RDWR | O_NOCTTY);
+  if(fd < 0){
+    perror("open slave");
+    return;
+  }
+  if(tcgetattr(fd, &params)){
+    perror("tcgetattr");
+    return;
+  }
+  cfmakeraw(&params);
+  tcsetattr (fd, TCSANOW, &params);
+  tcflush(fd, TCIOFLUSH);
+  close(fd);
+
+  while(emulatorGetState() != EMU_STOPPED){
+
+    c = read(uartIo->masterFd, &bufin, 1);
+    if(c == 1){
+      printf("uart %s v: 0x%x\n", uartIo->device_link, bufin);
+      c = write(uartIo->masterFd, &bufin, 1);
+    }
+  }
+}
+
+void* createReceiverThread(UartIO *uart){
+
+  a_uartIo[deviceIndex] = uart;
+  return archThreadCreate(receiveLoop, THREAD_PRIO_NORMAL);
+}
+
 UartIO* uart_create(uint16_t ioPort){
 
    // get the master fd
-  int masterfd = open("/dev/ptmx", O_RDWR | O_NOCTTY);
-  if(masterfd < 0){
+  int masterFd = open("/dev/ptmx", O_RDWR | O_NOCTTY);
+  if(masterFd < 0){
     perror("getpt");
     return NULL;
   }
 
-  if(grantpt(masterfd) < 0)
+  if(grantpt(masterFd) < 0)
   {
     perror("grantpt");
     return NULL;
   }
 
-  if(unlockpt(masterfd) < 0)
+  if(unlockpt(masterFd) < 0)
   {
     perror("unlockpt");
     return NULL;
   }
 
   char slavepath[64];
-  if(ptsname_r(masterfd, slavepath, sizeof(slavepath)) < 0)
+  if(ptsname_r(masterFd, slavepath, sizeof(slavepath)) < 0)
   {
     perror("ptsname_r");
     return NULL;
   }
 
   char* device_name = (char*)calloc(32, sizeof(char));
-  snprintf(device_name, 32*sizeof(char), DEVICE_LINK, ioPort);
+  snprintf(device_name, 32*sizeof(char), DEVICE_LINK_TPL, ioPort);
   printf("i/o port %#4x mapped to %s (%s)\n", ioPort, device_name, slavepath);
 
   if(unlink(device_name)){//will fail if not exist already
@@ -81,10 +127,12 @@ UartIO* uart_create(uint16_t ioPort){
 
   UartIO* uart = malloc(sizeof(UartIO));
   uart->ioPort = ioPort;
-  uart->masterfd = masterfd;
+  uart->masterFd = masterFd;
+  //uart->slaveFd = slaveFd;
   uart->type = UART_HOST;
   uart->device_link = device_name;
   uart->recvCallback = recvCallback;
+  uart->thread = createReceiverThread(uart);
 
   return uart;
 }
@@ -99,14 +147,18 @@ void uart_write(UartIO* uart, uint8_t reg, uint8_t value) {
 }
 
 void uart_destroy(UartIO* uart) {
+
   if(uart){
+    if(uart->thread){
+      archThreadJoin(uart->thread, 1000);
+    }
     if(uart->device_link){
       printf("unlink %s\n", uart->device_link);
       unlink(uart->device_link);
       free(uart->device_link);
     }
-    if(uart->masterfd != -1) {
-      close(uart->masterfd);
+    if(uart->masterFd != -1) {
+      close(uart->masterFd);
     }
     free(uart);
   }

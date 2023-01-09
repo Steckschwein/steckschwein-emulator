@@ -19,7 +19,8 @@ typedef enum {UART_NONE, UART_FILE, UART_HOST } UartType;
 
 typedef struct{
 
-    int masterfd;
+    int masterFd;
+    int slaveFd;
 
     uint16_t ioPort;
     uint8_t uartregisters[16];
@@ -30,6 +31,8 @@ typedef struct{
     char* device_link;
 
     void (*recvCallback)(uint8_t);
+    void *thread;
+
 } UartIO;
 
 UartIO* uart_create(uint16_t ioPort);
