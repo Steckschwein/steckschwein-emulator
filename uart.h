@@ -35,7 +35,7 @@ typedef struct{
 
 } UartIO;
 
-UartIO* uart_create(uint16_t ioPort);
+UartIO* uart_create(uint16_t ioPort, void *recvCallback);
 
 void uart_destroy(UartIO* uart);
 

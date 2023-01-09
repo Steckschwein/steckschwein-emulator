@@ -40,10 +40,6 @@ UartIO *a_uartIo[DEVICE_UART_MAX];
 
 static short deviceIndex = 0;
 
-void recvCallback(uint8_t v){
-
-}
-
 void receiveLoop(){
 
   UartIO *uartIo = a_uartIo[deviceIndex++];
@@ -85,7 +81,12 @@ void* createReceiverThread(UartIO *uart){
   return archThreadCreate(receiveLoop, THREAD_PRIO_NORMAL);
 }
 
-UartIO* uart_create(uint16_t ioPort){
+UartIO* uart_create(uint16_t ioPort, void *recvCallback){
+
+  if(deviceIndex >= DEVICE_UART_MAX){//max devices
+    fprintf(stderr, "requested uart device number %d, but only %d are allowed.", deviceIndex+1, DEVICE_UART_MAX);
+    return NULL;
+  }
 
    // get the master fd
   int masterFd = open("/dev/ptmx", O_RDWR | O_NOCTTY);
@@ -143,7 +144,7 @@ uint8_t uart_read(UartIO* uart, uint8_t reg) {
 
 void uart_write(UartIO* uart, uint8_t reg, uint8_t value) {
 //     printf("uart w %x %x\n", reg, value);
-       uart->uartregisters[reg] = value;
+  uart->uartregisters[reg] = value;
 }
 
 void uart_destroy(UartIO* uart) {

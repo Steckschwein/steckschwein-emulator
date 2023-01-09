@@ -300,15 +300,15 @@ void archVideoOutputChange() {
 void archEmulationStopNotification() {
 	DEBUG("archEmulationStopNotification\n");
 #ifdef RUN_EMU_ONCE_ONLY
-    doQuit = 1;
 #endif
+  doQuit = 1;
 }
 
 void archEmulationStartFailure() {
 	DEBUG("archEmulationStartFailure\n");
 #ifdef RUN_EMU_ONCE_ONLY
-    doQuit = 1;
 #endif
+  doQuit = 1;
 }
 
 int archUpdateEmuDisplay(int syncMode) {

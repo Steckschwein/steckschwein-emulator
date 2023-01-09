@@ -111,10 +111,10 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
      ym3812 = ym3812Create(boardGetMixer());
 
-    if((uartIo0x200 = uart_create(0x200)) == NULL)
+    if((uartIo0x200 = uart_create(0x200, NULL)) == NULL)
       return success;
 
-    if((uartIo0x250 = uart_create(0x250)) == NULL)
+    if((uartIo0x250 = uart_create(0x250, NULL)) == NULL)
       return success;
 
      //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
