@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <errno.h>
 #include <string.h>
 #include <time.h>
@@ -46,31 +47,38 @@ void receiveLoop(){
   if(!uartIo)
     return;
 
-  char bufin = 'O';
-  int c;
+  char bufin = '\0';
   struct termios params;
 
-  // TODO adjust slave with uart register settings
-  int fd = open(uartIo->device_link, O_RDWR | O_NOCTTY);
-  if(fd < 0){
-    perror("open slave");
-    return;
-  }
-  if(tcgetattr(fd, &params)){
+  fd_set rfds;
+  struct timeval tv;
+  struct timespec ts;
+
+  // TODO adjust pts with uart register settings
+  if(tcgetattr(uartIo->masterFd, &params)){
     perror("tcgetattr");
     return;
   }
   cfmakeraw(&params);
-  tcsetattr (fd, TCSANOW, &params);
-  tcflush(fd, TCIOFLUSH);
-  close(fd);
+  tcsetattr (uartIo->masterFd, TCSANOW, &params);
+  tcflush(uartIo->masterFd, TCIOFLUSH);
 
   while(emulatorGetState() != EMU_STOPPED){
 
-    c = read(uartIo->masterFd, &bufin, 1);
-    if(c == 1){
-      printf("uart %s v: 0x%x\n", uartIo->device_link, bufin);
-      c = write(uartIo->masterFd, &bufin, 1);
+    struct pollfd pfd = { .fd = uartIo->masterFd, .events = POLLHUP, .revents = 0 };
+    int c = poll(&pfd, 1, 100);
+    if (c == -1){
+      perror("poll()");
+    }
+    else if (c && (pfd.revents & POLLHUP)){
+      c = read(uartIo->masterFd, &bufin, 1);
+      if(c == 1){
+        printf("uart %s v: 0x%x\n", uartIo->device_link, bufin);
+        c = write(uartIo->masterFd, &bufin, 1);
+      }else{
+//        printf(".");
+        archThreadSleep(1);
+      }
     }
   }
 }
@@ -88,28 +96,23 @@ UartIO* uart_create(uint16_t ioPort, void *recvCallback){
     return NULL;
   }
 
-   // get the master fd
+   // open master
   int masterFd = open("/dev/ptmx", O_RDWR | O_NOCTTY);
   if(masterFd < 0){
     perror("getpt");
     return NULL;
   }
-
-  if(grantpt(masterFd) < 0)
-  {
+  if(grantpt(masterFd) < 0){
     perror("grantpt");
     return NULL;
   }
-
-  if(unlockpt(masterFd) < 0)
-  {
+  if(unlockpt(masterFd) < 0){
     perror("unlockpt");
     return NULL;
   }
-
+  // determine slave
   char slavepath[64];
-  if(ptsname_r(masterFd, slavepath, sizeof(slavepath)) < 0)
-  {
+  if(ptsname_r(masterFd, slavepath, sizeof(slavepath)) < 0){
     perror("ptsname_r");
     return NULL;
   }
@@ -129,7 +132,6 @@ UartIO* uart_create(uint16_t ioPort, void *recvCallback){
   UartIO* uart = malloc(sizeof(UartIO));
   uart->ioPort = ioPort;
   uart->masterFd = masterFd;
-  //uart->slaveFd = slaveFd;
   uart->type = UART_HOST;
   uart->device_link = device_name;
   uart->recvCallback = recvCallback;

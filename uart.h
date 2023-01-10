@@ -20,7 +20,6 @@ typedef enum {UART_NONE, UART_FILE, UART_HOST } UartType;
 typedef struct{
 
     int masterFd;
-    int slaveFd;
 
     uint16_t ioPort;
     uint8_t uartregisters[16];
