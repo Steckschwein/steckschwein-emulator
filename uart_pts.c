@@ -16,6 +16,8 @@
 #include "memory.h"
 #include "glue.h"
 
+#include "uart_16550.h"
+
 /**
 
 # serial loopback
@@ -121,27 +123,29 @@ UartIO* uart_create(uint16_t ioPort, void *recvCallback){
   snprintf(device_name, 32*sizeof(char), DEVICE_LINK_TPL, ioPort);
   printf("i/o port %#4x mapped to %s (%s)\n", ioPort, device_name, slavepath);
 
-  if(unlink(device_name)){//will fail if not exist already
-    errno = 0;//but reset errno
+  if(!unlink(device_name)){//will fail if not exist already
+    errno = 0;//but we've to reset errno, otherwise subsequent calls will fail
   }
   if(symlink(slavepath, device_name)){
     perror("symlink");
     return NULL;
   }
 
+  UART_16550 *hw = uart_16550_create(ioPort);
+
   UartIO* uart = malloc(sizeof(UartIO));
-  uart->ioPort = ioPort;
   uart->masterFd = masterFd;
   uart->type = UART_HOST;
   uart->device_link = device_name;
   uart->recvCallback = recvCallback;
   uart->thread = createReceiverThread(uart);
+  uart->device = hw;
 
   return uart;
 }
 
 uint8_t uart_read(UartIO* uart, uint8_t reg) {
-       return uart->uartregisters[reg];
+  return uart->uartregisters[reg];
 }
 
 void uart_write(UartIO* uart, uint8_t reg, uint8_t value) {
@@ -163,6 +167,7 @@ void uart_destroy(UartIO* uart) {
     if(uart->masterFd != -1) {
       close(uart->masterFd);
     }
+    uart_16550_destroy(uart->device);
     free(uart);
   }
 }

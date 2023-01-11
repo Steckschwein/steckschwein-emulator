@@ -21,13 +21,13 @@ typedef struct{
 
     int masterFd;
 
-    uint16_t ioPort;
     uint8_t uartregisters[16];
 
     UartType type;
     int  uartReady;
 
     char* device_link;
+    void* device;
 
     void (*recvCallback)(uint8_t);
     void *thread;

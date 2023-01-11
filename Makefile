@@ -170,7 +170,8 @@ SOURCE_FILES += ym3812.c
 SOURCE_FILES += sdcard.c
 SOURCE_FILES += spi.c
 # SOURCE_FILES += uart.c
-SOURCE_FILES += uart_lo.c
+SOURCE_FILES += uart_pts.c
+SOURCE_FILES += uart_16550.c
 SOURCE_FILES += via.c
 SOURCE_FILES += joystick.c
 

@@ -12,7 +12,6 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <limits.h>
-
 #include <errno.h>
 
 #include <SDL.h>
