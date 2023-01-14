@@ -49,7 +49,7 @@ void receiveLoop(){
   if(!uartIo)
     return;
 
-  Chardev *chr = uartIo->chr;
+  Chardev *chr = &uartIo->chr;
   char bufin = '\0';
   struct termios params;
   struct timespec ts;
@@ -147,37 +147,32 @@ UartIO* uart_create(uint16_t ioPort, void *recvCallback){
     return NULL;
   }
 
-  Chardev *chr = malloc(sizeof(Chardev));
-  chr->fd = masterFd;
-
-  UART_16550 *hw = uart_16550_create(ioPort);
-
   UartIO* uart = malloc(sizeof(UartIO));
+  uart->chr.fd = masterFd;
   uart->type = UART_HOST;
   uart->device_link = slave;
   uart->recvCallback = recvCallback;
-  uart->device = hw;
-  uart->chr = chr;
+  uart->device = uart_16550_create(&uart->chr, ioPort);
   uart->thread = createReceiverThread(uart);
 
   return uart;
 }
 
-void uart_destroy(UartIO* uart) {
+void uart_destroy(UartIO* uartIo) {
 
-  if(uart){
-    if(uart->thread){
-      archThreadJoin(uart->thread, 1000);
+  if(uartIo){
+    if(uartIo->thread){
+      archThreadJoin(uartIo->thread, 1000);
     }
-    if(uart->device_link){
-      printf("unlink %s\n", uart->device_link);
-      unlink(uart->device_link);
-      free(uart->device_link);
+    if(uartIo->device_link){
+      printf("unlink %s\n", uartIo->device_link);
+      unlink(uartIo->device_link);
+      free(uartIo->device_link);
     }
-    if(uart->chr != -1) {
-      close(uart->chr->fd);
+    if(uartIo->chr.fd != -1) {
+      close(uartIo->chr.fd);
     }
-    uart_16550_destroy(uart->device);
-    free(uart);
+    uart_16550_destroy(uartIo->device);
+    free(uartIo);
   }
 }

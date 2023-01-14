@@ -16,6 +16,8 @@
 
 extern int showDebugOnRender;
 
+//TODO FIXME decouple SDL
+int DEBUGHandleEvent(SDL_Event *pEvent);
 void DEBUGRenderDisplay(int width,int height);
 void DEBUGBreakToDebugger(void);
 int  DEBUGGetCurrentStatus(void);

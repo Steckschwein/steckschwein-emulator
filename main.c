@@ -12,6 +12,8 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <limits.h>
+#include <math.h>
+
 #include <errno.h>
 
 #include <SDL.h>
@@ -345,7 +347,7 @@ int WaitReverse() {
 		}
 		archEventWait(emuSyncEvent, -1);
 	}
-	boardRewind();
+	//boardRewind();
 
 	return -60;
 }
@@ -523,7 +525,7 @@ static void handleEvent(SDL_Event *event) {
 		break;
 	case SDL_JOYHATMOTION:
 		/**< Joystick hat position change */
-		handle_event(event);
+		//handle_event(event);
 		DEBUG("joystick hat event %x b:%x t:%x s:%x\n", event->jhat.which, event->jhat.hat, event->jbutton.type,
 				event->jbutton.state);
 		break;

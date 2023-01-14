@@ -43,7 +43,7 @@ struct SerialState {
        it can be reset while reading iir */
     int thr_ipending;
     UInt32 irq;
-    Chardev *chr;
+    Chardev chr;
     int last_break_enable;
     uint32_t baudbase;
     uint32_t tsr_retry;
@@ -74,12 +74,11 @@ typedef struct SerialState SerialState;
 
 
 typedef struct UART_16550{
-
     SerialState *s;
     uint16_t port;
 } UART_16550;
 
-UART_16550* uart_16550_create(uint16_t);
+UART_16550* uart_16550_create(Chardev *chr, uint16_t port);
 void uart_16550_destroy(UART_16550 *);
 
 void serial_set_frequency(SerialState *s, uint32_t frequency);

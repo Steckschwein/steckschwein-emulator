@@ -21,7 +21,7 @@ typedef enum {UART_NONE, UART_FILE, UART_HOST } UartType;
 
 typedef struct{
 
-    Chardev *chr;
+    Chardev chr;
 
     UartType type;
     int  uartReady;

@@ -283,7 +283,9 @@ static void serial_xmit(SerialState *s)
             /* in loopback mode, say that we just received a char */
             //serial_receive1(s, &s->tsr, 1);
         } else {
+            //int rc = qemu_chr_fe_write(&s->chr, &s->tsr, 1);
             int rc = chr_io_write(&s->chr, &s->tsr, 1);
+
             if ((rc == 0 ||
                  (rc == -1 && errno == EAGAIN)) &&
                 s->tsr_retry < MAX_XMIT_RETRY) {
@@ -625,10 +627,10 @@ static void serial_reset(void *opaque)
 }
 
 
-static SerialState *serial_realize()
+static SerialState *serial_realize(Chardev *chr)
 {
     SerialState *s = calloc(1, sizeof(SerialState));
-
+    s->chr.fd = chr->fd;
     //s->modem_status_poll = timer_new_ns(QEMU_CLOCK_VIRTUAL, (QEMUTimerCB *) serial_update_msl, s);
 
     //s->fifo_timeout_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL, (QEMUTimerCB *) fifo_timeout_int, s);
@@ -652,11 +654,11 @@ void uart_16550_write(UART_16550 *uart, UInt16 port, UInt8 value){
   serial_ioport_write(uart, port & 0xff, value, 1);
 }
 
-UART_16550* uart_16550_create(uint16_t port){
+UART_16550* uart_16550_create(Chardev *chr, uint16_t port){
 
 	UART_16550 *uart = (UART_16550*)calloc(1, sizeof(UART_16550));
   uart->port = port;
-  uart->s = serial_realize();
+  uart->s = serial_realize(chr);
 
 	ioPortRegister(port+0, uart_16550_read, uart_16550_write, uart);//rxtx,ier
 	ioPortRegister(port+1, uart_16550_read, uart_16550_write, uart);//dll
@@ -681,7 +683,6 @@ void uart_16550_destroy(UART_16550 *uart){
   ioPortUnregister(uart->port+7);
 
   free(uart->s);
-
   free(uart);
 }
 

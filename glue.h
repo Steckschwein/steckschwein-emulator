@@ -51,6 +51,8 @@ typedef enum {
 
 void actionEmuTogglePause();
 void actionEmuStepBack();
+int updateEmuDisplay(int updateAll);
+int emulatorSyncScreen();
 
 extern UartIO* uartIo0x200;
 extern UartIO* uartIo0x250;
