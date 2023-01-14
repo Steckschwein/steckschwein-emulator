@@ -49,31 +49,29 @@ void receiveLoop(){
   if(!uartIo)
     return;
 
+  Chardev *chr = uartIo->chr;
   char bufin = '\0';
   struct termios params;
-
-  fd_set rfds;
-  struct timeval tv;
   struct timespec ts;
 
   // TODO adjust pts with uart register settings
-  if(tcgetattr(uartIo->masterFd, &params)){
+  if(tcgetattr(chr->fd, &params)){
     perror("tcgetattr");
     return;
   }
   cfmakeraw(&params);
-  tcsetattr (uartIo->masterFd, TCSANOW, &params);
-  tcflush(uartIo->masterFd, TCIOFLUSH);
+  tcsetattr (chr->fd, TCSANOW, &params);
+  tcflush(chr->fd, TCIOFLUSH);
 
   while(emulatorGetState() != EMU_STOPPED){
 
-    struct pollfd pfd = { .fd = uartIo->masterFd, .events = POLLHUP, .revents = 0 };
+    struct pollfd pfd = { .fd = chr->fd, .events = POLLHUP, .revents = 0 };
     int c = poll(&pfd, 1, 100);
     if (c == -1){
       perror("poll()");
     }
     else if (c && (pfd.revents & POLLHUP)){
-      c = read(uartIo->masterFd, &bufin, 1);
+      c = read(chr->fd, &bufin, 1);
       if(c == 1){
         printf("uart %s <= v: 0x%x\n", uartIo->device_link, bufin);
       }else{
@@ -149,14 +147,17 @@ UartIO* uart_create(uint16_t ioPort, void *recvCallback){
     return NULL;
   }
 
+  Chardev *chr = malloc(sizeof(Chardev));
+  chr->fd = masterFd;
+
   UART_16550 *hw = uart_16550_create(ioPort);
 
   UartIO* uart = malloc(sizeof(UartIO));
-  uart->masterFd = masterFd;
   uart->type = UART_HOST;
   uart->device_link = slave;
   uart->recvCallback = recvCallback;
   uart->device = hw;
+  uart->chr = chr;
   uart->thread = createReceiverThread(uart);
 
   return uart;
@@ -173,8 +174,8 @@ void uart_destroy(UartIO* uart) {
       unlink(uart->device_link);
       free(uart->device_link);
     }
-    if(uart->masterFd != -1) {
-      close(uart->masterFd);
+    if(uart->chr != -1) {
+      close(uart->chr->fd);
     }
     uart_16550_destroy(uart->device);
     free(uart);

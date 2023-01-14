@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "char-io.h"
+
 #define UART_REG_IER 0
 #define UART_REG_LSR 5
 
@@ -19,7 +21,7 @@ typedef enum {UART_NONE, UART_FILE, UART_HOST } UartType;
 
 typedef struct{
 
-    int masterFd;
+    Chardev *chr;
 
     UartType type;
     int  uartReady;
@@ -33,7 +35,6 @@ typedef struct{
 } UartIO;
 
 UartIO* uart_create(uint16_t ioPort, void *recvCallback);
-
 void uart_destroy(UartIO* uart);
 
 #endif

@@ -14,18 +14,14 @@
 
 #define UART_FIFO_LENGTH    16      /* 16550A Fifo Length */
 
-
 #define CHR_IOCTL_SERIAL_SET_PARAMS   1
+
 typedef struct {
     int speed;
     int parity;
     int data_bits;
     int stop_bits;
-} QEMUSerialSetParams;
-
-typedef struct Chardev {
-  int fd;
-} Chardev;
+} SerialSetParams;
 
 struct SerialState {
 
