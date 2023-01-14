@@ -75,8 +75,7 @@ void receiveLoop(){
     else if (c && (pfd.revents & POLLHUP)){
       c = read(uartIo->masterFd, &bufin, 1);
       if(c == 1){
-        printf("uart %s v: 0x%x\n", uartIo->device_link, bufin);
-        c = write(uartIo->masterFd, &bufin, 1);
+        printf("uart %s <= v: 0x%x\n", uartIo->device_link, bufin);
       }else{
 //        printf(".");
         archThreadSleep(1);
@@ -97,11 +96,10 @@ UartIO* uart_create(uint16_t ioPort, void *recvCallback){
     fprintf(stderr, "requested uart device number %d, but only %d are allowed.", deviceIndex+1, DEVICE_UART_MAX);
     return NULL;
   }
-
-   // open master
+  // open master
   int masterFd = open("/dev/ptmx", O_RDWR | O_NOCTTY);
   if(masterFd < 0){
-    perror("getpt");
+    perror("get ptmx failed");
     return NULL;
   }
   if(grantpt(masterFd) < 0){
@@ -119,14 +117,34 @@ UartIO* uart_create(uint16_t ioPort, void *recvCallback){
     return NULL;
   }
 
-  char* device_name = (char*)calloc(32, sizeof(char));
-  snprintf(device_name, 32*sizeof(char), DEVICE_LINK_TPL, ioPort);
-  printf("i/o port %#4x mapped to %s (%s)\n", ioPort, device_name, slavepath);
+  int sfd;
+  if ((sfd = open(slavepath, O_RDONLY | O_NOCTTY)) == -1) {
+    perror("open slave");
+    close(masterFd);
+    return NULL;
+  }
 
-  if(!unlink(device_name)){//will fail if not exist already
+  struct termios tty;
+  if (tcgetattr(sfd, &tty) < 0) {
+    perror("ioctl on slave");
+    close(sfd);
+    close(masterFd);
+  }
+
+  tcgetattr(sfd, &tty);
+  cfmakeraw(&tty);
+  tcsetattr(sfd, TCSAFLUSH, &tty);
+  close(sfd);
+
+  // maintain symlink in cwd
+  char* slave = (char*)calloc(32, sizeof(char));
+  snprintf(slave, 32*sizeof(char), DEVICE_LINK_TPL, ioPort);
+  printf("i/o port %#4x mapped to %s (%s)\n", ioPort, slave, slavepath);
+
+  if(!unlink(slave)){//will fail if not exist already
     errno = 0;//but we've to reset errno, otherwise subsequent calls will fail
   }
-  if(symlink(slavepath, device_name)){
+  if(symlink(slavepath, slave)){
     perror("symlink");
     return NULL;
   }
@@ -136,21 +154,12 @@ UartIO* uart_create(uint16_t ioPort, void *recvCallback){
   UartIO* uart = malloc(sizeof(UartIO));
   uart->masterFd = masterFd;
   uart->type = UART_HOST;
-  uart->device_link = device_name;
+  uart->device_link = slave;
   uart->recvCallback = recvCallback;
-  uart->thread = createReceiverThread(uart);
   uart->device = hw;
+  uart->thread = createReceiverThread(uart);
 
   return uart;
-}
-
-uint8_t uart_read(UartIO* uart, uint8_t reg) {
-  return uart->uartregisters[reg];
-}
-
-void uart_write(UartIO* uart, uint8_t reg, uint8_t value) {
-//     printf("uart w %x %x\n", reg, value);
-  uart->uartregisters[reg] = value;
 }
 
 void uart_destroy(UartIO* uart) {

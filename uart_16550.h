@@ -5,12 +5,27 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <assert.h>
+#include <errno.h>
+
+#include "MsxTypes.h"
+#include "glue.h"
+#include "fifo8.h"
 
 #define UART_FIFO_LENGTH    16      /* 16550A Fifo Length */
 
-typedef struct UART_16550{
-    uint16_t port;
-} UART_16550;
+
+#define CHR_IOCTL_SERIAL_SET_PARAMS   1
+typedef struct {
+    int speed;
+    int parity;
+    int data_bits;
+    int stop_bits;
+} QEMUSerialSetParams;
+
+typedef struct Chardev {
+  int fd;
+} Chardev;
 
 struct SerialState {
 
@@ -31,32 +46,42 @@ struct SerialState {
     /* NOTE: this hidden state is necessary for tx irq generation as
        it can be reset while reading iir */
     int thr_ipending;
-    //qemu_irq irq;
-    //CharBackend chr;
+    UInt32 irq;
+    Chardev *chr;
     int last_break_enable;
     uint32_t baudbase;
     uint32_t tsr_retry;
-   // guint watch_tag;
+    int watch_tag;
     bool wakeup;
 
     /* Time when the last byte was successfully sent out of the tsr */
     uint64_t last_xmit_ts;
-    //Fifo8 recv_fifo;
-    //Fifo8 xmit_fifo;
+    Fifo8 recv_fifo;
+    Fifo8 xmit_fifo;
     /* Interrupt trigger level for recv_fifo */
     uint8_t recv_fifo_itl;
 
     //QEMUTimer *fifo_timeout_timer;
+    void *fifo_timeout_timer;
     int timeout_ipending;           /* timeout interrupt pending state */
 
     uint64_t char_transmit_time;    /* time to transmit a char in ticks */
     int poll_msl;
 
     //QEMUTimer *modem_status_poll;
+    void *modem_status_poll;
+
     //MemoryRegion io;
 };
 
 typedef struct SerialState SerialState;
+
+
+typedef struct UART_16550{
+
+    SerialState *s;
+    uint16_t port;
+} UART_16550;
 
 UART_16550* uart_16550_create(uint16_t);
 void uart_16550_destroy(UART_16550 *);

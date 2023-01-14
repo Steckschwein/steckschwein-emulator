@@ -21,8 +21,6 @@ typedef struct{
 
     int masterFd;
 
-    uint8_t uartregisters[16];
-
     UartType type;
     int  uartReady;
 
@@ -37,8 +35,5 @@ typedef struct{
 UartIO* uart_create(uint16_t ioPort, void *recvCallback);
 
 void uart_destroy(UartIO* uart);
-
-uint8_t uart_read(UartIO* uart, uint8_t reg);
-void uart_write(UartIO* uart, uint8_t reg, uint8_t value);
 
 #endif

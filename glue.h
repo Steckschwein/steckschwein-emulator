@@ -9,6 +9,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+
+#define NANOSECONDS_PER_SECOND 1000000000LL
+
 #define WARN(...) fprintf(stderr, __VA_ARGS__)
 
 #ifdef DEBUG_ENABLED
