@@ -467,7 +467,7 @@ int boardRewind()
 
 void boardSetFrequency(int frequency)
 {
-   boardFreq = frequency * (boardFrequency() / 3579545);
+   boardFreq = frequency * (boardFrequency() / EMU_FREQUENCY);
 
    mixerSetBoardFrequency(frequency);
 }

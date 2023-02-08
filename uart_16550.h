@@ -16,13 +16,6 @@
 
 #define CHR_IOCTL_SERIAL_SET_PARAMS   1
 
-typedef struct {
-    int speed;
-    int parity;
-    int data_bits;
-    int stop_bits;
-} SerialSetParams;
-
 struct SerialState {
 
     uint16_t divider;
@@ -72,15 +65,14 @@ struct SerialState {
 
 typedef struct SerialState SerialState;
 
-
 typedef struct UART_16550{
     SerialState *s;
     uint16_t port;
 } UART_16550;
 
-UART_16550* uart_16550_create(Chardev *chr, uint16_t port);
+UART_16550* uart_16550_create(UartIO *uartIo, Chardev *chr, uint16_t port);
 void uart_16550_destroy(UART_16550 *);
 
-void serial_set_frequency(SerialState *s, uint32_t frequency);
+// void serial_set_frequency(SerialState *s, uint32_t frequency);
 
 #endif

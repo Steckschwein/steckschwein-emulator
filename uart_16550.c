@@ -1,4 +1,6 @@
 #include "uart_16550.h"
+#include "bitops.h"
+#include "char-io.h"
 
 #define UART_LCR_DLAB	0x80	/* Divisor latch access bit */
 
@@ -64,85 +66,20 @@
 
 #define MAX_XMIT_RETRY      4
 
+#define UART_BAUDBASE 115200 // 115200 Baud / 1.8432Mhz
 
 // ######
 
-#define CHR_IOCTL_SERIAL_SET_BREAK    2
-#define CHR_IOCTL_SERIAL_SET_TIOCM   13
-#define CHR_IOCTL_SERIAL_GET_TIOCM   14
-
-#define CHR_TIOCM_CTS   0x020
-#define CHR_TIOCM_CAR   0x040
-#define CHR_TIOCM_DSR   0x100
-#define CHR_TIOCM_RI    0x080
-#define CHR_TIOCM_DTR   0x002
-#define CHR_TIOCM_RTS   0x004
 #define ENOTSUP 4096
 
-
-/**
- * extract32:
- * @value: the value to extract the bit field from
- * @start: the lowest bit in the bit field (numbered from 0)
- * @length: the length of the bit field
- *
- * Extract from the 32 bit input @value the bit field specified by the
- * @start and @length parameters, and return it. The bit field must
- * lie entirely within the 32 bit word. It is valid to request that
- * all 32 bits are returned (ie @length 32 and @start 0).
- *
- * Returns: the value of the bit field extracted from the input value.
- */
-static inline uint32_t extract32(uint32_t value, int start, int length)
+static inline void recv_fifo_put(SerialState *s, uint8_t chr)
 {
-    assert(start >= 0 && length > 0 && length <= 32 - start);
-    return (value >> start) & (~0U >> (32 - length));
-}
-
-/**
- * extract16:
- * @value: the value to extract the bit field from
- * @start: the lowest bit in the bit field (numbered from 0)
- * @length: the length of the bit field
- *
- * Extract from the 16 bit input @value the bit field specified by the
- * @start and @length parameters, and return it. The bit field must
- * lie entirely within the 16 bit word. It is valid to request that
- * all 16 bits are returned (ie @length 16 and @start 0).
- *
- * Returns: the value of the bit field extracted from the input value.
- */
-static inline uint16_t extract16(uint16_t value, int start, int length)
-{
-    assert(start >= 0 && length > 0 && length <= 16 - start);
-    return extract32(value, start, length);
-}
-
-
-/**
- * deposit32:
- * @value: initial value to insert bit field into
- * @start: the lowest bit in the bit field (numbered from 0)
- * @length: the length of the bit field
- * @fieldval: the value to insert into the bit field
- *
- * Deposit @fieldval into the 32 bit @value at the bit field specified
- * by the @start and @length parameters, and return the modified
- * @value. Bits of @value outside the bit field are not modified.
- * Bits of @fieldval above the least significant @length bits are
- * ignored. The bit field must lie entirely within the 32 bit word.
- * It is valid to request that all 32 bits are modified (ie @length
- * 32 and @start 0).
- *
- * Returns: the modified @value.
- */
-static inline uint32_t deposit32(uint32_t value, int start, int length,
-                                 uint32_t fieldval)
-{
-    uint32_t mask;
-    assert(start >= 0 && length > 0 && length <= 32 - start);
-    mask = (~0U >> (32 - length)) << start;
-    return (value & ~mask) | ((fieldval << start) & mask);
+    /* Receive overruns do not overwrite FIFO contents. */
+    if (!fifo8_is_full(&s->recv_fifo)) {
+        fifo8_push(&s->recv_fifo, chr);
+    } else {
+        s->lsr |= UART_LSR_OE;
+    }
 }
 
 static void serial_update_irq(SerialState *s)
@@ -170,13 +107,37 @@ static void serial_update_irq(SerialState *s)
 
     if (tmp_iir != UART_IIR_NO_INT) {
         // qemu_irq_raise(s->irq);
-        boardClearInt(s->irq);
+        boardSetInt(s->irq);
     } else {
         // qemu_irq_lower(s->irq);
-        boardSetInt(s->irq);
+        boardClearInt(s->irq);
     }
 }
 
+static void serial_receive1(void *opaque, const uint8_t *buf, int size)
+{
+    SerialState *s = opaque;
+
+    if (s->wakeup) {
+        //qemu_system_wakeup_request(QEMU_WAKEUP_REASON_OTHER, NULL);
+    }
+    if(s->fcr & UART_FCR_FE) {
+        int i;
+        for (i = 0; i < size; i++) {
+            recv_fifo_put(s, buf[i]);
+        }
+        s->lsr |= UART_LSR_DR;
+        /* call the timeout receive callback in 4 char transmit time */
+        // timer_mod(s->fifo_timeout_timer, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) + s->char_transmit_time * 4);
+//        timer_mod(s->fifo_timeout_timer, boardSystemTime64() + s->char_transmit_time * 4);
+    } else {
+        if (s->lsr & UART_LSR_DR)
+            s->lsr |= UART_LSR_OE;
+        s->rbr = buf[0];
+        s->lsr |= UART_LSR_DR;
+    }
+    serial_update_irq(s);
+}
 
 static void serial_update_parameters(SerialState *s)
 {
@@ -212,6 +173,8 @@ static void serial_update_parameters(SerialState *s)
     ssp.stop_bits = stop_bits;
     s->char_transmit_time =  (NANOSECONDS_PER_SECOND / speed) * frame_size;
     //qemu_chr_fe_ioctl(&s->chr, CHR_IOCTL_SERIAL_SET_PARAMS, &ssp);
+    chr_fe_ioctl(&s->chr, CHR_IOCTL_SERIAL_SET_PARAMS, &ssp);
+
     //trace_serial_update_parameters(speed, parity, data_bits, stop_bits);
 }
 
@@ -220,15 +183,14 @@ static void serial_update_msl(SerialState *s)
     uint8_t omsr;
     int flags;
 
-    /*
-    timer_del(s->modem_status_poll);
 
-    if (qemu_chr_fe_ioctl(&s->chr, CHR_IOCTL_SERIAL_GET_TIOCM,
+    //timer_del(s->modem_status_poll);
+
+    if (chr_fe_ioctl(&s->chr, CHR_IOCTL_SERIAL_GET_TIOCM,
                           &flags) == -ENOTSUP) {
         s->poll_msl = -1;
         return;
     }
-    */
 
     omsr = s->msr;
 
@@ -281,7 +243,7 @@ static void serial_xmit(SerialState *s)
 
         if (s->mcr & UART_MCR_LOOP) {
             /* in loopback mode, say that we just received a char */
-            //serial_receive1(s, &s->tsr, 1);
+            serial_receive1(s, &s->tsr, 1);
         } else {
             //int rc = qemu_chr_fe_write(&s->chr, &s->tsr, 1);
             int rc = chr_io_write(&s->chr, &s->tsr, 1);
@@ -348,6 +310,7 @@ static void serial_update_tiocm(SerialState *s)
     int flags;
 
     //qemu_chr_fe_ioctl(&s->chr, CHR_IOCTL_SERIAL_GET_TIOCM, &flags);
+    chr_fe_ioctl(&s->chr, CHR_IOCTL_SERIAL_GET_TIOCM, &flags);
 
     flags &= ~(CHR_TIOCM_RTS | CHR_TIOCM_DTR);
 
@@ -357,8 +320,8 @@ static void serial_update_tiocm(SerialState *s)
     if (s->mcr & UART_MCR_DTR) {
         flags |= CHR_TIOCM_DTR;
     }
-
  //   qemu_chr_fe_ioctl(&s->chr, CHR_IOCTL_SERIAL_SET_TIOCM, &flags);
+    chr_fe_ioctl(&s->chr, CHR_IOCTL_SERIAL_SET_TIOCM, &flags);
 }
 
 static void serial_ioport_write(UART_16550 *uart, uint16_t addr, uint64_t val,
@@ -470,6 +433,7 @@ static void serial_ioport_write(UART_16550 *uart, uint16_t addr, uint64_t val,
                 s->last_break_enable = break_enable;
               //  qemu_chr_fe_ioctl(&s->chr, CHR_IOCTL_SERIAL_SET_BREAK,
                 //                  &break_enable);
+              chr_fe_ioctl(&s->chr, CHR_IOCTL_SERIAL_SET_BREAK, &break_enable);
             }
         }
         break;
@@ -501,7 +465,7 @@ static void serial_ioport_write(UART_16550 *uart, uint16_t addr, uint64_t val,
 static uint64_t serial_ioport_read(UART_16550 *uart, uint8_t addr, unsigned size)
 {
     SerialState *s = uart->s;
-    uint32_t ret;
+    uint8_t ret;
 
     assert(size == 1 && addr < 8);
     switch(addr) {
@@ -616,21 +580,34 @@ static void serial_reset(void *opaque)
     fifo8_reset(&s->xmit_fifo);
 
     //s->last_xmit_ts = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+    s->last_xmit_ts = boardSystemTime64();
 
     s->thr_ipending = 0;
     s->last_break_enable = 0;
-    boardSetInt(s->irq);
+    boardClearInt(s->irq);
     //qemu_irq_lower(s->irq);
 
     serial_update_msl(s);
     s->msr &= ~UART_MSR_ANY_DELTA;
+
+    s->irq = 0x20;
 }
 
+/* There's data in recv_fifo and s->rbr has not been read for 4 char transmit times */
+static void fifo_timeout_int (void *opaque) {
+    SerialState *s = opaque;
+    if (s->recv_fifo.num) {
+        s->timeout_ipending = 1;
+        serial_update_irq(s);
+    }
+}
 
 static SerialState *serial_realize(Chardev *chr)
 {
-    SerialState *s = calloc(1, sizeof(SerialState));
+    SerialState *s = malloc(sizeof(SerialState));
     s->chr.fd = chr->fd;
+
+    serial_set_frequency(s, UART_BAUDBASE);
     //s->modem_status_poll = timer_new_ns(QEMU_CLOCK_VIRTUAL, (QEMUTimerCB *) serial_update_msl, s);
 
     //s->fifo_timeout_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL, (QEMUTimerCB *) fifo_timeout_int, s);
@@ -645,6 +622,33 @@ static SerialState *serial_realize(Chardev *chr)
     return s;
 }
 
+static void serial_unrealize(SerialState *s)
+{
+//    qemu_chr_fe_deinit(&s->chr, false);
+
+//    timer_free(s->modem_status_poll);
+
+  //  timer_free(s->fifo_timeout_timer);
+
+    fifo8_destroy(&s->recv_fifo);
+    fifo8_destroy(&s->xmit_fifo);
+
+    //qemu_unregister_reset(serial_reset, s);
+}
+
+/* Change the main reference oscillator frequency. */
+void serial_set_frequency(SerialState *s, uint32_t frequency)
+{
+    s->baudbase = frequency;
+    serial_update_parameters(s);
+}
+
+
+static void serial_receive(void *opaque, const uint8_t *buf, int size)
+{
+  UART_16550 *uart = (UART_16550*)opaque;
+  serial_receive1(uart->s, buf, size);
+}
 
 uint8_t uart_16550_read(UART_16550 *uart, UInt16 port){
   return serial_ioport_read(uart, port & 0xff, 1);
@@ -654,11 +658,13 @@ void uart_16550_write(UART_16550 *uart, UInt16 port, UInt8 value){
   serial_ioport_write(uart, port & 0xff, value, 1);
 }
 
-UART_16550* uart_16550_create(Chardev *chr, uint16_t port){
+UART_16550* uart_16550_create(UartIO *uartIo, Chardev *chr, uint16_t port){
 
 	UART_16550 *uart = (UART_16550*)calloc(1, sizeof(UART_16550));
   uart->port = port;
   uart->s = serial_realize(chr);
+
+  uartIo->recvCallback = serial_receive;
 
 	ioPortRegister(port+0, uart_16550_read, uart_16550_write, uart);//rxtx,ier
 	ioPortRegister(port+1, uart_16550_read, uart_16550_write, uart);//dll

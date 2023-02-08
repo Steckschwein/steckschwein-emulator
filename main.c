@@ -192,7 +192,8 @@ void machine_reset() {
 	spi_rtc_init();
 	spi_init();
 	via1_init();
-	reset6502();
+//	uart_reset();
+  reset6502();
 }
 
 void machine_paste(char *s) {

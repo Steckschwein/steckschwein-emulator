@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
- 
+
 #ifdef WII
 static UInt16 empty_line_buffer[FB_MAX_LINE_WIDTH];
 
@@ -308,7 +308,7 @@ static void generateGammaTable(Video* pVideo)
 
 #define videoGamma(index) gammaTable[index + 256]
 
-static void initRGBTable(Video* pVideo) 
+static void initRGBTable(Video* pVideo)
 {
     int rgb;
 
@@ -445,7 +445,7 @@ static void copySharpPAL_2x2_16(FrameBuffer* frame, void* pDestination, int dstP
                 colNext = (rgbTable[pSrc[w++]] & 0xe79c) >> 2;
                 colRgb1  = (colNext + 3 * colCur) & 0xe79c;
                 colRgb2  = (colCur + 3 * colNext) & 0xe79c;
-                
+
                 colCur = colNext;
 
                 noise = (UInt16)(rnd >> 31) * 0x0821;
@@ -537,7 +537,7 @@ static void copySharpPAL_2x2_32(FrameBuffer* frame, void* pDestination, int dstP
                 colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
                 colRgb1  = (colNext + 3 * colCur) & 0xfcfcfc;
                 colRgb2  = (colCur + 3 * colNext) & 0xfcfcfc;
-                
+
                 colCur = colNext;
 
                 noise = (rnd >> 29) * 0x10101;
@@ -798,7 +798,7 @@ static void copyMonitorPAL_2x2_16(FrameBuffer* frame, void* pDestination, int ds
                 colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
                 colRgb1 = (3 * colCur + colNext) & 0xfcfcfc;
                 colRgb2 = (4 * colNext) & 0xfcfcfc;
-                
+
                 colCur = colNext;
 
                 noise = (UInt16)(rnd >> 31) * 0x0821;
@@ -1022,7 +1022,7 @@ static void copyMonitorPAL_2x1_16(FrameBuffer* frame, void* pDestination, int ds
                 colNext = (rgbTable[pSrc[w++]] & 0xe79c) >> 2;
                 colRgb1 = (colNext + 3 * colCur) & 0xe79c;
                 colRgb2 = (colNext * 4) & 0xe79c;
-                
+
                 colCur = colNext;
 
 
@@ -1099,7 +1099,7 @@ static void copyMonitorPAL_2x1_32(FrameBuffer* frame, void* pDestination, int ds
                 colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
                 colRgb1 = (colNext + 3 * colCur) & 0xfcfcfc;
                 colRgb2 = (colNext * 4) & 0xfcfcfc;
-                
+
                 colCur = colNext;
 
                 noise = (rnd >> 30) * 0x10101;
@@ -1322,7 +1322,7 @@ static void copyPAL_1x1_16(FrameBuffer* frame, void* pDestination, int dstPitch,
 
     rndVal *= 13;
     rnd    *= rndVal;
-    
+
     dstPitch /= (int)sizeof(UInt16);
 
     for (h = 0; h < height; h++) {
@@ -1445,7 +1445,7 @@ static void copyPAL_1x05_32(FrameBuffer* frame, void* pDestination, int dstPitch
                 UInt32 colTmp2B = (rgbTable[pSrcB[w++]] & 0xf0f0f0) >> 4;
                 UInt32 colNext = (colTmp1A + colTmp2A + colTmp1B + colTmp2B) & 0xf0f0f0;
                 UInt32 colRgb  = (colPrev + 2 * colCur + colNext) & 0xfcfcfc;
-                
+
                 colPrev = colCur;
                 colCur = colNext;
 
@@ -1460,7 +1460,7 @@ static void copyPAL_1x05_32(FrameBuffer* frame, void* pDestination, int dstPitch
                 UInt32 colTmpB = (rgbTable[pSrcB[w++]] & 0xf8f8f8) >> 3;
                 UInt32 colNext = (colTmpA + colTmpB) & 0xf8f8f8;
                 UInt32 colRgb  = (colPrev + 2 * colCur + colNext) & 0xfcfcfc;
-                
+
                 colPrev = colCur;
                 colCur = colNext;
 
@@ -1514,7 +1514,7 @@ static void copy_1x1_16(FrameBuffer* frame, void* pDestination, int dstPitch, UI
                 pDst += 4;
             }
         }
-        pDst = pOldDst + dstPitch; 
+        pDst = pOldDst + dstPitch;
     }
 }
 
@@ -1554,7 +1554,7 @@ static void copy_1x1_32(FrameBuffer* frame, void* pDestination, int dstPitch, UI
                 pDst += 4;
             }
         }
-        pDst = pOldDst + dstPitch; 
+        pDst = pOldDst + dstPitch;
     }
 }
 
@@ -1577,7 +1577,7 @@ static void copy_1x05_16(FrameBuffer* frame, void* pDestination, int dstPitch, U
             while (width--) {
                 UInt16 col0 = (((rgbTable[pSrc1[0]] & 0xe79c) >> 2) + ((rgbTable[pSrc1[1]] & 0xe79c) >> 2));
                 UInt16 col1 = (((rgbTable[pSrc2[0]] & 0xe79c) >> 2) + ((rgbTable[pSrc2[1]] & 0xe79c) >> 2));
-                
+
                 *pDst++ = (col0 + col1) & 0xe79c;
                 pSrc1 += 2;
                 pSrc2 += 2;
@@ -1589,7 +1589,7 @@ static void copy_1x05_16(FrameBuffer* frame, void* pDestination, int dstPitch, U
                 *pDst++ = (((rgbTable[pSrc1[0]] & 0xe79c) >> 1) + ((rgbTable[pSrc2[0]] & 0xe79c) >> 1)) & 0xe79c;
             }
         }
-        pDst = pOldDst + dstPitch; 
+        pDst = pOldDst + dstPitch;
     }
 }
 
@@ -1613,7 +1613,7 @@ static void copy_1x05_32(FrameBuffer* frame, void* pDestination, int dstPitch, U
             while (width--) {
                 UInt32 col0 = (((rgbTable[pSrc1[0]] & 0xfcfcfc) >> 2) + ((rgbTable[pSrc1[1]] & 0xfcfcfc) >> 2));
                 UInt32 col1 = (((rgbTable[pSrc2[0]] & 0xfcfcfc) >> 2) + ((rgbTable[pSrc2[1]] & 0xfcfcfc) >> 2));
-                
+
                 *pDst++ = (col0 + col1) & 0xfcfcfc;
                 pSrc1 += 2;
                 pSrc2 += 2;
@@ -1627,7 +1627,7 @@ static void copy_1x05_32(FrameBuffer* frame, void* pDestination, int dstPitch, U
                 pSrc2++;
             }
         }
-        pDst = pOldDst + dstPitch; 
+        pDst = pOldDst + dstPitch;
     }
 }
 
@@ -1703,7 +1703,7 @@ static void copy_2x2_16(FrameBuffer* frame, void* pDestination, int dstPitch, UI
                 pDst2[6] = col4;
                 pDst2[7] = col4;
                 pDst2 += 8;
-            }  
+            }
         }
 
         pDst1 = pDst1old + dstPitch * 2;
@@ -1822,14 +1822,14 @@ inner_loop2:
 		movntq	[edx-8],mm2
 		jnz		inner_loop2
 
-		emms 
+		emms
 
 	}
 #endif
 }
 #endif
 
-void copy_2x2_32_core1(UInt32* rgbTable, UInt16* pSrc, UInt32* pDst1, UInt32* pDst2, int width, int hint) 
+void copy_2x2_32_core1(UInt32* rgbTable, UInt16* pSrc, UInt32* pDst1, UInt32* pDst2, int width, int hint)
 {
     while (width--) {
         UInt32 col1 = rgbTable[pSrc[0]];
@@ -1996,7 +1996,7 @@ inner_loop2:
 
 		jnz		inner_loop2
 
-		emms 
+		emms
 
 	}
 #endif
@@ -2064,7 +2064,7 @@ static void copy_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UI
 		mov hasSSE,edx
 	}
 #endif
-    
+
     hasSSE = 1;
 	core1=hasSSE? copy_2x2_32_core1_SSE: copy_2x2_32_core1;
 	core2=hasSSE? copy_2x2_32_core2_SSE: copy_2x2_32_core2;
@@ -2084,9 +2084,9 @@ static void copy_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UI
 
     for (h = 0; h < height; h++) {
 
-        if (frame->line[h].doubleWidth) 
+        if (frame->line[h].doubleWidth)
 			core1(rgbTable,frame->line[h].buffer,pDst1,pDst2,srcWidth / 4 * 2,dstPitch * 2*4);
-        else 
+        else
 			core2(rgbTable,frame->line[h].buffer,pDst1,pDst2,srcWidth / 4,dstPitch * 2*4);
 
         pDst1 += dstPitch * 2;
@@ -2215,7 +2215,7 @@ static void hq2x_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UI
 
     if (srcWidth == 0) {
         return;
-    }  
+    }
 
     for (h = 0; h < srcHeight; h++) {
         UInt16* pSrc = frame->line[h].buffer;
@@ -2247,7 +2247,7 @@ static void hq3x_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UI
 
     if (srcWidth == 0) {
         return;
-    }  
+    }
 
     for (h = 0; h < srcHeight; h++) {
         UInt16* pSrc = frame->line[h].buffer;
@@ -2341,7 +2341,7 @@ static void scale2x_2x2_16(FrameBuffer* frame, void* pDestination, int dstPitch,
 **
 ******************************************************************************
 */
-Video* videoCreate() 
+Video* videoCreate()
 {
     Video* pVideo = (Video*)calloc(1, sizeof(Video));
 
@@ -2364,7 +2364,7 @@ Video* videoCreate()
     return pVideo;
 }
 
-void videoDestroy(Video* pVideo) 
+void videoDestroy(Video* pVideo)
 {
     free(pVideo);
 }
@@ -2394,7 +2394,7 @@ void videoSetColors(Video* pVideo, int saturation, int brightness, int contrast,
     initRGBTable(pVideo);
 }
 
-void videoSetColorMode(Video* pVideo, VideoColorMode colorMode) 
+void videoSetColorMode(Video* pVideo, VideoColorMode colorMode)
 {
     switch (colorMode) {
     case VIDEO_GREEN:
@@ -2446,7 +2446,7 @@ void videoSetColorSaturation(Video* pVideo, int enable, int width)
     pVideo->colorSaturationWidth  = width;
 }
 
-void videoUpdateAll(Video* video, Properties* properties) 
+void videoUpdateAll(Video* video, Properties* properties)
 {
     videoSetColors(video, properties->video.saturation, properties->video.brightness, properties->video.contrast, properties->video.gamma);
     videoSetScanLines(video, properties->video.scanlinesEnable, properties->video.scanlinesPct);
@@ -2824,7 +2824,7 @@ void scanLines_32(void* pBuffer, int width, int height, int pitch, int scanLines
 	/*rdtsc_end_timer(0);*/
 }
 
-static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int zoom, 
+static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int zoom,
                           void* pDst, int dstOffset, int dstPitch, int canChangeZoom)
 {
     pDst = (char*)pDst + zoom * dstOffset;
@@ -2965,7 +2965,7 @@ static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
     return zoom;
 }
 
-static int videoRender480(Video* pVideo, FrameBuffer* frame, int bitDepth, int zoom, 
+static int videoRender480(Video* pVideo, FrameBuffer* frame, int bitDepth, int zoom,
                           void* pDst, int dstOffset, int dstPitch, int canChangeZoom)
 {
     pDst = (char*)pDst + zoom * dstOffset;
@@ -3037,7 +3037,7 @@ static int videoRender480(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
     return zoom;
 }
 
-int videoRender(Video* pVideo, FrameBuffer* frame, int bitDepth, int zoom, 
+int videoRender(Video* pVideo, FrameBuffer* frame, int bitDepth, int zoom,
                 void* pDst, int dstOffset, int dstPitch, int canChangeZoom)
 {
     if (frame == NULL) {

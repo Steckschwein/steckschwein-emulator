@@ -29,12 +29,14 @@ typedef struct{
     char* device_link;
     void* device;
 
-    void (*recvCallback)(uint8_t);
+    void (*recvCallback)(void* device, uint8_t* buf, int size);
     void *thread;
 
 } UartIO;
 
 UartIO* uart_create(uint16_t ioPort, void *recvCallback);
 void uart_destroy(UartIO* uart);
+
+void uart_step(UartIO* uart);
 
 #endif

@@ -73,8 +73,6 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
      int success = 0;
 
-     int i;
-
      steckschweinRam = NULL;
 
      mos6502 = mos6502create(boardTimerCheckTimeout);
