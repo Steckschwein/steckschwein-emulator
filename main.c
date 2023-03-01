@@ -926,7 +926,7 @@ void emulatorStop() {
 
 	archSoundSuspend();
 	archThreadJoin(emuThread, 3000);
-	archThreadDestroy(emuThread);
+//	archThreadDestroy(emuThread);
 //    archMidiEnable(0);
 //    machineDestroy(machine);
 #ifndef WII
