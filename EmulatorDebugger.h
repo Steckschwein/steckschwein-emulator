@@ -20,6 +20,7 @@ void DEBUGRenderDisplay(int width,int height);
 void DEBUGBreakToDebugger(void);
 int  DEBUGGetCurrentStatus(void);
 void DEBUGSetBreakPoint(int newBreakPoint);
+void DEBUGClearBreakPoint(int breakPoint);
 void DEBUGInitUI(SDL_Surface *surface);
 void DEBUGFreeUI();
 

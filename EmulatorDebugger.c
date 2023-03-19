@@ -88,7 +88,7 @@ static void DEBUGExecCmd();
 // *** MUST BE SCAN CODES ***
 
 enum DBG_CMD {
-	CMD_SET_BPK = 's', CMD_DUMP_MEM = 'm', CMD_DISASM = 'd', CMD_SET_BANK = 'b', CMD_SET_REGISTER = 'r'
+	CMD_CLR_BPK = 'c', CMD_SET_BPK = 's', CMD_DUMP_MEM = 'm', CMD_DISASM = 'd', CMD_SET_BANK = 'b', CMD_SET_REGISTER = 'r'
 };
 
 // RGB colours
@@ -197,6 +197,11 @@ void DEBUGFreeUI() {
 void DEBUGSetBreakPoint(int newBreakPoint) {
 	breakPoint = newBreakPoint;
 	dbgSetBreakpoint(newBreakPoint);
+}
+
+void DEBUGClearBreakPoint(int breakPoint) {
+	breakPoint = -1;
+	dbgClearBreakpoint(breakPoint);
 }
 
 // *******************************************************************************************
@@ -324,6 +329,11 @@ static void DEBUGExecCmd() {
 	// printf("cmd:%c line: '%s'\n", cmd, line);
 
 	switch (cmd) {
+	case CMD_CLR_BPK:
+		sscanf(line, "%x", &number);
+		addr = number & 0xFFFF;
+		DEBUGClearBreakPoint(addr);
+		break;
 	case CMD_SET_BPK:
 		sscanf(line, "%x", &number);
 		addr = number & 0xFFFF;
@@ -475,8 +485,9 @@ static void DEBUGRenderCode(int lines, int initialPC) {
 //
 // *******************************************************************************************
 static char *labels[] = { "NV-BDIZC", "", "", "A", "X", "Y", "", "", "PC", "SP", "", "BRK", "",
-	"BR0", "BR1", "BR2", "BR3",
-	NULL };
+	"BR0", "BR1", "BR2", "BR3","",
+  "IRQ", // pending irq
+  NULL };
 
 static int DEBUGRenderRegisters(void) {
 	int n = 0, yc = 0;
@@ -506,10 +517,14 @@ static int DEBUGRenderRegisters(void) {
 	DEBUGNumber(DBG_DATX, yc++, breakPoint & 0xFFFF, 4, col_data);
 	yc++;
 
+  // CPLD Bank registers
 	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(0), 2, col_data);
 	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(1), 2, col_data);
 	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(2), 2, col_data);
 	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(3), 2, col_data);
+	yc++;
+
+  DEBUGNumber(DBG_DATX, yc++, boardGetInt(0xff), 2, col_data);
 
 	return n;// Number of code display lines
 }
