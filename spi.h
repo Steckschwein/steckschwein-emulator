@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <SDL.h>
 
-void spi_init();
 void spi_step();
 
 // TODO FIXME design

@@ -140,8 +140,6 @@ static UInt32 emuUsageCurrent = 0;
 
 static int doQuit = 0;
 
-//int screenWidth=240;//320;
-//int screenHeight=320;//240;
 int screenWidth = 320;
 int screenHeight = 240;
 
@@ -187,10 +185,9 @@ void machine_dump() {
 }
 
 void machine_reset(int prg_override_start) {
-	spi_rtc_init();
-	spi_init();
+	spi_rtc_reset();
 	uart_init(prg_path, prg_override_start, checkUploadLmf);
-	via1_init();
+	via1_reset();
 	reset6502();
 }
 
@@ -1144,7 +1141,7 @@ int main(int argc, char **argv) {
 	//read default properties
 //	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANK, "Steckschwein");
 //	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
-	properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
+	properties = propCreate(0, 0, P_EMU_SYNCAUTO, "Steckschwein");
 	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
 
 	argc--;

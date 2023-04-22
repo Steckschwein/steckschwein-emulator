@@ -28,10 +28,6 @@
 // CB1 SPICLK (=PB0)
 // CB2 MISO
 
-void spi_init() {
-
-}
-
 volatile uint8_t last_keycode = 0;
 
 uint8_t spi_handle_keyboard(uint8_t inbyte) {

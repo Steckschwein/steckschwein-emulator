@@ -15,13 +15,21 @@ static struct tm *timestamp;
 static bool chip_select = false;
 static uint8_t nvram[96] = { 0x42, 'L', 'O', 'A', 'D', 'E', 'R', ' ', ' ', 'B', 'I', 'N', 1, 3, 0x37 };
 
+static uint8_t regs[0x20];
+
+int _1HzTimeHanler(void* timer) {
+  sprintf(stderr, ".");
+
+  return 20;//continue
+}
+
 char* swHomeDir() {
 	char swDir[FILENAME_MAX];
-    #if __MINGW32_NO__
+  #if __MINGW32_NO__
 		snprintf(swDir, FILENAME_MAX, "%s%s/%s", getenv("HOMEDRIVE"), getenv("HOME"), SW_DIR);
 	#else
-	snprintf(swDir, FILENAME_MAX, "%s/%s", getenv("HOME"), SW_DIR);
-#endif
+	  snprintf(swDir, FILENAME_MAX, "%s/%s", getenv("HOME"), SW_DIR);
+  #endif
 
 	DIR *dir = opendir(swDir);
 	if (dir == NULL || errno == ENOENT) {
@@ -46,7 +54,7 @@ char* nvramFile() {
 	return strdup(nvramFile);
 }
 
-void spi_rtc_init() {
+void spi_rtc_reset() {
 
 	char *nvramFileStr = nvramFile();
 	FILE *f = fopen(nvramFileStr, "rb");
@@ -58,6 +66,8 @@ void spi_rtc_init() {
 		fclose(f);
 	}
 	free(nvramFileStr);
+
+  regs[RTC_CONTROL] = 1<<6; //set WP (write protect enabled after reset)
 }
 
 void spi_rtc_destroy() {
@@ -103,13 +113,15 @@ uint8_t spi_rtc_handle(uint8_t inbyte) {
 		addr = inbyte;
 		chip_select = true;
 	} else {
-		if (addr & 0x80) { //write
+#ifdef TRACE_RTC
+    printf("RTC access %x %x\n", (addr & 0x7f) - 0x20, inbyte);
+#endif
+		if (addr & 0x80 && ((addr & 0x1f) == RTC_CONTROL || (regs[RTC_CONTROL] & 0x40) == 0)) { //write, if WP = 0
 			if ((addr & 0x7f) >= 0x20) { //nvram access?
 				nvram[(addr & 0x7f) - 0x20] = inbyte;
-#ifdef TRACE_RTC
-				printf("nvram write %x %x\n", (addr & 0x7f) - 0x20, inbyte);
-#endif
-			}
+			}else{
+        regs[addr & 0x1f] = inbyte;
+      }
 		} else { //read
 			if (addr >= 0x20) { //nvram access
 				outbyte = nvram[addr - 0x20];
@@ -136,12 +148,15 @@ uint8_t spi_rtc_handle(uint8_t inbyte) {
 				case RTC_YEAR:
 					outbyte = toBCD(timestamp->tm_year - 100);
 					break;
+        default:
+          outbyte = regs[addr & 0x1f] ;
+          break;
 				}
 		}
+    addr++;
 #ifdef TRACE_RTC
 		printf("rtc %x %x %x %x\n", inbyte, outbyte, addr, chip_select);
 #endif
-		addr++;
 	}
 
 	return outbyte;
