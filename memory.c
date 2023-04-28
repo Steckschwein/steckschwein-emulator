@@ -64,9 +64,9 @@ uint8_t *get_address(uint16_t address, bool debugOn){
 
 	uint32_t extaddr = ((ctrl_port[reg] & ((mem_size >> BANK_SIZE)-1)) << BANK_SIZE) | (address & ((1<<BANK_SIZE)-1));
 
-    if(!debugOn){//skip if called from debugger
-        DEBUG ("address: a: $%4x r: $%2x/$%2x sz: $%x ext: $%x", address, reg, ctrl_port[reg], mem_size, extaddr);
-    }
+  if(!debugOn){//skip if called from debugger
+      DEBUG ("address: a: $%4x r: $%2x/$%2x sz: $%x ext: $%x", address, reg, ctrl_port[reg], mem_size, extaddr);
+  }
 
 	return &p[extaddr & (mem_size-1)];
 }
@@ -99,9 +99,9 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
 
 	uint8_t value = *p;
 
-    if(!debugOn){//called from render
-        DEBUG (" read v: %2x\n", value);
-    }
+  if(!debugOn){//called from render
+      DEBUG (" read v: %2x\n", value);
+  }
 
 	return value;
 
@@ -152,7 +152,7 @@ void write6502(uint16_t address, uint8_t value) {
 	uint8_t *p = get_address(address, false);
 	*p = value;
 
-    DEBUG (" write v: $%2x\n", value);
+  DEBUG (" write v: $%2x\n", value);
 
 #else
 	DEBUG("write6502 %4x %2x\n", address, value);

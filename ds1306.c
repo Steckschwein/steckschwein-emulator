@@ -23,8 +23,7 @@ int _1HzTimeHanler(void* timer) {
   return 20;//continue
 }
 
-char* swHomeDir() {
-	char swDir[FILENAME_MAX];
+* swHomeDir(char *swDir) {
   #if __MINGW32_NO__
 		snprintf(swDir, FILENAME_MAX, "%s%s/%s", getenv("HOMEDRIVE"), getenv("HOME"), SW_DIR);
 	#else
@@ -41,46 +40,51 @@ char* swHomeDir() {
 	}
 	if (closedir(dir)) {
 		fprintf(stderr, "error close dir %s\n", strerror(errno));
+    return NULL;
 	}
-
-	return strdup(swDir);
+  return swDir;
 }
 
-char* nvramFile() {
-	char nvramFile[FILENAME_MAX];
-	char *homeDirStr = swHomeDir();
+char* nvramFilePath(char *nvramFile) {
+	char swDir[FILENAME_MAX];
+	char *homeDirStr = swHomeDir(&swDir);
+  if(homeDirStr == NULL)
+    return NULL;
 	snprintf(nvramFile, FILENAME_MAX, "%s/%s", homeDirStr, SW_NVRAM);
-	free(homeDirStr);
-	return strdup(nvramFile);
+	return nvramFile;
 }
 
 void spi_rtc_reset() {
 
-	char *nvramFileStr = nvramFile();
-	FILE *f = fopen(nvramFileStr, "rb");
-	if (f != NULL) {
-		size_t r = fread(nvram, 1, sizeof(nvram), f);
-		if (ferror(f) || r != sizeof(nvram)) {
-			fprintf(stderr, "error read nvram state %s\n", strerror(errno));
-		}
-		fclose(f);
-	}
-	free(nvramFileStr);
-
+	char nvramFile[FILENAME_MAX];
+	char *nvramFileStr = nvramFilePath(&nvramFile);
+  if(nvramFileStr != NULL){
+  	FILE *f = fopen(nvramFileStr, "rb");
+    if (f != NULL) {
+      size_t r = fread(nvram, 1, sizeof(nvram), f);
+      if (ferror(f) || r != sizeof(nvram)) {
+        fprintf(stderr, "error read nvram state %s\n", strerror(errno));
+      }
+      fclose(f);
+    }
+  }
   regs[RTC_CONTROL] = 1<<6; //set WP (write protect enabled after reset)
 }
 
 void spi_rtc_destroy() {
-	char *nvramFileStr = nvramFile();
-	FILE *f = fopen(nvramFileStr, "wb");
-	if (f != NULL) {
-		size_t r = fwrite(nvram, 1, sizeof(nvram), f);
-		if (ferror(f)) {
-			fprintf(stderr, "error fwrite %s\n", strerror(errno));
-		}
-		fclose(f);
-	}
-	free(nvramFileStr);
+
+	char nvramFile[FILENAME_MAX];
+	char *nvramFileStr = nvramFilePath(&nvramFile);
+  if(nvramFileStr != NULL){
+    FILE *f = fopen(nvramFileStr, "wb");
+    if (f != NULL) {
+      size_t r = fwrite(nvram, 1, sizeof(nvram), f);
+      if (ferror(f)) {
+        fprintf(stderr, "error fwrite %s\n", strerror(errno));
+      }
+      fclose(f);
+    }
+  }
 }
 
 void spi_rtc_deselect() { // chip select /CE high

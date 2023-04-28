@@ -126,7 +126,12 @@ static int emulationStartFailure = 0;
 static int pendingDisplayEvents = 0;
 static void *dpyUpdateAckEvent = NULL;
 
+static SDL_Window *window;
+static SDL_Renderer *renderer;
+static SDL_Texture *sdlTexture;
+
 static SDL_Surface *surface;
+
 static int bitDepth;
 static int zoom = 1;
 static char *displayData[2] = { NULL, NULL };
@@ -349,7 +354,7 @@ int WaitReverse() {
 
 int updateEmuDisplay(int updateAll) {
 
-	int bytesPerPixel = bitDepth / 8;
+	int bytesPerPixel = bitDepth >> 3;
 
 	char *dpyData = displayData[curDisplayData];
 	int width = zoom * screenWidth;
@@ -376,24 +381,53 @@ int updateEmuDisplay(int updateAll) {
 		}
 	}
 	DEBUGRenderDisplay(width, height);
-
+/*
 	if (SDL_MUSTLOCK(surface) && SDL_LockSurface(surface) < 0) {
 		return 0;
 	}
-	SDL_UpdateRect(surface, 0, 0, width, height);
+*/
+	SDL_UpdateTexture(sdlTexture, NULL, frameBuffer, width * sizeof (Uint32));
+	SDL_RenderClear(renderer);
+	SDL_RenderCopy(renderer, sdlTexture, NULL, NULL);
+	SDL_RenderPresent(renderer);
+/*	SDL_UpdateRect(surface, 0, 0, width, height);
 	if (SDL_MUSTLOCK(surface)) {
 		SDL_UnlockSurface(surface);
 	}
-
+*/
 	return 0;
+}
+
+SDL_Surface *__SDL_SetVideoMode(int width, int height, int bpp, int flags){
+
+/*
+  SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height, bpp,
+    0x00ff0000,
+    0x0000ff00,
+    0x000000ff,
+    0xff000000
+    );
+  */
+  SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, bpp,
+    SDL_PIXELFORMAT_RGBA8888
+    );
+
+  //SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
+
+  return surface;
 }
 
 void createSdlSurface(int width, int height, int fullscreen) {
 
-	int flags = SDL_SWSURFACE | (fullscreen ? SDL_FULLSCREEN : 0);
+	int flags = SDL_SWSURFACE | (fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+  int _scale = 2;
+
+  SDL_Window *screen = SDL_CreateWindowAndRenderer(width * _scale, height * _scale, 0, &window, &renderer);
+	//SDL_SetWindowResizable(window, true);
+	SDL_RenderSetLogicalSize(renderer, width, height);
 
 	// try default bpp
-	surface = SDL_SetVideoMode(width, height, 0, flags);
+  surface = __SDL_SetVideoMode(width, height, 0, flags);
 	int bytepp = (surface ? surface->format->BytesPerPixel : 0);
 	if (bytepp != 2 && bytepp != 4) {
 		SDL_FreeSurface(surface);
@@ -402,13 +436,12 @@ void createSdlSurface(int width, int height, int fullscreen) {
 
 	if (!surface) {
 		bitDepth = 32;
-		surface = SDL_SetVideoMode(width, height, bitDepth, flags);
+		surface = __SDL_SetVideoMode(width, height, bitDepth, flags);
 	}
 	if (!surface) {
 		bitDepth = 16;
-		surface = SDL_SetVideoMode(width, height, bitDepth, flags);
+		surface = __SDL_SetVideoMode(width, height, bitDepth, flags);
 	}
-
 	if (surface != NULL) {
 		displayData[0] = (char*) surface->pixels;
 		curDisplayData = 0;
@@ -416,31 +449,45 @@ void createSdlSurface(int width, int height, int fullscreen) {
 
 		DEBUGInitUI(surface);
 	}
+	sdlTexture = SDL_CreateTextureFromSurface(renderer, surface);
+//	sdlTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+/*
+  if(screen){
+		displayData[0] = (char*) screen->pixels;
+		curDisplayData = 0;
+		displayPitch = surface->pitch;
+  }
+*/
 }
 
-int createSdlWindow() {
+int createOrUpdateSdlWindow() {
+
 	const char *title = "Steckschwein Emulator - blueMSX";
+
 	int fullscreen = properties->video.windowSize == P_VIDEO_SIZEFULLSCREEN;
 
-	if (fullscreen) {
-		zoom = properties->video.fullscreen.width / screenWidth;
-		bitDepth = properties->video.fullscreen.bitDepth;
-	} else {
-		if (properties->video.windowSize == P_VIDEO_SIZEX1) {
-			zoom = 1;
-		} else if (properties->video.windowSize == P_VIDEO_SIZEX2) {
-			zoom = 2;
-		} else {
-			zoom = 4;
-		}
-		bitDepth = 32;
-	}
+  if(!surface){//create
+    if (fullscreen) {
+      zoom = properties->video.fullscreen.width / screenWidth;
+      bitDepth = properties->video.fullscreen.bitDepth;
+    } else {
+      if (properties->video.windowSize == P_VIDEO_SIZEX1) {
+        zoom = 1;
+      } else if (properties->video.windowSize == P_VIDEO_SIZEX2) {
+        zoom = 2;
+      } else {
+        zoom = 4;
+      }
+      bitDepth = 32;
+    }
 
-	createSdlSurface(zoom * screenWidth, zoom * screenHeight, fullscreen);
-
-	// Set the window caption
-	SDL_WM_SetCaption(title, NULL);
-
+    createSdlSurface(zoom * screenWidth, zoom * screenHeight, fullscreen);
+    // Set the window caption
+    SDL_SetWindowTitle(window, title);
+  }else{
+    SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+    SDL_ShowCursor(!fullscreen);
+  }
 	return 1;
 }
 
@@ -459,17 +506,17 @@ static void handleEvent(SDL_Event *event) {
 			pendingDisplayEvents--;
 			break;
 		case EVENT_UPDATE_WINDOW:
-			if (!createSdlWindow()) {
+			if (!createOrUpdateSdlWindow()) {
 				exit(0);
 			}
 			break;
 		}
 		break;
-	case SDL_ACTIVEEVENT:
-		if (event->active.state & SDL_APPINPUTFOCUS) {
+	case SDL_WINDOWEVENT:
+		if (event->window.event & SDL_WINDOWEVENT_FOCUS_GAINED) {
 //            keyboardSetFocus(1, event->active.gain);
 		}
-		if (event->active.state == SDL_APPMOUSEFOCUS) {
+		if (event->window.event == SDL_WINDOWEVENT_ENTER || event->window.event == SDL_WINDOWEVENT_LEAVE) {
 //            sdlMouseSetFocus(event->active.gain);
 		}
 		break;
@@ -477,9 +524,9 @@ static void handleEvent(SDL_Event *event) {
 //        shortcutCheckown(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
 	{
 		int keyNum;
-		Uint8 *keyBuf = SDL_GetKeyState(&keyNum);
+		Uint8 *keyBuf = SDL_GetKeyboardState(&keyNum);
 		if (keyBuf != NULL) {
-			if (keyBuf[SDLK_LALT]) {
+			if (keyBuf[SDL_SCANCODE_LALT]) {
 				if (event->key.keysym.sym == SDLK_f) {
 					actionFullscreenToggle();
 					break;
@@ -491,7 +538,6 @@ static void handleEvent(SDL_Event *event) {
 					break;
 				}
 			}
-
 		}
 		spi_handle_keyevent(&event->key);
 		break;
@@ -500,9 +546,10 @@ static void handleEvent(SDL_Event *event) {
 //        shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
 		spi_handle_keyevent(&event->key);
 		break;
-	case SDL_VIDEOEXPOSE:
-		updateEmuDisplay(1);
-		break;
+// TODO SDL2
+//	case SDL_VIDEOEXPOSE:
+	//	updateEmuDisplay(1);
+		//break;
 	case SDL_MOUSEBUTTONDOWN:
 	case SDL_MOUSEBUTTONUP:
 //        sdlMouseButton(event->button.button, event->button.state);
@@ -921,16 +968,18 @@ void emulatorStop() {
 
 	emuExitFlag = 1;
 
+#ifndef WII
+    archEventSet(emuSyncEvent);
+#endif
 	archSoundSuspend();
 	archThreadJoin(emuThread, 3000);
-//	archThreadDestroy(emuThread);
 //    archMidiEnable(0);
-//    machineDestroy(machine);
+  machineDestroy(NULL);
+  archThreadDestroy(emuThread);
 #ifndef WII
-	archEventDestroy(emuSyncEvent);
+  archEventDestroy(emuSyncEvent);
 #endif
-
-	archEventDestroy(emuStartEvent);
+  archEventDestroy(emuStartEvent);
 
 	// Reset active indicators in mixer
 	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MOONSOUND, 1);
@@ -941,7 +990,8 @@ void emulatorStop() {
 
 	archEmulationStopNotification();
 
-	dbgDisable();dbgPrint();
+	dbgDisable();
+  dbgPrint();
 //    savelog();
 }
 
@@ -1380,10 +1430,11 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	SDL_ShowCursor(SDL_DISABLE);
+/*
 	if (SDL_EnableKeyRepeat(250, 50) < 0) {
 		return 1;
 	}
-
+*/
 	video = videoCreate();
 	videoSetColors(video, properties->video.saturation, properties->video.brightness, properties->video.contrast,
 			properties->video.gamma);
@@ -1391,7 +1442,7 @@ int main(int argc, char **argv) {
 	videoSetColorSaturation(video, properties->video.colorSaturationEnable, properties->video.colorSaturationWidth);
 
 	bitDepth = 32;
-	if (!createSdlWindow()) {
+	if (!createOrUpdateSdlWindow()) {
 		return 0;
 	}
 
@@ -1431,13 +1482,13 @@ int main(int argc, char **argv) {
 #ifndef SINGLE_THREADED	//on multi-threaded the main thread will loop here
     SDL_Event event;//While the user hasn't quit
     while(!doQuit){
-        SDL_WaitEvent(&event);
-		if( event.type == SDL_QUIT ) {
-			doQuit = 1;
-		}
-		else {
-			handleEvent(&event);
-		}
+      SDL_WaitEvent(&event);
+      if( event.type == SDL_QUIT ) {
+        doQuit = 1;
+      }
+      else {
+        handleEvent(&event);
+      }
     }
 #endif
 
@@ -1446,16 +1497,19 @@ int main(int argc, char **argv) {
 	if (SDL_WasInit(SDL_INIT_EVERYTHING)) {
 		SDL_Quit();
 	}
+
+  DEBUGFreeUI();
+
+	return 0;
+}
+
+void machineDestroy(void *machine){
 	videoDestroy(video);
 	archSoundDestroy();
 	mixerDestroy(mixer);
 	propDestroy(properties);
-	DEBUGFreeUI();
-	memory_destroy();
-
-	spi_rtc_destroy();
-
-	return 0;
+  spi_rtc_destroy();
+//	memory_destroy();
 }
 
 void emscripten_main_loop(void) {
