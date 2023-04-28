@@ -23,7 +23,7 @@ int _1HzTimeHanler(void* timer) {
   return 20;//continue
 }
 
-* swHomeDir(char *swDir) {
+char* swHomeDir(char *swDir) {
   #if __MINGW32_NO__
 		snprintf(swDir, FILENAME_MAX, "%s%s/%s", getenv("HOMEDRIVE"), getenv("HOME"), SW_DIR);
 	#else

@@ -145,7 +145,7 @@ static UInt32 emuUsageCurrent = 0;
 
 static int doQuit = 0;
 
-int screenWidth = 320;
+int screenWidth = 321;
 int screenHeight = 240;
 
 #define EVENT_UPDATE_DISPLAY 2
@@ -355,8 +355,8 @@ int WaitReverse() {
 int updateEmuDisplay(int updateAll) {
 
 	int bytesPerPixel = bitDepth >> 3;
-
 	char *dpyData = displayData[curDisplayData];
+
 	int width = zoom * screenWidth;
 	int height = zoom * screenHeight;
 
@@ -400,18 +400,17 @@ int updateEmuDisplay(int updateAll) {
 
 SDL_Surface *__SDL_SetVideoMode(int width, int height, int bpp, int flags){
 
-/*
   SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height, bpp,
-    0x00ff0000,
-    0x0000ff00,
-    0x000000ff,
-    0xff000000
+    0x00000000,
+    0x00000000,
+    0x00000000,
+    0x00000000
     );
-  */
+/*
   SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, bpp,
-    SDL_PIXELFORMAT_RGBA8888
-    );
-
+    SDL_PIXELFORMAT_RGB888
+  );
+*/
   //SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
 
   return surface;
@@ -420,10 +419,11 @@ SDL_Surface *__SDL_SetVideoMode(int width, int height, int bpp, int flags){
 void createSdlSurface(int width, int height, int fullscreen) {
 
 	int flags = SDL_SWSURFACE | (fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
-  int _scale = 2;
+  int window_scale = 2;
+  int scale = 1;
 
-  SDL_Window *screen = SDL_CreateWindowAndRenderer(width * _scale, height * _scale, 0, &window, &renderer);
-	//SDL_SetWindowResizable(window, true);
+  SDL_Window *screen = SDL_CreateWindowAndRenderer(width * window_scale, height * window_scale, 0, &window, &renderer);
+	SDL_SetWindowResizable(window, true);
 	SDL_RenderSetLogicalSize(renderer, width, height);
 
 	// try default bpp
@@ -449,8 +449,17 @@ void createSdlSurface(int width, int height, int fullscreen) {
 
 		DEBUGInitUI(surface);
 	}
-	sdlTexture = SDL_CreateTextureFromSurface(renderer, surface);
-//	sdlTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+//  sdlTexture = SDL_CreateTextureFromSurface(renderer, surface);
+	sdlTexture = SDL_CreateTexture(renderer,
+    /*
+    | SDL_PIXELORDER(SDL_PACKEDORDER_NONE)
+     SDL_PIXELFORMAT_RGB555
+    SDL_BYTESPERPIXEL(bytepp)
+    | SDL_PIXELLAYOUT(SDL_PACKEDLAYOUT_1555)
+    */
+    SDL_PIXELFORMAT_ARGB1555
+    ,
+    SDL_TEXTUREACCESS_STREAMING, width*scale, height*scale);
 /*
   if(screen){
 		displayData[0] = (char*) screen->pixels;
@@ -481,7 +490,7 @@ int createOrUpdateSdlWindow() {
       bitDepth = 32;
     }
 
-    createSdlSurface(zoom * screenWidth, zoom * screenHeight, fullscreen);
+    createSdlSurface(screenWidth, screenHeight, fullscreen);
     // Set the window caption
     SDL_SetWindowTitle(window, title);
   }else{
@@ -546,10 +555,9 @@ static void handleEvent(SDL_Event *event) {
 //        shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
 		spi_handle_keyevent(&event->key);
 		break;
-// TODO SDL2
-//	case SDL_VIDEOEXPOSE:
-	//	updateEmuDisplay(1);
-		//break;
+	case SDL_WINDOWEVENT_EXPOSED:
+		updateEmuDisplay(1);
+		break;
 	case SDL_MOUSEBUTTONDOWN:
 	case SDL_MOUSEBUTTONUP:
 //        sdlMouseButton(event->button.button, event->button.state);

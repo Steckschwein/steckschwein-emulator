@@ -205,7 +205,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->emulation.reverseMaxTime    = 15;
 
     properties->video.monitorColor          = P_VIDEO_COLOR;
-    properties->video.monitorType           = P_VIDEO_PALMON;//P_VIDEO_PALSCALE2X;
+    properties->video.monitorType           = P_VIDEO_PALMON;//P_VIDEO_PALMON;//VIDEO_PAL_HQ2X;
     properties->video.windowSize            = P_VIDEO_SIZEX1;//default 2x
     properties->video.windowSizeInitial     = properties->video.windowSize;
     properties->video.windowSizeChanged     = 0;
