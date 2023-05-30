@@ -35,7 +35,7 @@ static uint8_t uartregisters[16];
 
 extern int errno;
 
-bool uart_checkUploadLmf = false;
+bool uart_checkUploadLmf = true;
 clock_t uart_checkUploadLmfTs = 0;
 
 time_t uart_file_lmf = -1;
@@ -46,37 +46,141 @@ uint8_t *p_prg_img_ix;
 uint16_t prg_size;
 uint16_t *p_prg_size;
 uint16_t bytes_available;
-unsigned char upload_protocol_ix = 0;
 
 unsigned char *prg_path;
 int prg_override_start;
 
-struct upload_state {
+struct serial_state {
 	uint16_t bytes;
 	uint8_t (*read)(uint8_t r);
 	uint8_t (*write)(uint8_t r, uint8_t v);
 };
 
-uint8_t upload_read_startAddress(uint8_t r);
-uint8_t upload_read_OK(uint8_t r);
-void upload_write_OK(uint8_t r, uint8_t v);
-uint8_t upload_read_length(uint8_t r);
-uint8_t upload_read_program(uint8_t r);
+uint8_t upload_read_startAddress(uint8_t reg);
+uint8_t upload_read_OK(uint8_t reg);
+void uart_write_two_data_bytes(uint8_t reg, uint8_t val);
+uint8_t upload_read_length(uint8_t reg);
+uint8_t upload_read_program(uint8_t reg);
 
-static struct upload_state upload_protocol[] = { //
-		{ .read = upload_read_startAddress, }, //
-				{ .read = upload_read_OK, .write = upload_write_OK }, //
+static struct serial_state upload_protocol[] = { //
+    		{ .read = upload_read_startAddress }, //
+				{ .read = upload_read_OK, .write = uart_write_two_data_bytes }, //
 				{ .read = upload_read_length }, //
-				{ .read = upload_read_OK, .write = upload_write_OK }, //
+				{ .read = upload_read_OK, .write = uart_write_two_data_bytes }, //
 				{ .read = upload_read_program }, //
-				{ .read = upload_read_OK, .write = upload_write_OK }, //
-				{ }, //end state
+				{ .read = upload_read_OK, .write = uart_write_two_data_bytes }, //
+				{}, //end state
+};
+
+uint8_t uart_read_xmodem_crc(uint8_t reg);
+void uart_write_xmodem_crc(uint8_t reg, uint8_t val);
+uint8_t uart_read_xmodem_block_start(uint8_t reg);
+uint8_t uart_read_xmodem_block_end(uint8_t reg);
+uint8_t uart_read_xmodem_block_data(uint8_t reg);
+uint8_t uart_read_data_bytes(uint8_t r, uint8_t **p_data, uint16_t *c);
+
+static struct serial_state xmodem_protocol[] = { //
+        { .read = uart_read_xmodem_crc, .write = uart_write_xmodem_crc },
+    		{ .read = uart_read_xmodem_block_start }, //
+    		{ .read = uart_read_xmodem_block_data }, //
+    		{ .read = uart_read_xmodem_block_end }, //
+				{}, //end state
 		};
 
+struct serial_state *protocol =
+  &xmodem_protocol;
+  //&upload_protocol;
+
+unsigned char protocol_ix = 0;
+
+uint8_t uart_read_xmodem_crc(uint8_t reg){
+	if (reg == UART_REG_LSR) {
+		return lsr_THRE;
+	}
+  return 0;
+}
+
+#define XMODEM_SOH  0x01		// start block
+#define XMODEM_EOT  0x04		// end of text marker
+#define XMODEM_ACK  0x06		// good block acknowledged
+#define XMODEM_NAK  0x15		// bad block acknowledged
+#define XMODEM_CAN  0x18		// cancel (not standard, not supported)
+#define XMODEM_CR   0x0d		// carriage return
+#define XMODEM_LF   0x0a		// line feed
+#define XMODEM_ESC  0x1b		// ESC to exit
+
+uint16_t xmodem_crc16_tab_l[256];
+uint16_t xmodem_crc16_tab_h[256];
+
+void uart_write_xmodem_crc(uint8_t reg, uint8_t val){
+	static int c = 3;
+  if(val == 'C' && --c == 0){
+    loadFile();
+    if(p_prg_img){
+      protocol_ix++;
+      c = 3; //reset for next crc check
+    }
+  }
+}
+
+uint8_t xmodem_blocknr = 1;
+
+uint8_t uart_read_xmodem_block_start(uint8_t reg){
+	static int c = 2;
+	if (reg == UART_REG_LSR) {
+		return lsr_DR;
+	} else if (reg == UART_REG_IER) {
+    switch(c--){
+      case 2:
+        return XMODEM_SOH;
+      case 1:
+        return xmodem_blocknr;
+      case 0:
+        bytes_available = 128;// 128 data bytes
+
+        protocol_ix++;
+        c = 2; //reset for next block start check
+        return xmodem_blocknr ^ 0xff;
+    }
+  }
+  return 0;
+}
+
+
+
+uint8_t uart_read_xmodem_block_end(uint8_t reg){
+	static int c = 1;
+	if (reg == UART_REG_LSR) {
+		return lsr_DR;
+	} else if (reg == UART_REG_IER) {
+    switch(c--){
+      case 1:
+        return 0;
+      case 0:
+//        protocol_ix++;
+        return 0;
+    }
+  }
+  return 0;
+}
+
+uint8_t uart_read_xmodem_block_data(uint8_t reg){
+	if (reg == UART_REG_LSR) {
+		return lsr_DR;
+	} else if (reg == UART_REG_IER) {
+    if(p_prg_img_ix == (p_prg_img + prg_size)){
+  		if (--bytes_available == 0) {
+        protocol_ix++;
+      }
+      return 0;
+    }
+    return uart_read_data_bytes(reg, &p_prg_img_ix, &bytes_available);
+  }
+  return XMODEM_NAK;
+}
+
 long getFilesize(FILE *file){
-
 	long filesize = -1L;
-
 	if(fseek(file, 0L, SEEK_END) == EOF){
 		fprintf(stderr, "error fseek %s\n", strerror(errno));
 	}else{
@@ -85,7 +189,7 @@ long getFilesize(FILE *file){
 	return filesize;
 }
 
-void loadFile(int prg_override_start, FILE *prg_file) {
+void readProgram(int prg_override_start, FILE *prg_file) {
 
 	long filesize = getFilesize(prg_file);
 	if (filesize == -1L) {
@@ -119,52 +223,20 @@ void loadFile(int prg_override_start, FILE *prg_file) {
 			free(p_prg_img);
 			p_prg_img = NULL;
 		}
-		bytes_available = 2;
 	}
 }
 
-void reset_upload() {
-	upload_protocol_ix = 0;
-	if (p_prg_img != NULL) {
-		free(p_prg_img); //free
-		p_prg_img = NULL;
-		p_prg_img_ix = NULL;
-	}
-}
-
-void uart_init(unsigned char *p_prg_path, int p_prg_override_start, bool checkLmf) {
-	prg_path = p_prg_path;
-	prg_override_start = p_prg_override_start;
-	uart_checkUploadLmf = checkLmf;
-	reset_upload();
-}
-
-uint8_t upload_read_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
-	if (r == UART_REG_LSR) {
-		return lsr_DR;
-	} else if (r == UART_REG_IER) {
-		if (--(*c) == 0) {
-			upload_protocol_ix++;
-			bytes_available = 2;
-		}
-		uint8_t b = *(*p_data)++; //inc given ptr. if byte was read
-		return b;
-	}
-	return 0;
-}
-
-uint8_t upload_read_startAddress(uint8_t r) {
-
-    if (!p_prg_img && prg_path && (uart_checkUploadLmfTs + UART_CHECK_UPLOAD_INTERVAL_SECONDS < (uart_checkUploadLmfTs = clock()))) {
-		#if __MINGW32_NO__
+void loadFile(){
+#if __MINGW32_NO__
 		struct __stat64 attrib;
 		int rc = __stat64(prg_path, &attrib);
-		#else
+#else
 		struct stat attrib;
 		int rc = stat(prg_path, &attrib);
-		#endif
+#endif
 		if (rc) {
-			fprintf(stderr, "could not stat file %s, error was %s\n", prg_path, strerror(errno));
+			fprintf(stderr, "could not stat file %s, error was: %s\n", prg_path, strerror(errno));
+      reset_upload();
 			return 0;
 		}
 		if (uart_checkUploadLmf && uart_file_lmf == attrib.st_mtime) {
@@ -179,21 +251,69 @@ uint8_t upload_read_startAddress(uint8_t r) {
 			reset_upload();
 			return 0;
 		}
-		loadFile(prg_override_start, prg_file);
+		readProgram(prg_override_start, prg_file);
 		fclose(prg_file);
+}
+
+void reset_upload() {
+	protocol_ix = 0;
+	if (p_prg_img != NULL) {
+		free(p_prg_img); //free
+		p_prg_img = NULL;
+		p_prg_img_ix = NULL;
+	}
+}
+
+void uart_init(unsigned char *p_prg_path, int p_prg_override_start, bool checkLmf) {
+	prg_path = p_prg_path;
+	prg_override_start = p_prg_override_start;
+	uart_checkUploadLmf = checkLmf;
+	reset_upload();
+
+
+  for(uint8_t i=0;i<255;i++){
+    xmodem_crc16_tab_h[i] = xmodem_crc16_tab_h[i] ^ i;
+    for(uint8_t j=1;j<=8;j++){
+      uint8_t c_l = xmodem_crc16_tab_l[i]>>7;
+      uint8_t c_h = xmodem_crc16_tab_h[i]>>7;
+      xmodem_crc16_tab_l[i] = xmodem_crc16_tab_l[i]<<1;
+      xmodem_crc16_tab_h[i] = xmodem_crc16_tab_h[i]<<1 | c_l;
+    }
+  }
+}
+
+uint8_t uart_read_data_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
+	if (r == UART_REG_LSR) {
+		return lsr_DR;
+	} else if (r == UART_REG_IER) {
+		if (--(*c) == 0) {
+			protocol_ix++;
+//			bytes_available = 2;
+		}
+		uint8_t b = *(*p_data)++; //inc given ptr. if byte was read
+		return b;
+	}
+	return 0;
+}
+
+uint8_t upload_read_startAddress(uint8_t reg) {
+
+  if (!p_prg_img && prg_path && (uart_checkUploadLmfTs + UART_CHECK_UPLOAD_INTERVAL_SECONDS < (uart_checkUploadLmfTs = clock()))) {
+    loadFile();
 	}
 	if (p_prg_img) {
-		return upload_read_bytes(r, &p_prg_img_ix, &bytes_available);
+    bytes_available = 2;
+		return uart_read_data_bytes(reg, &p_prg_img_ix, &bytes_available);
 	}
 	return 0;
 }
 
 uint8_t upload_read_length(uint8_t r) {
-	return upload_read_bytes(r, &p_prg_size, &bytes_available);
+	return uart_read_data_bytes(r, &p_prg_size, &bytes_available);
 }
 
 uint8_t upload_read_program(uint8_t r) {
-	uint8_t outbyte = upload_read_bytes(r, &p_prg_img_ix, &prg_size);
+	uint8_t outbyte = uart_read_data_bytes(r, &p_prg_img_ix, &prg_size);
 	return outbyte;
 }
 
@@ -204,12 +324,12 @@ uint8_t upload_read_OK(uint8_t r) {
 	return lsr_DR;
 }
 
-void upload_write_OK(uint8_t r, uint8_t v) {
+void uart_write_two_data_bytes(uint8_t r, uint8_t v) {
 	static int c = 2;
 	if (--c == 0) {
-		upload_protocol_ix++;
+		protocol_ix++;
 		c = 2; //reset, for next "OK" check
-		if (upload_protocol_ix >= 6) { //
+		if (protocol_ix >= sizeof(*protocol)) { //
 			reset_upload();
 		}
 	}
@@ -217,8 +337,8 @@ void upload_write_OK(uint8_t r, uint8_t v) {
 
 uint8_t uart_read(uint8_t reg) {
 //	printf("uart r %x\n", reg);
-	if (upload_protocol[upload_protocol_ix].read) {
-		return upload_protocol[upload_protocol_ix].read(reg);
+	if (protocol[protocol_ix].read) {
+		return protocol[protocol_ix].read(reg);
 	}
 	return uartregisters[reg];
 }
@@ -226,9 +346,9 @@ uint8_t uart_read(uint8_t reg) {
 void uart_write(uint8_t reg, uint8_t value) {
 //	printf("uart w %x %x\n", reg, value);
 	uartregisters[reg] = value;
+  if (protocol[protocol_ix].write) {
+    protocol[protocol_ix].write(reg, value);
+  }
 	if (p_prg_img_ix) {
-		if (upload_protocol[upload_protocol_ix].write) {
-			upload_protocol[upload_protocol_ix].write(reg, value);
-		}
 	}
 }
