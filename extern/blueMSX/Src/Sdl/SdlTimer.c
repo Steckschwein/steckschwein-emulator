@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -41,18 +41,18 @@ void archTimerDestroy(void* timer) {}
 // The only timer that is required is a high res timer. The resolution is
 // not super important, the higher the better, but one tick every 10ms is
 // good enough. The frequency argument is in Hz and is 1000 or less.
-UInt32 archGetSystemUpTime(UInt32 frequency) 
+UInt32 archGetSystemUpTime(UInt32 frequency)
 {
     return SDL_GetTicks() / (1000 / frequency);
 }
 
-// This is just a timer value with a frequency as high as possible. 
+// This is just a timer value with a frequency as high as possible.
 // The frequency of the timer is not important.
 UInt32 archGetHiresTimer() {
     return SDL_GetTicks();
 }
 
-#else 
+#else
 
 static void (*timerCb)(void*) = NULL;
 static UInt32 timerFreq;
@@ -71,8 +71,8 @@ Uint32 timerCalback(Uint32 interval)
     return interval;
 }
 
-void* archCreateTimer(int period, int (*timerCallback)(void*)) 
-{ 
+void* archCreateTimer(int period, int (*timerCallback)(void*))
+{
     timerFreq = 1000 / period;
     lastTimeout = archGetSystemUpTime(timerFreq);
     timerCb  = timerCallback;
@@ -82,7 +82,7 @@ void* archCreateTimer(int period, int (*timerCallback)(void*))
     return timerCallback;
 }
 
-void archTimerDestroy(void* timer) 
+void archTimerDestroy(void* timer)
 {
     if (timerCb != timer) {
         return;
@@ -92,7 +92,7 @@ void archTimerDestroy(void* timer)
     timerCb = NULL;
 }
 
-UInt32 archGetSystemUpTime(UInt32 frequency) 
+UInt32 archGetSystemUpTime(UInt32 frequency)
 {
     return SDL_GetTicks() / (1000 / frequency);
 }

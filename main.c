@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <limits.h>
+#include <math.h>
 
 #include <errno.h>
 
@@ -20,7 +21,6 @@
 #include "disasm.h"
 #include "memory.h"
 #include "via.h"
-#include "uart.h"
 #include "spi.h"
 #include "sdcard.h"
 #include "ds1306.h"
@@ -81,7 +81,7 @@ uint16_t trace_address = 0;
 
 static Mixer *mixer;
 
-extern unsigned char *prg_path; //extern - also used in uart
+unsigned char *prg_path; //extern - also used in uart
 
 bool checkUploadLmf = false; //check lmf of the upload file, if not changed no recurring uploads
 bool run_after_load = false;
@@ -188,12 +188,12 @@ void machine_dump() {
 	printf("Dumped system to %s.\n", filename);
 }
 
-void machine_reset(int prg_override_start) {
+void machine_reset() {
 	spi_rtc_init();
 	spi_init();
-	uart_init(prg_path, prg_override_start, checkUploadLmf);
 	via1_init();
-	reset6502();
+//	uart_reset();
+  reset6502();
 }
 
 void machine_paste(char *s) {
@@ -302,15 +302,15 @@ void archVideoOutputChange() {
 void archEmulationStopNotification() {
 	DEBUG("archEmulationStopNotification\n");
 #ifdef RUN_EMU_ONCE_ONLY
-    doQuit = 1;
 #endif
+  doQuit = 1;
 }
 
 void archEmulationStartFailure() {
 	DEBUG("archEmulationStartFailure\n");
 #ifdef RUN_EMU_ONCE_ONLY
-    doQuit = 1;
 #endif
+  doQuit = 1;
 }
 
 int archUpdateEmuDisplay(int syncMode) {
@@ -336,7 +336,8 @@ int archUpdateEmuDisplay(int syncMode) {
 }
 
 int WaitReverse() {
-//	boardEnableSnapshots(0);
+
+       // boardEnableSnapshots(0);
 
 	for (;;) {
 		UInt32 sysTime = archGetSystemUpTime(1000);
@@ -347,7 +348,7 @@ int WaitReverse() {
 		}
 		archEventWait(emuSyncEvent, -1);
 	}
-	boardRewind();
+	//boardRewind();
 
 	return -60;
 }
@@ -525,7 +526,7 @@ static void handleEvent(SDL_Event *event) {
 		break;
 	case SDL_JOYHATMOTION:
 		/**< Joystick hat position change */
-		handle_event(event);
+		//handle_event(event);
 		DEBUG("joystick hat event %x b:%x t:%x s:%x\n", event->jhat.which, event->jhat.hat, event->jbutton.type,
 				event->jbutton.state);
 		break;
@@ -609,10 +610,10 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
 #ifdef SINGLE_THREADED
 	emuExitFlag |= archPollEvent();
 #endif
-	DEBUG(stdout, "WaitForSync %x\n", emuExitFlag);
+  DEBUG("WaitForSync %x\n", emuExitFlag);
 
 	if (((++kbdPollCnt & 0x03) >> 1) == 0) {
-//       archPollInput();
+    // archPollInput();
 	}
 
 	if (emuUseSynchronousUpdate() == P_EMU_SYNCTOVBLANK) {
@@ -620,19 +621,19 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
 		while ((!emuExitFlag && emuState != EMU_RUNNING) || overflowCount > 0) {
 			archEventWait(emuSyncEvent, -1);
 #ifdef NO_TIMERS
-            while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
+        while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
 #endif
 			overflowCount--;
 		}
 	} else {
 		do {
 #ifdef NO_TIMERS
-            while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
+      while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
 #endif
 			archEventWait(emuSyncEvent, -1);
 			if (((emuMaxSpeed || emuMaxEmuSpeed) && !emuExitFlag) || overflowCount > 0) {
 #ifdef NO_TIMERS
-                while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
+        while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
 #endif
 				archEventWait(emuSyncEvent, -1);
 			}
@@ -696,7 +697,7 @@ void emulatorSuspend() {
 			archThreadSleep(10);
 		} while (!emuSuspendFlag);
 		archSoundSuspend();
-//        archMidiEnable(0);
+    // archMidiEnable(0);
 	}
 }
 
@@ -706,7 +707,7 @@ void emulatorSetFrequency(int logFrequency, int *frequency) {
 	if (frequency != NULL) {
 		*frequency = emuFrequency;
 	}
-
+  DEBUG("boardSetFrequency: %d\n", emuFrequency);
 	boardSetFrequency(emuFrequency);
 }
 
@@ -724,7 +725,6 @@ static void emulatorThread() {
 	}
 	success = boardRun(mixer, frequency, reversePeriod, reverseBufferCnt, WaitForSync);
 
-	//the emu loop
 	//ledSetAll(0);
 	emuState = EMU_STOPPED;
 
@@ -798,21 +798,12 @@ int timerCallback(void *timer) {
 	return 1;
 }
 
-EmuState emulatorGetState() {
-	return emuState;
-}
-
 int isEmuSingleStep() {
 	return emuSingleStep;
 }
 
-void emulatorResume() {
-	if (emuState == EMU_SUSPENDED) {
-		emuSysTime = 0;
-
-		emuState = EMU_RUNNING;
-		archUpdateEmuDisplay(0);
-	}
+EmuState emulatorGetState(){
+   return emuState;
 }
 
 void emulatorSetState(EmuState state) {
@@ -833,6 +824,15 @@ void emulatorSetState(EmuState state) {
 		}
 	}
 	emuState = state;
+}
+
+void emulatorResume() {
+	if (emuState == EMU_SUSPENDED) {
+		emuSysTime = 0;
+
+		emuState = EMU_RUNNING;
+		archUpdateEmuDisplay(0);
+	}
 }
 
 void emulatorStart(const char *stateName) {
@@ -888,7 +888,7 @@ void emulatorStart(const char *stateName) {
 #else
 	emuThread = archThreadCreate(emulatorThread, THREAD_PRIO_HIGH);
 
-	archEventWait(emuStartEvent, 1000);
+	archEventWait(emuStartEvent, 3000);
 
 	if (emulationStartFailure) {
 		archEmulationStopNotification();
@@ -921,16 +921,16 @@ void emulatorStop() {
 	emuState = EMU_STOPPED;
 
 	do {
-		archThreadSleep(10);
+    archThreadSleep(1);
 	} while (!emuSuspendFlag);
 
 	emuExitFlag = 1;
 
 	archSoundSuspend();
 	archThreadJoin(emuThread, 3000);
-	archThreadDestroy(emuThread);
+	//archThreadDestroy(emuThread);
 //    archMidiEnable(0);
-//    machineDestroy(machine);
+  //machineDestroy(machine);
 #ifndef WII
 	archEventDestroy(emuSyncEvent);
 #endif
@@ -946,7 +946,8 @@ void emulatorStop() {
 
 	archEmulationStopNotification();
 
-	dbgDisable();dbgPrint();
+  dbgDisable();
+  dbgPrint();
 //    savelog();
 }
 
@@ -1140,14 +1141,8 @@ int main(int argc, char **argv) {
 	// no ROM file is specified on the command line.
 	strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
 
-	memory_init();
-	mixer = mixerCreate();
-
 	//read default properties
-//	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANK, "Steckschwein");
-//	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
-	properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
-	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
+	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANKASYNC, "Steckschwein");
 
 	argc--;
 	argv++;
@@ -1333,6 +1328,8 @@ int main(int argc, char **argv) {
 		}
 	}
 
+  memory_init();
+
 	int rom_override_start = parseNumber(rom_path);
 	FILE *f = fopen(rom_path, "rb");
 	if (!f) {
@@ -1400,6 +1397,8 @@ int main(int argc, char **argv) {
 
 	dpyUpdateAckEvent = archEventCreate(0);
 
+  mixer = mixerCreate();
+
 //    keyboardInit();
 
 //    emulatorInit(properties, mixer);
@@ -1415,7 +1414,7 @@ int main(int argc, char **argv) {
 //    uartIoSetType(properties->ports.Com.type, properties->ports.Com.fileName);
 //    ykIoSetMidiInType(properties->sound.YkIn.type, properties->sound.YkIn.fileName);
 
-	machine_reset(prg_override_start);
+	machine_reset();
 
 	emulatorRestartSound();
 
@@ -1431,32 +1430,36 @@ int main(int argc, char **argv) {
 	videoUpdateAll(video, properties);
 
 	emulatorStart("Start");
+
 #ifndef SINGLE_THREADED	//on multi-threaded the main thread will loop here
     SDL_Event event;//While the user hasn't quit
     while(!doQuit){
-        SDL_WaitEvent(&event);
-		if( event.type == SDL_QUIT ) {
-			doQuit = 1;
-		}
-		else {
-			handleEvent(&event);
-		}
+      SDL_WaitEvent(&event);
+      if( event.type == SDL_QUIT ) {
+        doQuit = 1;
+      }
+      else {
+  			handleEvent(&event);
+	  	}
     }
 #endif
+
+  emulatorStop();
+
+	videoDestroy(video);
+  propDestroy(properties);
+	archSoundDestroy();
+	mixerDestroy(mixer);
+	spi_rtc_destroy();
+	memory_destroy();
+
+	DEBUGFreeUI();
 
 	// For stop threads before destroy.
 	// Clean up.
 	if (SDL_WasInit(SDL_INIT_EVERYTHING)) {
 		SDL_Quit();
 	}
-	videoDestroy(video);
-	archSoundDestroy();
-	mixerDestroy(mixer);
-	propDestroy(properties);
-	DEBUGFreeUI();
-	memory_destroy();
-
-	spi_rtc_destroy();
 
 	return 0;
 }

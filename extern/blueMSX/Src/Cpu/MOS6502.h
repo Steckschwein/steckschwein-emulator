@@ -2,7 +2,7 @@
 #define MOS6502_H
 #include "MsxTypes.h"
 
-#define ENABLE_BREAKPOINTS
+// #define ENABLE_BREAKPOINTS
 
 typedef UInt32 SystemTime;
 

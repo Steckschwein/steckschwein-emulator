@@ -188,6 +188,7 @@ int _main(int argc, char **argv) {
 	if (SDL_WasInit(SDL_INIT_VIDEO)) {
 		SDL_Quit();
 	}
+  return 0;
 }
 
 void DEBUGInitChars(SDL_Surface *renderer) {

@@ -30,7 +30,6 @@
 
 #include "MsxTypes.h"
 //#include "MediaDb.h"
-//#include "Machine.h"
 #include "VDP.h"
 #include "AudioMixer.h"
 #include "glue.h"
@@ -43,7 +42,7 @@ typedef struct {
     int  casetteCount;
     */
     void* cpuRef;
-    
+
     void   (*destroy)();
     void   (*softReset)();
 /*
@@ -75,6 +74,13 @@ typedef struct {
 static BoardInfo boardInfo;
 
 void boardInit(UInt32* systemTime);
+
+int boardRun(Mixer* mixer,
+             int frequency,
+             int reversePeriod,
+             int reverseBufferCnt,
+             int (*syncCallback)(int, int));
+
 void boardReset();
 
 UInt64 boardSystemTime64();
