@@ -72,18 +72,24 @@ static struct serial_state upload_protocol[] = { //
 				{}, //end state
 };
 
-uint8_t uart_read_xmodem_crc(uint8_t reg);
+uint8_t xmodem_blocknr;
+uint8_t xmodem_crc16_l = 0;
+uint8_t xmodem_crc16_h = 0;
+
+uint8_t uart_xmodem_ready_to_send(uint8_t reg);
 void uart_write_xmodem_crc(uint8_t reg, uint8_t val);
 uint8_t uart_read_xmodem_block_start(uint8_t reg);
 uint8_t uart_read_xmodem_block_end(uint8_t reg);
 uint8_t uart_read_xmodem_block_data(uint8_t reg);
 uint8_t uart_read_data_bytes(uint8_t r, uint8_t **p_data, uint16_t *c);
+void uart_xmodem_write_ack(uint8_t reg, uint8_t val);
 
 static struct serial_state xmodem_protocol[] = { //
-        { .read = uart_read_xmodem_crc, .write = uart_write_xmodem_crc },
+        { .read = uart_xmodem_ready_to_send, .write = uart_write_xmodem_crc },
     		{ .read = uart_read_xmodem_block_start }, //
     		{ .read = uart_read_xmodem_block_data }, //
     		{ .read = uart_read_xmodem_block_end }, //
+    		{ .read = uart_xmodem_ready_to_send, .write = uart_xmodem_write_ack },
 				{}, //end state
 		};
 
@@ -93,7 +99,7 @@ struct serial_state *protocol =
 
 unsigned char protocol_ix = 0;
 
-uint8_t uart_read_xmodem_crc(uint8_t reg){
+uint8_t uart_xmodem_ready_to_send(uint8_t reg){
 	if (reg == UART_REG_LSR) {
 		return lsr_THRE;
 	}
@@ -109,8 +115,8 @@ uint8_t uart_read_xmodem_crc(uint8_t reg){
 #define XMODEM_LF   0x0a		// line feed
 #define XMODEM_ESC  0x1b		// ESC to exit
 
-uint16_t xmodem_crc16_tab_l[256];
-uint16_t xmodem_crc16_tab_h[256];
+uint8_t xmodem_crc16_tab_l[256];
+uint8_t xmodem_crc16_tab_h[256];
 
 void uart_write_xmodem_crc(uint8_t reg, uint8_t val){
 	static int c = 3;
@@ -119,46 +125,55 @@ void uart_write_xmodem_crc(uint8_t reg, uint8_t val){
     if(p_prg_img){
       protocol_ix++;
       c = 3; //reset for next crc check
+      xmodem_blocknr = 1;
     }
   }
 }
 
-uint8_t xmodem_blocknr = 1;
+void uart_xmodem_write_ack(uint8_t reg, uint8_t val){
+  if(val == XMODEM_ACK){
+    protocol_ix=1;//if ack, go on with next block set to block_start
+  }else if(val == XMODEM_NAK){
+
+  }
+}
 
 uint8_t uart_read_xmodem_block_start(uint8_t reg){
 	static int c = 2;
 	if (reg == UART_REG_LSR) {
 		return lsr_DR;
-	} else if (reg == UART_REG_IER) {
+	} else if (reg == UART_REG_RXTX) {
     switch(c--){
       case 2:
         return XMODEM_SOH;
       case 1:
+        printf("blockno: 0x$%02x\n", xmodem_blocknr);
         return xmodem_blocknr;
       case 0:
+        xmodem_crc16_l = 0;
+        xmodem_crc16_h = 0;
         bytes_available = 128;// 128 data bytes
-
         protocol_ix++;
-        c = 2; //reset for next block start check
+        c = 2; //reset for next block
         return xmodem_blocknr ^ 0xff;
     }
   }
   return 0;
 }
 
-
-
 uint8_t uart_read_xmodem_block_end(uint8_t reg){
 	static int c = 1;
 	if (reg == UART_REG_LSR) {
 		return lsr_DR;
-	} else if (reg == UART_REG_IER) {
+	} else if (reg == UART_REG_RXTX) {
     switch(c--){
       case 1:
-        return 0;
+        return xmodem_crc16_h;
       case 0:
-//        protocol_ix++;
-        return 0;
+        c = 1;
+        protocol_ix++;
+        xmodem_blocknr++;
+        return xmodem_crc16_l;
     }
   }
   return 0;
@@ -167,14 +182,21 @@ uint8_t uart_read_xmodem_block_end(uint8_t reg){
 uint8_t uart_read_xmodem_block_data(uint8_t reg){
 	if (reg == UART_REG_LSR) {
 		return lsr_DR;
-	} else if (reg == UART_REG_IER) {
-    if(p_prg_img_ix == (p_prg_img + prg_size)){
-  		if (--bytes_available == 0) {
-        protocol_ix++;
-      }
-      return 0;
-    }
-    return uart_read_data_bytes(reg, &p_prg_img_ix, &bytes_available);
+	} else if (reg == UART_REG_RXTX) {
+    uint8_t b = 0;
+    // if(p_prg_img_ix == (p_prg_img + prg_size)){//end of prg reached?
+    //   if (--bytes_available == 0) {
+    //     protocol_ix++;
+    //   }
+    // }else{
+      b = uart_read_data_bytes(reg, &p_prg_img_ix, &bytes_available);
+    // }
+    uint8_t i = b ^ xmodem_crc16_h;
+    xmodem_crc16_h = xmodem_crc16_l ^ xmodem_crc16_tab_h[i];
+    xmodem_crc16_l = xmodem_crc16_tab_l[i];
+    printf("$%02x%02x\n", xmodem_crc16_h, xmodem_crc16_l);
+
+    return b;
   }
   return XMODEM_NAK;
 }
@@ -213,8 +235,8 @@ void readProgram(int prg_override_start, FILE *prg_file) {
 		}
 		size_t r = fread((p_prg_img + (2 - offs)), 1, filesize, prg_file);
 		if (r) {
-			printf("uart() load program to 0x%04x-0x%04x (size 0x%04x / read 0x%04x)\n",
-				*(p_prg_img + 0) | *(p_prg_img + 1) << 8,
+			printf("uart() load program file for address space 0x%04x-0x%04x (size 0x%04x / read 0x%04x)\n",
+        *(p_prg_img + 0) | *(p_prg_img + 1) << 8,
 				(*(p_prg_img + 0) | *(p_prg_img + 1) << 8) + prg_size,
 				prg_size, r);
 		} else {
@@ -270,27 +292,48 @@ void uart_init(unsigned char *p_prg_path, int p_prg_override_start, bool checkLm
 	uart_checkUploadLmf = checkLmf;
 	reset_upload();
 
-
-  for(uint8_t i=0;i<255;i++){
+  for(uint16_t i=0;i<=255;i++){
+    xmodem_crc16_tab_l[i] = 0;
+    xmodem_crc16_tab_h[i] = 0;
+  }
+  for(uint16_t i=0;i<=255;i++){
     xmodem_crc16_tab_h[i] = xmodem_crc16_tab_h[i] ^ i;
-    for(uint8_t j=1;j<=8;j++){
-      uint8_t c_l = xmodem_crc16_tab_l[i]>>7;
-      uint8_t c_h = xmodem_crc16_tab_h[i]>>7;
-      xmodem_crc16_tab_l[i] = xmodem_crc16_tab_l[i]<<1;
-      xmodem_crc16_tab_h[i] = xmodem_crc16_tab_h[i]<<1 | c_l;
+    for(uint8_t j=8;j>0;j--){
+      uint16_t c_l = xmodem_crc16_tab_l[i]<<1;
+      uint16_t c_h = xmodem_crc16_tab_h[i]<<1;
+      xmodem_crc16_tab_l[i] = c_l & 0xff;
+      xmodem_crc16_tab_h[i] = (c_h | (c_l >> 8)) & 0xff;
+      if((c_h & 0x100) == 0x100){
+        xmodem_crc16_tab_h[i] ^= 0x10;
+        xmodem_crc16_tab_l[i] ^= 0x21;
+      }
     }
   }
+  for(int i=0;i<=255;i++){
+    if(i % 16 == 0)
+      printf("\n");
+    printf("$%02x ", xmodem_crc16_tab_l[i]);
+  }
+  printf("\n");
+  for(int i=0;i<=255;i++){
+    if(i % 16 == 0)
+      printf("\n");
+    printf("$%02x ", xmodem_crc16_tab_h[i]);
+  }
+  printf("\n");
 }
 
 uint8_t uart_read_data_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
 	if (r == UART_REG_LSR) {
 		return lsr_DR;
-	} else if (r == UART_REG_IER) {
-		if (--(*c) == 0) {
+	} else if (r == UART_REG_RXTX) {
+    uint8_t b = 0;
+    if(*p_data != (p_prg_img + prg_size)){//end of prg reached?
+		  b = *(*p_data)++; //inc given ptr. if byte was read
+    }
+    if (--(*c) == 0) {
 			protocol_ix++;
-//			bytes_available = 2;
 		}
-		uint8_t b = *(*p_data)++; //inc given ptr. if byte was read
 		return b;
 	}
 	return 0;
@@ -349,6 +392,7 @@ void uart_write(uint8_t reg, uint8_t value) {
   if (protocol[protocol_ix].write) {
     protocol[protocol_ix].write(reg, value);
   }
-	if (p_prg_img_ix) {
+  if (p_prg_img_ix) {
+
 	}
 }
