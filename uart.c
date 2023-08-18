@@ -173,7 +173,7 @@ uint8_t uart_read_xmodem_block_start(uint8_t reg){
       case 2:
         return XMODEM_SOH;
       case 1:
-        printf("blockno: 0x$%02x\n", xmodem_blocknr);
+        DEBUG("blockno: 0x$%02x\n", xmodem_blocknr);
         return xmodem_blocknr;
       case 0:
         xmodem_crc16_l = 0;
@@ -213,7 +213,7 @@ uint8_t uart_read_xmodem_block_data(uint8_t reg){
     uint8_t i = b ^ xmodem_crc16_h;
     xmodem_crc16_h = xmodem_crc16_l ^ xmodem_crc16_tab_h[i];
     xmodem_crc16_l = xmodem_crc16_tab_l[i];
-    printf("$%02x%02x\n", xmodem_crc16_h, xmodem_crc16_l);
+    DEBUG("$%02x%02x\n", xmodem_crc16_h, xmodem_crc16_l);
 
     return b;
   }
@@ -330,16 +330,16 @@ void uart_init(unsigned char *p_prg_path, int p_prg_override_start, bool checkLm
   }
   for(int i=0;i<=255;i++){
     if(i % 16 == 0)
-      printf("\n");
-    printf("$%02x ", xmodem_crc16_tab_l[i]);
+      DEBUG("\n");
+    DEBUG("$%02x ", xmodem_crc16_tab_l[i]);
   }
-  printf("\n");
+  DEBUG("\n");
   for(int i=0;i<=255;i++){
     if(i % 16 == 0)
-      printf("\n");
-    printf("$%02x ", xmodem_crc16_tab_h[i]);
+      DEBUG("\n");
+    DEBUG("$%02x ", xmodem_crc16_tab_h[i]);
   }
-  printf("\n");
+  DEBUG("\n");
 }
 
 uint8_t uart_read_data_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
