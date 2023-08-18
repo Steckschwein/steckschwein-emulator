@@ -10,7 +10,6 @@
 #include <stdbool.h>
 
 #define UART_REG_IER 0
-#define UART_REG_RXTX 0
 #define UART_REG_LSR 5
 
 #define lsr_DR 		1<<0 // data ready
