@@ -56,41 +56,25 @@ struct serial_state {
 	uint8_t (*write)(uint8_t r, uint8_t v);
 };
 
-uint8_t upload_read_startAddress(uint8_t reg);
-uint8_t upload_read_OK(uint8_t reg);
-void uart_write_two_data_bytes(uint8_t reg, uint8_t val);
-uint8_t upload_read_length(uint8_t reg);
-uint8_t upload_read_program(uint8_t reg);
-
-static struct serial_state upload_protocol[] = { //
-    		{ .read = upload_read_startAddress }, //
-				{ .read = upload_read_OK, .write = uart_write_two_data_bytes }, //
-				{ .read = upload_read_length }, //
-				{ .read = upload_read_OK, .write = uart_write_two_data_bytes }, //
-				{ .read = upload_read_program }, //
-				{ .read = upload_read_OK, .write = uart_write_two_data_bytes }, //
-				{}, //end state
-};
-
 uint8_t xmodem_blocknr;
 uint8_t xmodem_crc16_l = 0;
 uint8_t xmodem_crc16_h = 0;
 
 uint8_t uart_xmodem_ready_to_send(uint8_t reg);
-void uart_write_xmodem_crc(uint8_t reg, uint8_t val);
-uint8_t uart_read_xmodem_block_start(uint8_t reg);
-uint8_t uart_read_xmodem_block_end(uint8_t reg);
-uint8_t uart_read_xmodem_block_data(uint8_t reg);
+uint8_t uart_xmodem_read_block_start(uint8_t reg);
+uint8_t uart_xmodem_read_block_end(uint8_t reg);
+uint8_t uart_xmodem_read_block_data(uint8_t reg);
 uint8_t uart_xmodem_read_eot(uint8_t reg);
+void uart_xmodem_write_crc(uint8_t reg, uint8_t val);
 void uart_xmodem_write_ack(uint8_t reg, uint8_t val);
 
 uint8_t uart_read_data_bytes(uint8_t r, uint8_t **p_data, uint16_t *c);
 
 static struct serial_state xmodem_protocol[] = { //
-        { .read = uart_xmodem_ready_to_send, .write = uart_write_xmodem_crc },
-    		{ .read = uart_read_xmodem_block_start }, //
-    		{ .read = uart_read_xmodem_block_data }, //
-    		{ .read = uart_read_xmodem_block_end }, //
+        { .read = uart_xmodem_ready_to_send, .write = uart_xmodem_write_crc },
+    		{ .read = uart_xmodem_read_block_start }, //
+    		{ .read = uart_xmodem_read_block_data }, //
+    		{ .read = uart_xmodem_read_block_end }, //
     		{ .read = uart_xmodem_ready_to_send, .write = uart_xmodem_write_ack },
     		{ .read = uart_xmodem_read_eot, .write = uart_xmodem_write_ack },
 				{}, //end state
@@ -114,7 +98,7 @@ unsigned char protocol_ix = 0;
 uint8_t xmodem_crc16_tab_l[256];
 uint8_t xmodem_crc16_tab_h[256];
 
-void uart_write_xmodem_crc(uint8_t reg, uint8_t val){
+void uart_xmodem_write_crc(uint8_t reg, uint8_t val){
 	static int c = 3;
   if(val == 'C' && --c == 0){
     loadFile();
@@ -163,7 +147,7 @@ uint8_t uart_xmodem_read_eot(uint8_t reg){
   return 0;
 }
 
-uint8_t uart_read_xmodem_block_start(uint8_t reg){
+uint8_t uart_xmodem_read_block_start(uint8_t reg){
 	static int c = 2;
 	if (reg == UART_REG_LSR) {
 		return lsr_DR;
@@ -186,7 +170,7 @@ uint8_t uart_read_xmodem_block_start(uint8_t reg){
   return 0;
 }
 
-uint8_t uart_read_xmodem_block_end(uint8_t reg){
+uint8_t uart_xmodem_read_block_end(uint8_t reg){
 	static int c = 1;
 	if (reg == UART_REG_LSR) {
 		return lsr_DR;
@@ -204,7 +188,7 @@ uint8_t uart_read_xmodem_block_end(uint8_t reg){
   return 0;
 }
 
-uint8_t uart_read_xmodem_block_data(uint8_t reg){
+uint8_t uart_xmodem_read_block_data(uint8_t reg){
 	if (reg == UART_REG_LSR) {
 		return lsr_DR;
 	} else if (reg == UART_REG_RXTX) {
