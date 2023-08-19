@@ -341,45 +341,6 @@ uint8_t uart_read_data_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
 	return 0;
 }
 
-uint8_t upload_read_startAddress(uint8_t reg) {
-
-  if (!p_prg_img && prg_path && (uart_checkUploadLmfTs + UART_CHECK_UPLOAD_INTERVAL_SECONDS < (uart_checkUploadLmfTs = clock()))) {
-    loadFile();
-	}
-	if (p_prg_img) {
-    bytes_available = 2;
-		return uart_read_data_bytes(reg, &p_prg_img_ix, &bytes_available);
-	}
-	return 0;
-}
-
-uint8_t upload_read_length(uint8_t r) {
-	return uart_read_data_bytes(r, &p_prg_size, &bytes_available);
-}
-
-uint8_t upload_read_program(uint8_t r) {
-	uint8_t outbyte = uart_read_data_bytes(r, &p_prg_img_ix, &prg_size);
-	return outbyte;
-}
-
-uint8_t upload_read_OK(uint8_t r) {
-	if (r == UART_REG_LSR) {
-		return lsr_THRE;
-	}
-	return lsr_DR;
-}
-
-void uart_write_two_data_bytes(uint8_t r, uint8_t v) {
-	static int c = 2;
-	if (--c == 0) {
-		protocol_ix++;
-		c = 2; //reset, for next "OK" check
-		if (protocol_ix >= sizeof(*protocol)) { //
-			reset_upload();
-		}
-	}
-}
-
 uint8_t uart_read(uint8_t reg) {
 //	printf("uart r %x\n", reg);
 	if (protocol[protocol_ix].read) {
