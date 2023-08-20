@@ -251,6 +251,10 @@ void readProgram(int prg_override_start, FILE *prg_file) {
 }
 
 void loadFile(){
+
+    if(prg_path == NULL)
+      return;
+
 #if __MINGW32_NO__
 		struct __stat64 attrib;
 		int rc = __stat64(prg_path, &attrib);
@@ -261,11 +265,11 @@ void loadFile(){
 		if (rc) {
 			fprintf(stderr, "could not stat file %s, error was: %s\n", prg_path, strerror(errno));
       reset_upload();
-			return 0;
+			return;
 		}
 		if (uart_checkUploadLmf && uart_file_lmf == attrib.st_mtime) {
 			DEBUG (stdout, "skip upload of file %s, file has not changed\n", prg_path);
-			return 0;
+			return;
 		}
 		uart_file_lmf = attrib.st_mtime;
 		FILE *prg_file = fopen(prg_path, "rb");
@@ -273,7 +277,7 @@ void loadFile(){
 			fprintf(stderr, "uart upload read start address - cannot open file %s, error %s\n", prg_path,
 					strerror(errno));
 			reset_upload();
-			return 0;
+			return;
 		}
 		readProgram(prg_override_start, prg_file);
 		fclose(prg_file);
