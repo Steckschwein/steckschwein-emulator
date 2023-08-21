@@ -438,7 +438,7 @@ void createSdlSurface(int width, int height, int fullscreen) {
 
 int createOrUpdateSdlWindow() {
 
-	const char *title = "Steckschwein Emulator - blueMSX";
+	const char *title = "Steckschwein Emulator 2.0 (blueMSX)";
 
 	int fullscreen = properties->video.windowSize == P_VIDEO_SIZEFULLSCREEN;
 
