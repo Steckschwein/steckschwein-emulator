@@ -26,8 +26,8 @@ void memory_init() {
 	ctrl_port[0] = 0x00;
 #ifdef SSW2_0
 	ctrl_port[1] = 0x01;
-	ctrl_port[2] = 0x02;
-	ctrl_port[3] = 0x80;
+	ctrl_port[2] = 0x80;
+	ctrl_port[3] = 0x81;
 #endif
 }
 
