@@ -371,28 +371,13 @@ int updateEmuDisplay(int updateAll) {
 					(screenHeight - frameBuffer->lines) * zoom / 2 * screenWidth; //y offset
 
 	videoRender(video, frameBuffer, bitDepth, zoom, dpyData + borderOffset * bytesPerPixel, 0, displayPitch, -1);
-	if (borderOffset > 0) {
-		int h = height;
-		while (h--) {
-			memset(dpyData, 0, borderOffset * bytesPerPixel);
-			// memset(dpyData + (width - borderOffset) * bytesPerPixel, 0, borderOffset * bytesPerPixel);
-		  // dpyData += displayPitch;
-		}
-	}
+
 	DEBUGRenderDisplay(width, height);
-/*
-	if (SDL_MUSTLOCK(surface) && SDL_LockSurface(surface) < 0) {
-		return 0;
-	}
-*/
+
+	SDL_UpdateTexture(sdlTexture, NULL, dpyData, displayPitch);
 	SDL_RenderClear(renderer);
-	SDL_UpdateTexture(sdlTexture, NULL, displayData[curDisplayData], displayPitch);
 	SDL_RenderCopy(renderer, sdlTexture, NULL, NULL);
 	SDL_RenderPresent(renderer);
-  // SDL_UpdateRect(surface, 0, 0, width, height);
-	// if (SDL_MUSTLOCK(surface)) {
-	// 	SDL_UnlockSurface(surface);
-	// }
 
 	return 0;
 }
@@ -402,28 +387,22 @@ SDL_Surface *__SDL_SetVideoMode(int width, int height, int bpp){
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 
 #else
-	Uint32 rmask = 0x00000000;
-	Uint32 gmask = 0x00000000;
-	Uint32 bmask = 0x00000000;
+	Uint32 rmask = 0x000000ff;
+	Uint32 gmask = 0x0000ff00;
+	Uint32 bmask = 0x00ff0000;
 	Uint32 amask = 0x00000000;
 #endif
 
   SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height, bpp,
     rmask, gmask, bmask, amask
   );
-
-  // SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, bpp,
-  //   SDL_PIXELFORMAT_RGB888
-  // );
-  SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
-
   return surface;
 }
 
 void createSdlSurface(int width, int height, int fullscreen) {
 
 	int flags = SDL_SWSURFACE | (fullscreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_RESIZABLE);
-  int window_scale = 2;
+  int window_scale = zoom * 2;
 
   SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "0" );
   SDL_Window *screen = SDL_CreateWindowAndRenderer(width * window_scale, height * window_scale, flags, &window, &renderer);
@@ -439,11 +418,11 @@ void createSdlSurface(int width, int height, int fullscreen) {
 
 	if (!surface) {
 		bitDepth = 32;
-		surface = __SDL_SetVideoMode(width, height, bitDepth);
+		surface = __SDL_SetVideoMode(width*zoom, height*zoom, bitDepth);
 	}
 	if (!surface) {
 		bitDepth = 16;
-		surface = __SDL_SetVideoMode(width, height, bitDepth);
+		surface = __SDL_SetVideoMode(width*zoom, height*zoom, bitDepth);
 	}
 	if (surface != NULL) {
 		displayData[0] = (char*) surface->pixels;
@@ -454,14 +433,7 @@ void createSdlSurface(int width, int height, int fullscreen) {
 	}
   sdlTexture = SDL_CreateTexture(renderer,
     SDL_PIXELFORMAT_RGB888,
-    SDL_TEXTUREACCESS_STREAMING, width, height);
-/*
-  if(screen){
-		displayData[0] = (char*) screen->pixels;
-		curDisplayData = 0;
-		displayPitch = surface->pitch;
-  }
-*/
+    SDL_TEXTUREACCESS_STREAMING, width*zoom, height*zoom);
 }
 
 int createOrUpdateSdlWindow() {
