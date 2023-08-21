@@ -121,7 +121,6 @@ ValueNamePair MonitorTypePair[] = {
 ValueNamePair WindowSizePair[] = {
     { P_VIDEO_SIZEX1,               "small" },
     { P_VIDEO_SIZEX2,               "normal" },
-    { P_VIDEO_SIZEX3,               "big" },
     { P_VIDEO_SIZEFULLSCREEN,       "fullscreen" },
     { -1,                           "" },
 };
@@ -205,8 +204,8 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->emulation.reverseMaxTime    = 15;
 
     properties->video.monitorColor          = P_VIDEO_COLOR;
-    properties->video.monitorType           = P_VIDEO_PALMON;//P_VIDEO_PALMON;//VIDEO_PAL_HQ2X;
-    properties->video.windowSize            = P_VIDEO_SIZEX1;//default 2x
+    properties->video.monitorType           = VIDEO_PAL_FAST;
+    properties->video.windowSize            = P_VIDEO_SIZEX1;
     properties->video.windowSizeInitial     = properties->video.windowSize;
     properties->video.windowSizeChanged     = 0;
     properties->video.windowX               = -1;

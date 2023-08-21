@@ -14,7 +14,7 @@ int xPos = 0;
 int yPos = 0;
 
 // font texture
-uint16_t *textureData;
+uint16_t *textureData = NULL;
 SDL_Surface *fontSurface;
 int textureInitialized = 0;
 
@@ -140,8 +140,9 @@ static unsigned char fontdata[] = { 0x00, 0x00, 0x00, 0x00, 0x00, // 0x20 (space
 // *******************************************************************************************
 
 void DEBUGDestroy() {
+  // if(textureData != NULL)
+  //   free(textureData);
 	SDL_free(fontSurface);
-	free(textureData);
 }
 /*
 int main(int argc, char **argv) {
@@ -193,10 +194,12 @@ int main(int argc, char **argv) {
 
 void DEBUGInitChars(SDL_Surface *renderer) {
 	size_t textureMemSize = sizeof(uint32_t) * TEXTURE_WIDTH * TEXTURE_HEIGHT;
-	textureData = malloc(textureMemSize);
 
 	int depth = 16;
 	int pitch = TEXTURE_WIDTH * (depth / 8);
+
+  textureData = malloc(textureMemSize);
+
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 
 #else

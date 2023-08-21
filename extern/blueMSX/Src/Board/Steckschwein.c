@@ -14,14 +14,14 @@ static YM3812* ym3812;
 static void destroy() {
 	ym3812Destroy(ym3812);
 
-//	rtcDestroy(ds1306);
+	// rtcDestroy(ds1306);
 
 	/*
    r800DebugDestroy();
     ioPortUnregister(0x2e);
     deviceManagerDestroy();
     */
-    mos6502Destroy(mos6502);
+  mos6502Destroy(mos6502);
 }
 
 static void reset()
