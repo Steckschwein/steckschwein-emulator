@@ -1139,9 +1139,7 @@ int main(int argc, char **argv) {
 	mixer = mixerCreate();
 
 	//read default properties
-//	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANK, "Steckschwein");
-//	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
-	properties = propCreate(0, 0, P_EMU_SYNCAUTO, "Steckschwein");
+	properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
 	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
 
 	argc--;
@@ -1450,10 +1448,9 @@ int main(int argc, char **argv) {
 	archSoundDestroy();
 	mixerDestroy(mixer);
 	propDestroy(properties);
-	DEBUGFreeUI();
-	memory_destroy();
-
 	spi_rtc_destroy();
+
+	DEBUGFreeUI();
 
 	return 0;
 }
