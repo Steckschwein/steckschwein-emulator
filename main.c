@@ -134,7 +134,7 @@ static SDL_Surface *surface;
 
 static int bitDepth;
 static int zoom;
-static int window_scale;
+static int window_scale = 3;// default 3x scale
 static char *displayData[2] = { NULL, NULL };
 static int curDisplayData = 0;
 static int displayPitch = 0;
@@ -448,7 +448,6 @@ int createOrUpdateSdlWindow() {
       bitDepth = properties->video.fullscreen.bitDepth;
     } else {
       zoom = 2;
-      window_scale = 3;
       bitDepth = 32;
     }
 
