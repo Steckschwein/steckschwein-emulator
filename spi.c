@@ -55,12 +55,12 @@ uint8_t spi_handle_keyboard(uint8_t inbyte) {
         unsigned int delay = (((inbyte >> 5) & 0x03) + 1) * 250;
         unsigned int interval = 1000 / (30 - (inbyte & 0x1c));
 
-//        if (SDL_EnableKeyRepeat(delay, interval)) {
-          fprintf(stderr, "could not set keyboard delay/rate!\n");
-          outbyte = 0xff;
-//        } else {
-  //        outbyte = 0xfa;
-    //    }
+        // if (SDL_EnableKeyRepeat(delay, interval)) {
+        //   fprintf(stderr, "could not set keyboard delay/rate!\n");
+        //   outbyte = 0xff;
+        // } else {
+        outbyte = 0xfa;
+        // }
         break;
       }
       default: //output captured keycode
