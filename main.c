@@ -16,6 +16,7 @@
 #include <errno.h>
 
 #include <SDL.h>
+#include <SDL_image.h>
 #include "cpu/fake6502.h"
 #include "disasm.h"
 #include "memory.h"
@@ -37,6 +38,9 @@
 #include "ArchEvent.h"
 #include "ArchThread.h"
 #include "ArchTimer.h"
+
+#include "schwein128.h"
+
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -275,6 +279,7 @@ static void usage() {
 	printf("\tcan be specified.\n");
 #endif
 	printf("\n");
+	printf("\nIcon from freepink on Flaticon: https://www.flaticon.com/de/autoren/freepik\n");
 	exit(1);
 }
 
@@ -406,6 +411,7 @@ void createSdlSurface(int width, int height, int fullscreen) {
 
   SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "2" );
   SDL_Window *screen = SDL_CreateWindowAndRenderer(width * window_scale, height * window_scale, flags, &window, &renderer);
+
 	SDL_RenderSetLogicalSize(renderer, width * window_scale, height * window_scale);
 
 	// try default bpp
@@ -453,7 +459,13 @@ int createOrUpdateSdlWindow() {
 
     createSdlSurface(screenWidth, screenHeight, fullscreen);
     // Set the window caption
+
     SDL_SetWindowTitle(window, title);
+
+	SDL_RWops   *src  = SDL_RWFromConstMem(schwein128_png, schwein128_png_len);
+	SDL_Surface *icon = IMG_Load_RW(src, 0);
+	SDL_SetWindowIcon(window, icon);
+
   }else{
     SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
     SDL_ShowCursor(!fullscreen);
@@ -1397,6 +1409,8 @@ int main(int argc, char **argv) {
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
 		return 1;
 	}
+		
+	IMG_Init(IMG_INIT_PNG);
 	SDL_ShowCursor(SDL_DISABLE);
 /*
 	if (SDL_EnableKeyRepeat(250, 50) < 0) {
@@ -1463,6 +1477,7 @@ int main(int argc, char **argv) {
 	// For stop threads before destroy.
 	// Clean up.
 	if (SDL_WasInit(SDL_INIT_EVERYTHING)) {
+		IMG_Quit();
 		SDL_Quit();
 	}
 
