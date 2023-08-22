@@ -31,7 +31,7 @@ static uint8_t via1registers[16];
 
 #define MAX_JOYS 2
 
-void via1_init() {
+void via1_reset() {
 	via1registers[VIA1_PORT_A] = 0xff; // set initial to high if used as input
 	via1registers[VIA1_PORT_B] = 0xff; // set initial to high if used as input
 }

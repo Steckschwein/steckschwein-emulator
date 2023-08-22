@@ -20,6 +20,7 @@ void DEBUGRenderDisplay(int width,int height);
 void DEBUGBreakToDebugger(void);
 int  DEBUGGetCurrentStatus(void);
 void DEBUGSetBreakPoint(int newBreakPoint);
+void DEBUGClearBreakPoint(int breakPoint);
 void DEBUGInitUI(SDL_Surface *surface);
 void DEBUGFreeUI();
 
@@ -27,10 +28,10 @@ void DEBUGFreeUI();
 #define DBG_HEIGHT 		(60)
 
 #define DBG_ASMX 		(4)										// Disassembly starts here
-#define DBG_LBLX 		(26) 									// Debug labels start here
-#define DBG_DATX		(30)									// Debug data starts here.
+#define DBG_LBLX 		(30) 									// Debug labels start here
+#define DBG_DATX		(34)									// Debug data starts here.
 #define DBG_STCK		(40)									// Debug stack starts here.
-#define DBG_MEMX 		(1)										// Memory Display starts here
+#define DBG_MEMX 		(4)										// Memory Display starts here
 
 #define DMODE_STOP 		(0)										// Debugger is waiting for action.
 #define DMODE_STEP 		(1)										// Debugger is doing a single step

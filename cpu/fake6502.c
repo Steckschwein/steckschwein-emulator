@@ -243,9 +243,6 @@ void step6502() {
 
 	instructions++;
 
-	if (instructions == 0xFFFFFFFF) {
-		printf("ins cnt overflow\n");
-	}
 	cycles = clockticks6502 - cycles;
 
 	if (callexternal)

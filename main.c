@@ -54,8 +54,6 @@ char *paste_text = NULL;
 char paste_text_data[65536];
 bool pasting_bas = false;
 
-uint16_t num_ram_banks = 64; // 512 KB default
-
 extern int errno;
 
 bool log_video = false;
@@ -128,9 +126,15 @@ static int emulationStartFailure = 0;
 static int pendingDisplayEvents = 0;
 static void *dpyUpdateAckEvent = NULL;
 
+static SDL_Window *window;
+static SDL_Renderer *renderer;
+static SDL_Texture *sdlTexture;
+
 static SDL_Surface *surface;
+
 static int bitDepth;
-static int zoom = 1;
+static int zoom;
+static int window_scale = 3;// default 3x scale
 static char *displayData[2] = { NULL, NULL };
 static int curDisplayData = 0;
 static int displayPitch = 0;
@@ -142,8 +146,6 @@ static UInt32 emuUsageCurrent = 0;
 
 static int doQuit = 0;
 
-//int screenWidth=240;//320;
-//int screenHeight=320;//240;
 int screenWidth = 320;
 int screenHeight = 240;
 
@@ -189,10 +191,9 @@ void machine_dump() {
 }
 
 void machine_reset(int prg_override_start) {
-	spi_rtc_init();
-	spi_init();
+	spi_rtc_reset();
 	uart_init(prg_path, prg_override_start, checkUploadLmf);
-	via1_init();
+	via1_reset();
 	reset6502();
 }
 
@@ -253,8 +254,8 @@ static void usage() {
 	printf("\tPOKE $9FB5,2 to start recording.\n");
 	printf("\tPOKE $9FB5,1 to capture a single frame.\n");
 	printf("\tPOKE $9FB5,0 to pause.\n");
-	printf("-scale {1|2|full} - use ALT_L+F to toggle fullscreen\n");
-	printf("\tScale output to an integer multiple of 640x480\n");
+	printf("-scale {1|2|..8|full} - use ALT_L+F to toggle fullscreen\n");
+	printf("\tScale output to an integer multiple of 256x212\n");
 	printf("-quality {linear (default) | best}\n");
 	printf("\tScaling algorithm quality\n");
 	printf("-debug [<address>]\n");
@@ -355,8 +356,8 @@ int WaitReverse() {
 int updateEmuDisplay(int updateAll) {
 
 	int bytesPerPixel = bitDepth / 8;
-
 	char *dpyData = displayData[curDisplayData];
+
 	int width = zoom * screenWidth;
 	int height = zoom * screenHeight;
 
@@ -372,33 +373,43 @@ int updateEmuDisplay(int updateAll) {
 
 	videoRender(video, frameBuffer, bitDepth, zoom, dpyData + borderOffset * bytesPerPixel, 0, displayPitch, -1);
 
-	if (borderOffset > 0) {
-		int h = height;
-		while (h--) {
-			memset(dpyData, 0, borderOffset * bytesPerPixel);
-//			memset(dpyData + (width - borderOffset) * bytesPerPixel, 0, borderOffset * bytesPerPixel);
-//			dpyData += displayPitch;
-		}
-	}
 	DEBUGRenderDisplay(width, height);
 
-	if (SDL_MUSTLOCK(surface) && SDL_LockSurface(surface) < 0) {
-		return 0;
-	}
-	SDL_UpdateRect(surface, 0, 0, width, height);
-	if (SDL_MUSTLOCK(surface)) {
-		SDL_UnlockSurface(surface);
-	}
+	SDL_UpdateTexture(sdlTexture, NULL, dpyData, displayPitch);
+	SDL_RenderClear(renderer);
+	SDL_RenderCopy(renderer, sdlTexture, NULL, NULL);
+	SDL_RenderPresent(renderer);
 
 	return 0;
 }
 
+SDL_Surface *__SDL_SetVideoMode(int width, int height, int bpp){
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+
+#else
+	Uint32 rmask = 0x000000ff;
+	Uint32 gmask = 0x0000ff00;
+	Uint32 bmask = 0x00ff0000;
+	Uint32 amask = 0x00000000;
+#endif
+
+  SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height, bpp,
+    rmask, gmask, bmask, amask
+  );
+  return surface;
+}
+
 void createSdlSurface(int width, int height, int fullscreen) {
 
-	int flags = SDL_SWSURFACE | (fullscreen ? SDL_FULLSCREEN : 0);
+	int flags = SDL_SWSURFACE | (fullscreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_RESIZABLE);
+
+  SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "2" );
+  SDL_Window *screen = SDL_CreateWindowAndRenderer(width * window_scale, height * window_scale, flags, &window, &renderer);
+	SDL_RenderSetLogicalSize(renderer, width * window_scale, height * window_scale);
 
 	// try default bpp
-	surface = SDL_SetVideoMode(width, height, 0, flags);
+  surface = __SDL_SetVideoMode(width, height, 0);
 	int bytepp = (surface ? surface->format->BytesPerPixel : 0);
 	if (bytepp != 2 && bytepp != 4) {
 		SDL_FreeSurface(surface);
@@ -407,13 +418,12 @@ void createSdlSurface(int width, int height, int fullscreen) {
 
 	if (!surface) {
 		bitDepth = 32;
-		surface = SDL_SetVideoMode(width, height, bitDepth, flags);
+		surface = __SDL_SetVideoMode(width*zoom, height*zoom, bitDepth);
 	}
 	if (!surface) {
 		bitDepth = 16;
-		surface = SDL_SetVideoMode(width, height, bitDepth, flags);
+		surface = __SDL_SetVideoMode(width*zoom, height*zoom, bitDepth);
 	}
-
 	if (surface != NULL) {
 		displayData[0] = (char*) surface->pixels;
 		curDisplayData = 0;
@@ -421,31 +431,33 @@ void createSdlSurface(int width, int height, int fullscreen) {
 
 		DEBUGInitUI(surface);
 	}
+  sdlTexture = SDL_CreateTexture(renderer,
+    SDL_PIXELFORMAT_RGB888,
+    SDL_TEXTUREACCESS_STREAMING, width*zoom, height*zoom);
 }
 
-int createSdlWindow() {
-	const char *title = "Steckschwein Emulator - blueMSX";
+int createOrUpdateSdlWindow() {
+
+	const char *title = "Steckschwein Emulator 2.0 (blueMSX)";
+
 	int fullscreen = properties->video.windowSize == P_VIDEO_SIZEFULLSCREEN;
 
-	if (fullscreen) {
-		zoom = properties->video.fullscreen.width / screenWidth;
-		bitDepth = properties->video.fullscreen.bitDepth;
-	} else {
-		if (properties->video.windowSize == P_VIDEO_SIZEX1) {
-			zoom = 1;
-		} else if (properties->video.windowSize == P_VIDEO_SIZEX2) {
-			zoom = 2;
-		} else {
-			zoom = 4;
-		}
-		bitDepth = 32;
-	}
+  if(!surface){//create
+    if (fullscreen) {
+      zoom = properties->video.fullscreen.width / screenWidth;
+      bitDepth = properties->video.fullscreen.bitDepth;
+    } else {
+      zoom = 2;
+      bitDepth = 32;
+    }
 
-	createSdlSurface(zoom * screenWidth, zoom * screenHeight, fullscreen);
-
-	// Set the window caption
-	SDL_WM_SetCaption(title, NULL);
-
+    createSdlSurface(screenWidth, screenHeight, fullscreen);
+    // Set the window caption
+    SDL_SetWindowTitle(window, title);
+  }else{
+    SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+    SDL_ShowCursor(!fullscreen);
+  }
 	return 1;
 }
 
@@ -464,17 +476,17 @@ static void handleEvent(SDL_Event *event) {
 			pendingDisplayEvents--;
 			break;
 		case EVENT_UPDATE_WINDOW:
-			if (!createSdlWindow()) {
+			if (!createOrUpdateSdlWindow()) {
 				exit(0);
 			}
 			break;
 		}
 		break;
-	case SDL_ACTIVEEVENT:
-		if (event->active.state & SDL_APPINPUTFOCUS) {
+	case SDL_WINDOWEVENT:
+		if (event->window.event & SDL_WINDOWEVENT_FOCUS_GAINED) {
 //            keyboardSetFocus(1, event->active.gain);
 		}
-		if (event->active.state == SDL_APPMOUSEFOCUS) {
+		if (event->window.event == SDL_WINDOWEVENT_ENTER || event->window.event == SDL_WINDOWEVENT_LEAVE) {
 //            sdlMouseSetFocus(event->active.gain);
 		}
 		break;
@@ -482,9 +494,9 @@ static void handleEvent(SDL_Event *event) {
 //        shortcutCheckown(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
 	{
 		int keyNum;
-		Uint8 *keyBuf = SDL_GetKeyState(&keyNum);
+		Uint8 *keyBuf = SDL_GetKeyboardState(&keyNum);
 		if (keyBuf != NULL) {
-			if (keyBuf[SDLK_LALT]) {
+			if (keyBuf[SDL_SCANCODE_LALT]) {
 				if (event->key.keysym.sym == SDLK_f) {
 					actionFullscreenToggle();
 					break;
@@ -496,7 +508,6 @@ static void handleEvent(SDL_Event *event) {
 					break;
 				}
 			}
-
 		}
 		spi_handle_keyevent(&event->key);
 		break;
@@ -505,7 +516,7 @@ static void handleEvent(SDL_Event *event) {
 //        shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
 		spi_handle_keyevent(&event->key);
 		break;
-	case SDL_VIDEOEXPOSE:
+	case SDL_WINDOWEVENT_EXPOSED:
 		updateEmuDisplay(1);
 		break;
 	case SDL_MOUSEBUTTONDOWN:
@@ -926,16 +937,18 @@ void emulatorStop() {
 
 	emuExitFlag = 1;
 
+#ifndef WII
+    archEventSet(emuSyncEvent);
+#endif
 	archSoundSuspend();
 	archThreadJoin(emuThread, 3000);
-	archThreadDestroy(emuThread);
 //    archMidiEnable(0);
-//    machineDestroy(machine);
+  machineDestroy(NULL);
+  archThreadDestroy(emuThread);
 #ifndef WII
-	archEventDestroy(emuSyncEvent);
+  archEventDestroy(emuSyncEvent);
 #endif
-
-	archEventDestroy(emuStartEvent);
+  archEventDestroy(emuStartEvent);
 
 	// Reset active indicators in mixer
 	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MOONSOUND, 1);
@@ -946,7 +959,8 @@ void emulatorStop() {
 
 	archEmulationStopNotification();
 
-	dbgDisable();dbgPrint();
+	dbgDisable();
+  dbgPrint();
 //    savelog();
 }
 
@@ -1080,7 +1094,7 @@ void instructionCb(uint32_t cycles) {
 }
 
 int nextArg(int *argc, char ***argv, char *arg) {
-	int n = argc && !strncmp(*argv[0], arg, strlen(*argv[0]));
+	int n = *argc && strlen(*argv[0]) == strlen(arg) && !strncmp(*argv[0], arg, strlen(*argv[0]));
 	if (n) {
 		(*argc)--;
 		(*argv)++;
@@ -1144,8 +1158,6 @@ int main(int argc, char **argv) {
 	mixer = mixerCreate();
 
 	//read default properties
-//	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANK, "Steckschwein");
-//	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
 	properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
 	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
 
@@ -1165,13 +1177,14 @@ int main(int argc, char **argv) {
 			for (int cmp = 8; cmp <= 64; cmp *= 2) {
 				if (kb == cmp) {
 					found = true;
+          argc--;
+    			argv++;
 					break;
 				}
 			}
 			if (!found) {
 				usage();
 			}
-			num_ram_banks = kb / 8;
 		} else if (nextArg(&argc, &argv, "-keymap")) {
 			if (!argc || argv[0][0] == '-') {
 				usage_keymap();
@@ -1273,6 +1286,7 @@ int main(int argc, char **argv) {
 		} else if (nextArg(&argc, &argv, "-debug")) {
 			isDebuggerEnabled = true;
 			if (argc && argv[0][0] != '-') {
+				printf("debug, break at $%x\n", strtol(argv[0], NULL, 16));
 				DEBUGSetBreakPoint((uint16_t) strtol(argv[0], NULL, 16));
 				argc--;
 				argv++;
@@ -1311,11 +1325,12 @@ int main(int argc, char **argv) {
 			screenHeight = t;
 			properties->video.rotate = 1;
 		} else if (nextArg(&argc, &argv, "-scale")) {
-			if (nextArg(&argc, &argv, "1")) {
-				properties->video.windowSize = P_VIDEO_SIZEX1;
-			} else if (nextArg(&argc, &argv, "2")) {
-				properties->video.windowSize = P_VIDEO_SIZEX2;
-			} else if (nextArg(&argc, &argv, "full")) {
+      int scale = atoi(argv[0]);
+      if(scale >= 1 && scale <= 8){
+				window_scale = scale;
+        argc--;
+			  argv++;
+      } else if (nextArg(&argc, &argv, "full")) {
 				properties->video.windowSize = P_VIDEO_SIZEFULLSCREEN;
 			} else {
 				usage();
@@ -1383,10 +1398,11 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	SDL_ShowCursor(SDL_DISABLE);
+/*
 	if (SDL_EnableKeyRepeat(250, 50) < 0) {
 		return 1;
 	}
-
+*/
 	video = videoCreate();
 	videoSetColors(video, properties->video.saturation, properties->video.brightness, properties->video.contrast,
 			properties->video.gamma);
@@ -1394,7 +1410,7 @@ int main(int argc, char **argv) {
 	videoSetColorSaturation(video, properties->video.colorSaturationEnable, properties->video.colorSaturationWidth);
 
 	bitDepth = 32;
-	if (!createSdlWindow()) {
+	if (!createOrUpdateSdlWindow()) {
 		return 0;
 	}
 
@@ -1434,13 +1450,13 @@ int main(int argc, char **argv) {
 #ifndef SINGLE_THREADED	//on multi-threaded the main thread will loop here
     SDL_Event event;//While the user hasn't quit
     while(!doQuit){
-        SDL_WaitEvent(&event);
-		if( event.type == SDL_QUIT ) {
-			doQuit = 1;
-		}
-		else {
-			handleEvent(&event);
-		}
+      SDL_WaitEvent(&event);
+      if( event.type == SDL_QUIT ) {
+        doQuit = 1;
+      }
+      else {
+        handleEvent(&event);
+      }
     }
 #endif
 
@@ -1449,14 +1465,20 @@ int main(int argc, char **argv) {
 	if (SDL_WasInit(SDL_INIT_EVERYTHING)) {
 		SDL_Quit();
 	}
+
+  DEBUGFreeUI();
+
+	return 0;
+}
+
+void machineDestroy(void *machine){
 	videoDestroy(video);
 	archSoundDestroy();
 	mixerDestroy(mixer);
 	propDestroy(properties);
-	DEBUGFreeUI();
-	memory_destroy();
-
 	spi_rtc_destroy();
+
+	DEBUGFreeUI();
 
 	return 0;
 }

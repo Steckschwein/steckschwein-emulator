@@ -14,7 +14,7 @@ int xPos = 0;
 int yPos = 0;
 
 // font texture
-uint16_t *textureData;
+uint16_t *textureData = NULL;
 SDL_Surface *fontSurface;
 int textureInitialized = 0;
 
@@ -140,11 +140,12 @@ static unsigned char fontdata[] = { 0x00, 0x00, 0x00, 0x00, 0x00, // 0x20 (space
 // *******************************************************************************************
 
 void DEBUGDestroy() {
+  // if(textureData != NULL)
+  //   free(textureData);
 	SDL_free(fontSurface);
-	free(textureData);
 }
-
-int _main(int argc, char **argv) {
+/*
+int main(int argc, char **argv) {
 
 	SDL_Init(SDL_INIT_VIDEO);
 
@@ -161,13 +162,13 @@ int _main(int argc, char **argv) {
 	color.r = 0xff;
 	color.g = 0x0;
 	color.b = 0;
-	color.unused = 0;
+	color.a = 0;
 	DEBUGString(screen, 0, 2, s, color);
 
 	color.r = 0;
 	color.g = 0xff;
 	color.b = 0x00;
-	color.unused = 0;
+	color.a = 0;
 	DEBUGString(screen, 0, 3, s, color);
 
 	if (SDL_MUSTLOCK(screen) && SDL_LockSurface(screen) < 0) {
@@ -189,13 +190,16 @@ int _main(int argc, char **argv) {
 		SDL_Quit();
 	}
 }
+*/
 
 void DEBUGInitChars(SDL_Surface *renderer) {
 	size_t textureMemSize = sizeof(uint32_t) * TEXTURE_WIDTH * TEXTURE_HEIGHT;
-	textureData = malloc(textureMemSize);
 
 	int depth = 16;
 	int pitch = TEXTURE_WIDTH * (depth / 8);
+
+  textureData = malloc(textureMemSize);
+
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 
 #else
@@ -240,8 +244,8 @@ void DEBUGWrite(SDL_Surface *renderer, int x, int y, int ch, SDL_Color colour) {
 	if (!textureInitialized) {
 		DEBUGInitChars(renderer);
 	}
-//	SDL_SetTextureColorMod(fontTexture, colour.r, colour.g, colour.b);
-//	SDL_SetColors(renderer, colour,)
+	// SDL_SetTextureColorMod(fontTexture, colour.r, colour.g, colour.b);
+	// SDL_SetColors(renderer, colour,)
 	ch -= 0x20;
 	SDL_Rect srcRect = { ch * CHAR_WIDTH, 0, CHAR_WIDTH, CHAR_HEIGHT };
 	SDL_Rect dstRect = { x * (CHAR_WIDTH + 1) + xPos, y * (CHAR_HEIGHT + 1) + yPos, CHAR_WIDTH, CHAR_HEIGHT };
