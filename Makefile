@@ -16,7 +16,7 @@ endif
 # Flags
 #
 # production flags (performance)
-CFLAGS   = -w -O2 -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror -fomit-frame-pointer -pedantic
+CFLAGS   = -w -O3 -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror -fomit-frame-pointer 
 
 # development flags (debugger support)
 # CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror
