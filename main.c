@@ -134,6 +134,7 @@ static SDL_Surface *surface;
 
 static int bitDepth;
 static int zoom;
+static int window_scale;
 static char *displayData[2] = { NULL, NULL };
 static int curDisplayData = 0;
 static int displayPitch = 0;
@@ -253,8 +254,8 @@ static void usage() {
 	printf("\tPOKE $9FB5,2 to start recording.\n");
 	printf("\tPOKE $9FB5,1 to capture a single frame.\n");
 	printf("\tPOKE $9FB5,0 to pause.\n");
-	printf("-scale {1|2|full} - use ALT_L+F to toggle fullscreen\n");
-	printf("\tScale output to an integer multiple of 640x480\n");
+	printf("-scale {1|2|..8|full} - use ALT_L+F to toggle fullscreen\n");
+	printf("\tScale output to an integer multiple of 256x212\n");
 	printf("-quality {linear (default) | best}\n");
 	printf("\tScaling algorithm quality\n");
 	printf("-debug [<address>]\n");
@@ -402,9 +403,8 @@ SDL_Surface *__SDL_SetVideoMode(int width, int height, int bpp){
 void createSdlSurface(int width, int height, int fullscreen) {
 
 	int flags = SDL_SWSURFACE | (fullscreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_RESIZABLE);
-  int window_scale = zoom * 2;
 
-  SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "0" );
+  SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "2" );
   SDL_Window *screen = SDL_CreateWindowAndRenderer(width * window_scale, height * window_scale, flags, &window, &renderer);
 	SDL_RenderSetLogicalSize(renderer, width * window_scale, height * window_scale);
 
@@ -447,13 +447,8 @@ int createOrUpdateSdlWindow() {
       zoom = properties->video.fullscreen.width / screenWidth;
       bitDepth = properties->video.fullscreen.bitDepth;
     } else {
-      if (properties->video.windowSize == P_VIDEO_SIZEX1) {
-        zoom = 1;
-      } else if (properties->video.windowSize == P_VIDEO_SIZEX2) {
-        zoom = 2;
-      } else {
-        zoom = 1;
-      }
+      zoom = 2;
+      window_scale = 3;
       bitDepth = 32;
     }
 
@@ -1100,7 +1095,7 @@ void instructionCb(uint32_t cycles) {
 }
 
 int nextArg(int *argc, char ***argv, char *arg) {
-	int n = argc && !strncmp(*argv[0], arg, strlen(*argv[0]));
+	int n = *argc && strlen(*argv[0]) == strlen(arg) && !strncmp(*argv[0], arg, strlen(*argv[0]));
 	if (n) {
 		(*argc)--;
 		(*argv)++;
@@ -1183,6 +1178,8 @@ int main(int argc, char **argv) {
 			for (int cmp = 8; cmp <= 64; cmp *= 2) {
 				if (kb == cmp) {
 					found = true;
+          argc--;
+    			argv++;
 					break;
 				}
 			}
@@ -1329,11 +1326,12 @@ int main(int argc, char **argv) {
 			screenHeight = t;
 			properties->video.rotate = 1;
 		} else if (nextArg(&argc, &argv, "-scale")) {
-			if (nextArg(&argc, &argv, "1")) {
-				properties->video.windowSize = P_VIDEO_SIZEX1;
-			} else if (nextArg(&argc, &argv, "2")) {
-				properties->video.windowSize = P_VIDEO_SIZEX2;
-			} else if (nextArg(&argc, &argv, "full")) {
+      int scale = atoi(argv[0]);
+      if(scale >= 1 && scale <= 8){
+				window_scale = scale;
+        argc--;
+			  argv++;
+      } else if (nextArg(&argc, &argv, "full")) {
 				properties->video.windowSize = P_VIDEO_SIZEFULLSCREEN;
 			} else {
 				usage();

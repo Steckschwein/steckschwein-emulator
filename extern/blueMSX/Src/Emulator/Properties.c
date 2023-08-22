@@ -204,7 +204,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->emulation.reverseMaxTime    = 15;
 
     properties->video.monitorColor          = P_VIDEO_COLOR;
-    properties->video.monitorType           = P_VIDEO_PALMON;
+    properties->video.monitorType           = P_VIDEO_PALHQ2X;
     properties->video.windowSize            = P_VIDEO_SIZEX2;
     properties->video.windowSizeInitial     = properties->video.windowSize;
     properties->video.windowSizeChanged     = 0;
@@ -218,7 +218,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->video.maximizeIsFullscreen  = 1;
     properties->video.deInterlace           = 1;
     properties->video.blendFrames           = 0;
-    properties->video.horizontalStretch     = 1;
+    properties->video.horizontalStretch     = 0;
     properties->video.verticalStretch       = 0;
     properties->video.contrast              = 100;
     properties->video.brightness            = 100;
