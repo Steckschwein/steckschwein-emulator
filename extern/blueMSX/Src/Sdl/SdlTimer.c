@@ -77,9 +77,9 @@ void* archCreateTimer(int intervalMillis, int (*timerCallback)(void*))
     lastTimeout = archGetSystemUpTime(timerFreq);
     timerCb  = timerCallback;
 
-    SDL_SetTimer(intervalMillis, timerCalback);
+    SDL_TimerID *timerId = SDL_AddTimer(intervalMillis, timerCalback, NULL);
 
-    return timerCallback;
+    return timerId;
 }
 
 void archTimerDestroy(void* timer)
@@ -88,7 +88,7 @@ void archTimerDestroy(void* timer)
         return;
     }
 
-    SDL_SetTimer(0, NULL);
+    SDL_RemoveTimer(timer);
     timerCb = NULL;
 }
 
