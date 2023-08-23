@@ -12,7 +12,7 @@ jobs:
 
     runs-on: ubuntu-latest
     container:
-      image: steckschwein/buildenv:v2_19-alpine
+      image: steckschwein/buildenv-emu:v0.0.1
       options: --user root
 
     steps:
