@@ -31,7 +31,7 @@ bool joystick_init() {
 			joystick1 = SDL_JoystickOpen(i);
 			if (joystick1) {
 				joystick1_number = i;
-				fprintf(stdout, "Use game controller %i: %s for joystick port 1\n", i, SDL_JoystickName(i));
+        fprintf(stdout, "Use game controller %i: %s for joystick port 2 with %i Hats / %i buttons\n", i, SDL_JoystickName(i), SDL_JoystickNumHats(joystick1), SDL_JoystickNumButtons(joystick1));
 				break;
 			} else {
 				fprintf(stderr, "Could not open game controller %i: %s\n", i, SDL_GetError());
@@ -43,7 +43,7 @@ bool joystick_init() {
 			if (joystick1_number != i) {
 				joystick2 = SDL_JoystickOpen(i);
 				if (joystick2) {
-					fprintf(stdout, "Use game controller %i: %s for joystick port 2\n", i, SDL_JoystickName(i));
+          fprintf(stdout, "Use game controller %i: %s for joystick port 2 with %i Hats / %i buttons\n", i, SDL_JoystickName(i), SDL_JoystickNumHats(joystick2), SDL_JoystickNumButtons(joystick2));
 					break;
 				} else {
 					fprintf(stderr, "Could not open game controller %i: %s\n", i, SDL_GetError());
@@ -137,7 +137,7 @@ uint16_t get_joystick_state(SDL_Joystick *control, enum joy_status mode) {
 		bool y_pressed = SDL_JoystickGetButton(control, SDL_CONTROLLER_BUTTON_X);
 		bool select_pressed = SDL_JoystickGetButton(control, SDL_CONTROLLER_BUTTON_LEFTSTICK);
 		bool start_pressed = SDL_JoystickGetButton(control, SDL_CONTROLLER_BUTTON_START);
-		bool up_pressed = SDL_JoystickGetHat(control, 0) & SDL_HAT_UP;
+		bool up_pressed = SDL_JoystickGetHat(control, 0) & SDL_HAT_UP || SDL_JoystickGetButton(control, SDL_CONTROLLER_BUTTON_DPAD_UP) || SDL_JoystickGetButton(control, SDL_JOYBUTTONUP);
 		bool down_pressed = SDL_JoystickGetHat(control, 0) & SDL_HAT_DOWN;
 		bool left_pressed = SDL_JoystickGetHat(control, 0) & SDL_HAT_LEFT;
 		bool right_pressed = SDL_JoystickGetHat(control, 0) & SDL_HAT_RIGHT;
