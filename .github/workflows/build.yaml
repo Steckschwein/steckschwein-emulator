@@ -2,7 +2,7 @@ ame: Build and Test Steckschwein-Emulator
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "featuew/*", "bugfix/*" ]
   pull_request:
     branches: [ "master" ]
 
