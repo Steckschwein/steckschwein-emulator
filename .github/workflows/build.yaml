@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: steckschwein/buildenv-emu:v0.0.1
-      options: --user schwein
+      options: --user root
 
     steps:
     - name: checkout
