@@ -12,8 +12,8 @@ jobs:
 
     runs-on: ubuntu-latest
     container:
-      image: steckschwein/buildenv:v2_19-alpine
-      options: --user root
+      image: steckschwein/buildenv-emu:v0.0.1
+      options: --user schwein
 
     steps:
     - name: checkout
