@@ -2,7 +2,7 @@ FROM alpine
 USER root
 RUN apk update && \
     apk add \
-      gcc make musl-dev bash \
+      gcc make musl-dev git python3 py3-pip bash \
       sdl2-dev sdl2_image-dev
 
 RUN addgroup -S schwein && adduser -S schwein -G schwein
