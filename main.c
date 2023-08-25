@@ -1156,6 +1156,8 @@ int main(int argc, char **argv) {
 	char *configfile_path = configfile_path_data;
 
 	char *bas_path = NULL;
+
+	char sdcard_image_path_data[PATH_MAX];
 	char *sdcard_path = NULL;
 
 	run_after_load = false;
@@ -1165,49 +1167,57 @@ int main(int argc, char **argv) {
 	freopen("CON", "w", stderr);
 #endif
 
+	rom_path = getcwd(rom_path_data, PATH_MAX);
+	if (rom_path == NULL) {
+		fprintf(stderr, "could not determine current work directory\n");
+		return 1;
+	}
+
+	// This causes the emulator to load ROM data from the executable's directory when
+	// no ROM file is specified on the command line.
+	strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
+
 	sprintf(configfile_path, "%s/.sw/config.json", getenv("HOME"));
 
 	FILE *fp = fopen(configfile_path, "r");
    
-    if (fp == NULL) {
-        printf("Error: Unable to open the file.\n");
-        return 1;
-    }
+    if (fp != NULL) {
   
-    // read the file contents into a string
-    char buffer[1024];
-    int len = fread(buffer, 1, sizeof(buffer), fp);
-    fclose(fp);
+		// read the file contents into a string
+		char buffer[1024];
+		int len = fread(buffer, 1, sizeof(buffer), fp);
+		fclose(fp);
 
-	cJSON *json = cJSON_Parse(buffer);
-    if (json == NULL) {
-        const char *error_ptr = cJSON_GetErrorPtr();
-        if (error_ptr != NULL) {
-            printf("Error: %s\n", error_ptr);
-        }
-        cJSON_Delete(json);
-        return 1;
-    }
-
-	cJSON *rom_path_json = cJSON_GetObjectItemCaseSensitive(json, "rom_path");
-	if (cJSON_IsString(rom_path_json) && (rom_path_json->valuestring != NULL)) {
-		wordexp_t exp_result;
-		wordexp(rom_path_json->valuestring, &exp_result, 0);
-		strncpy(rom_path_data, exp_result.we_wordv[0], sizeof(rom_path_data));
-		wordfree(&exp_result);
-    }
-/* 	else
-	{
-		rom_path = getcwd(rom_path_data, PATH_MAX;
-		if (rom_path == NULL) {
-			fprintf(stderr, "could not determine current work directory\n");
+		cJSON *json = cJSON_Parse(buffer);
+		if (json == NULL) {
+			const char *error_ptr = cJSON_GetErrorPtr();
+			if (error_ptr != NULL) {
+				printf("Error: %s\n", error_ptr);
+			}
+			cJSON_Delete(json);
 			return 1;
 		}
-	}
-   */
-	// This causes the emulator to load ROM data from the executable's directory when
-	// no ROM file is specified on the command line.
-	//strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
+
+		cJSON *rom_path_json = cJSON_GetObjectItemCaseSensitive(json, "rom_path");
+		if (cJSON_IsString(rom_path_json) && (rom_path_json->valuestring != NULL)) {
+			wordexp_t exp_result;
+			wordexp(rom_path_json->valuestring, &exp_result, 0);
+			strncpy(rom_path_data, exp_result.we_wordv[0], sizeof(rom_path_data));
+			wordfree(&exp_result);
+		}
+
+		cJSON *sdcard_image_path_json = cJSON_GetObjectItemCaseSensitive(json, "sdcard_image_path");
+		if (cJSON_IsString(sdcard_image_path_json) && (sdcard_image_path_json->valuestring != NULL)) {
+			wordexp_t exp_result;
+			wordexp(sdcard_image_path_json->valuestring, &exp_result, 0);
+			strncpy(sdcard_image_path_data, exp_result.we_wordv[0], sizeof(sdcard_image_path_data));
+			sdcard_path = sdcard_image_path_data;
+			wordfree(&exp_result);
+		}
+
+		cJSON_Delete(json);
+    }
+
 
 	memory_init();
 	mixer = mixerCreate();
