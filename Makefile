@@ -228,6 +228,9 @@ clean_$(TARGET):
 cpu/tables.h cpu/mnemonics.h: cpu/buildtables.py cpu/6502.opcodes cpu/65c02.opcodes
 	cd cpu && python buildtables.py
 
+install: all 
+	install -s -m 0755 $(TARGET) ~/bin/steckschwein-emu
+
 $(OUTPUT_DIR):
 	$(ECHO) Creating directory $@...
 	$(MKDIR) $(OUTPUT_DIR)
