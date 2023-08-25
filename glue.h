@@ -45,6 +45,9 @@ typedef enum {
 } gif_recorder_state_t;
 
 
+int updateEmuDisplay(int updateAll);
+int emulatorSyncScreen();
+
 void actionEmuTogglePause();
 void actionEmuStepBack();
 
