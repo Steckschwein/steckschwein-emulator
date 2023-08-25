@@ -160,6 +160,7 @@ int screenHeight = 240;
 #define EVENT_UPDATE_DISPLAY 2
 #define EVENT_UPDATE_WINDOW  3
 
+
 void machine_dump() {
 	int index = 0;
 	char filename[22];
@@ -1160,6 +1161,7 @@ int main(int argc, char **argv) {
 	char sdcard_image_path_data[PATH_MAX];
 	char *sdcard_path = NULL;
 
+
 	run_after_load = false;
 
 #if defined(WIN32)
@@ -1179,8 +1181,14 @@ int main(int argc, char **argv) {
 
 	sprintf(configfile_path, "%s/.sw/config.json", getenv("HOME"));
 
+	memory_init();
+	mixer = mixerCreate();
+
+	//read default properties
+	properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
+	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
+
 	FILE *fp = fopen(configfile_path, "r");
-   
     if (fp != NULL) {
   
 		// read the file contents into a string
@@ -1215,16 +1223,25 @@ int main(int argc, char **argv) {
 			wordfree(&exp_result);
 		}
 
+		cJSON *scale_json = cJSON_GetObjectItemCaseSensitive(json, "scale");
+		if (cJSON_IsString(scale_json)) 
+		{
+			if (! strcmp("full", scale_json->valuestring))
+			{
+				properties->video.windowSize = P_VIDEO_SIZEFULLSCREEN;
+			}
+		}
+		else if (cJSON_IsNumber(scale_json))
+		{
+			if (scale_json->valueint >= 1 && scale_json->valueint <= 8)
+			{
+				window_scale = scale_json->valueint;
+			}
+		} 
+
 		cJSON_Delete(json);
     }
 
-
-	memory_init();
-	mixer = mixerCreate();
-
-	//read default properties
-	properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
-	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
 
 	argc--;
 	argv++;
