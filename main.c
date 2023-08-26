@@ -16,7 +16,6 @@
 #include <errno.h>
 
 #include <SDL.h>
-#include <SDL_image.h>
 
 #include <wordexp.h>
 #include <ini.h>
@@ -42,9 +41,7 @@
 #include "ArchEvent.h"
 #include "ArchThread.h"
 #include "ArchTimer.h"
-
-#include "schwein128.h"
-
+#include "schwein128.rgba.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -453,6 +450,13 @@ int createOrUpdateSdlWindow() {
 
 	int fullscreen = properties->video.windowSize == P_VIDEO_SIZEFULLSCREEN;
 
+	// SDL_RWops *src  = SDL_RWFromConstMem(schwein128_png, schwein128_png_len);
+  // FILE *fd = fopen("schwein128.png","w");
+  // if(fd!=NULL){
+  //   fwrite(&schwein128_png, sizeof(char), schwein128_png_len, fd);
+  //   fclose(fd);
+  // }
+
   if(!surface){//create
     if (fullscreen) {
       zoom = properties->video.fullscreen.width / screenWidth;
@@ -465,12 +469,19 @@ int createOrUpdateSdlWindow() {
     createSdlSurface(screenWidth, screenHeight, fullscreen);
     // Set the window caption
 
+    #if SDL_BYTEORDER == SDL_BIG_ENDIAN
+
+    #else
+      Uint32 rmask = 0xff000000;
+      Uint32 gmask = 0x00ff0000;
+      Uint32 bmask = 0x0000ff00;
+      Uint32 amask = 0x000000ff;
+    #endif
     SDL_SetWindowTitle(window, title);
-
-	SDL_RWops   *src  = SDL_RWFromConstMem(schwein128_png, schwein128_png_len);
-	SDL_Surface *icon = IMG_Load_RW(src, 0);
-	SDL_SetWindowIcon(window, icon);
-
+    SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(&schwein128_rgba, 128,128,32,4*128,
+      rmask, gmask, bmask, amask);
+    SDL_SetWindowIcon(window, icon);
+    SDL_FreeSurface(icon);
   }else{
     SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
     SDL_ShowCursor(!fullscreen);
@@ -1490,8 +1501,7 @@ int main(int argc, char **argv) {
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
 		return 1;
 	}
-		
-	IMG_Init(IMG_INIT_PNG);
+
 	SDL_ShowCursor(SDL_DISABLE);
 /*
 	if (SDL_EnableKeyRepeat(250, 50) < 0) {
@@ -1558,7 +1568,6 @@ int main(int argc, char **argv) {
 	// For stop threads before destroy.
 	// Clean up.
 	if (SDL_WasInit(SDL_INIT_EVERYTHING)) {
-		IMG_Quit();
 		SDL_Quit();
 	}
 
