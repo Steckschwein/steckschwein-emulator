@@ -19,7 +19,7 @@
 #include <SDL_image.h>
 
 #include <wordexp.h>
-#include <cjson/cJSON.h>
+#include <ini.h>
 
 #include "cpu/fake6502.h"
 #include "disasm.h"
@@ -1149,6 +1149,40 @@ int parseNumber(unsigned char *s) {
 	return -1;
 }
 
+typedef struct
+{
+    const char* rom;
+    const char* sdcard;
+	const char* scale;
+} configuration;
+
+
+static int handler(void* user, const char* section, const char* name, const char* value)
+{
+    configuration* pconfig = (configuration*)user;
+
+    #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
+    if (MATCH("display", "scale")) {
+        pconfig->scale = strdup(value);
+    } else if (MATCH("paths", "rom")) {
+        pconfig->rom = strdup(value);
+    } else if (MATCH("paths", "sdcard")) {
+        pconfig->sdcard = strdup(value);
+    } else {
+        return 0;  /* unknown section/name, error */
+    }
+    return 1;
+}
+
+void do_wordexp(const char * in, char * out)
+{
+	wordexp_t exp_result;
+	wordexp(in, &exp_result, 0);
+	strcpy(out, exp_result.we_wordv[0]);
+	wordfree(&exp_result);
+}
+
+
 int main(int argc, char **argv) {
 	char rom_path_data[PATH_MAX];
 	char *rom_path = rom_path_data;
@@ -1160,7 +1194,6 @@ int main(int argc, char **argv) {
 
 	char sdcard_image_path_data[PATH_MAX];
 	char *sdcard_path = NULL;
-
 
 	run_after_load = false;
 
@@ -1179,7 +1212,6 @@ int main(int argc, char **argv) {
 	// no ROM file is specified on the command line.
 	strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
 
-	sprintf(configfile_path, "%s/.sw/config.json", getenv("HOME"));
 
 	memory_init();
 	mixer = mixerCreate();
@@ -1188,60 +1220,39 @@ int main(int argc, char **argv) {
 	properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
 	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
 
-	FILE *fp = fopen(configfile_path, "r");
-    if (fp != NULL) {
-  
-		// read the file contents into a string
-		char buffer[1024];
-		int len = fread(buffer, 1, sizeof(buffer), fp);
-		fclose(fp);
-
-		cJSON *json = cJSON_Parse(buffer);
-		if (json == NULL) {
-			const char *error_ptr = cJSON_GetErrorPtr();
-			if (error_ptr != NULL) {
-				printf("Error: %s\n", error_ptr);
-			}
-			cJSON_Delete(json);
-			return 1;
-		}
-
-		cJSON *rom_path_json = cJSON_GetObjectItemCaseSensitive(json, "rom_path");
-		if (cJSON_IsString(rom_path_json) && (rom_path_json->valuestring != NULL)) {
-			wordexp_t exp_result;
-			wordexp(rom_path_json->valuestring, &exp_result, 0);
-			strncpy(rom_path_data, exp_result.we_wordv[0], sizeof(rom_path_data));
-			wordfree(&exp_result);
-		}
-
-		cJSON *sdcard_image_path_json = cJSON_GetObjectItemCaseSensitive(json, "sdcard_image_path");
-		if (cJSON_IsString(sdcard_image_path_json) && (sdcard_image_path_json->valuestring != NULL)) {
-			wordexp_t exp_result;
-			wordexp(sdcard_image_path_json->valuestring, &exp_result, 0);
-			strncpy(sdcard_image_path_data, exp_result.we_wordv[0], sizeof(sdcard_image_path_data));
-			sdcard_path = sdcard_image_path_data;
-			wordfree(&exp_result);
-		}
-
-		cJSON *scale_json = cJSON_GetObjectItemCaseSensitive(json, "scale");
-		if (cJSON_IsString(scale_json)) 
+	configuration config;
+	sprintf(configfile_path, "%s/.sw/config.ini", getenv("HOME"));
+	if (ini_parse(configfile_path, handler, &config)  >=0)
+	{
+		wordexp_t exp_result;
+		if (config.rom)
 		{
-			if (! strcmp("full", scale_json->valuestring))
+			do_wordexp(config.rom, &rom_path_data);
+		}
+
+
+		if (config.sdcard)
+		{
+			do_wordexp(config.sdcard, &sdcard_image_path_data);
+			sdcard_path = sdcard_image_path_data;
+		}
+
+		if (config.scale)
+		{
+			if (! strcmp("full", config.scale))
 			{
 				properties->video.windowSize = P_VIDEO_SIZEFULLSCREEN;
 			}
-		}
-		else if (cJSON_IsNumber(scale_json))
-		{
-			if (scale_json->valueint >= 1 && scale_json->valueint <= 8)
+			else
 			{
-				window_scale = scale_json->valueint;
+				int tmp = atoi(config.scale);
+				if (tmp >= 1 && tmp <= 8)
+				{
+					window_scale = tmp;
+				}
 			}
-		} 
-
-		cJSON_Delete(json);
-    }
-
+		}
+	}
 
 	argc--;
 	argv++;

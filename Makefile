@@ -39,7 +39,7 @@ CFLAGS +=-DSSW2_0
 
 CFLAGS +=-mcmodel=large
 
-LDFLAGS= -lSDL2_image -lcjson
+LDFLAGS=
 #
 # SDL specific flags
 #
@@ -83,7 +83,7 @@ ifeq ($(CROSS_COMPILE_WINDOWS),1)
 	LDFLAGS+=-static-libgcc -static-libstdc++ -mconsole -Wl,--subsystem,console
 endif
 
-LIBS     = #-lz
+LIBS     = -lSDL2_image -linih
 TARGET   = steckschwein-emu
 
 SRCS        = $(SOURCE_FILES)
@@ -257,6 +257,6 @@ $(OUTPUT_DIR)/%.res: %.rc
 
 # WebASssembly/emscripten target
 #
-# See webassembly/WebAssembly.md
+# See webassembly/WebAstembly.md
 wasm:
 	emmake make
