@@ -93,7 +93,7 @@ void joystick_step() {
 
 }
 
-bool handle_event(SDL_Event *event) {
+bool joystick_handle_event(SDL_Event *event) {
 
 }
 

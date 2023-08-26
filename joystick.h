@@ -61,6 +61,8 @@ void joystick_step(); //do next step for handling joysticks
 
 bool handle_latch(bool latch, bool clock);  //used internally to check when to write to VIA
 
+bool joystick_handle_event(SDL_Event *event);
+
 //Used to get the 16-bit data needed to send
 uint16_t get_joystick_state(SDL_Joystick *control, enum joy_status mode);
 

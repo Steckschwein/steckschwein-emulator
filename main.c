@@ -407,8 +407,7 @@ void createSdlSurface(int width, int height, int fullscreen) {
 	int flags = SDL_SWSURFACE | (fullscreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_RESIZABLE);
 
   SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "2" );
-  SDL_Window *screen = SDL_CreateWindowAndRenderer(width * window_scale, height * window_scale, flags, &window, &renderer);
-
+  int r = SDL_CreateWindowAndRenderer(width * window_scale, height * window_scale, flags, &window, &renderer);
 	SDL_RenderSetLogicalSize(renderer, width * window_scale, height * window_scale);
 
 	// try default bpp
@@ -445,13 +444,6 @@ int createOrUpdateSdlWindow() {
 
 	int fullscreen = properties->video.windowSize == P_VIDEO_SIZEFULLSCREEN;
 
-	// SDL_RWops *src  = SDL_RWFromConstMem(schwein128_png, schwein128_png_len);
-  // FILE *fd = fopen("schwein128.png","w");
-  // if(fd!=NULL){
-  //   fwrite(&schwein128_png, sizeof(char), schwein128_png_len, fd);
-  //   fclose(fd);
-  // }
-
   if(!surface){//create
     if (fullscreen) {
       zoom = properties->video.fullscreen.width / screenWidth;
@@ -463,7 +455,6 @@ int createOrUpdateSdlWindow() {
 
     createSdlSurface(screenWidth, screenHeight, fullscreen);
     // Set the window caption
-
     #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 
     #else
@@ -559,7 +550,7 @@ static void handleEvent(SDL_Event *event) {
 		break;
 	case SDL_JOYHATMOTION:
 		/**< Joystick hat position change */
-		handle_event(event);
+		joystick_handle_event(event);
 		DEBUG("joystick hat event %x b:%x t:%x s:%x\n", event->jhat.which, event->jhat.hat, event->jbutton.type,
 				event->jbutton.state);
 		break;
@@ -588,6 +579,16 @@ int archPollEvent() {
 	return doQuit;
 }
 #endif
+
+void machineDestroy(void *machine){
+	videoDestroy(video);
+	archSoundDestroy();
+	mixerDestroy(mixer);
+	propDestroy(properties);
+	spi_rtc_destroy();
+
+	DEBUGFreeUI();
+}
 
 static int emuUseSynchronousUpdate() {
 	if (properties->emulation.syncMethod == P_EMU_SYNCIGNORE) {
@@ -1491,18 +1492,6 @@ int main(int argc, char **argv) {
 	}
 
   DEBUGFreeUI();
-
-	return 0;
-}
-
-void machineDestroy(void *machine){
-	videoDestroy(video);
-	archSoundDestroy();
-	mixerDestroy(mixer);
-	propDestroy(properties);
-	spi_rtc_destroy();
-
-	DEBUGFreeUI();
 
 	return 0;
 }
