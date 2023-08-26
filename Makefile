@@ -38,8 +38,6 @@ CFLAGS +=-DBUILD_YM3812
 CFLAGS +=-DSSW2_0
 
 CFLAGS +=-mcmodel=large
-
-LDFLAGS= -lSDL2_image
 #
 # SDL specific flags
 #
