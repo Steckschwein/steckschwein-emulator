@@ -16,6 +16,10 @@
 #include <errno.h>
 
 #include <SDL.h>
+
+#include <wordexp.h>
+#include <ini.h>
+
 #include "cpu/fake6502.h"
 #include "disasm.h"
 #include "memory.h"
@@ -152,6 +156,7 @@ int screenHeight = 240;
 
 #define EVENT_UPDATE_DISPLAY 2
 #define EVENT_UPDATE_WINDOW  3
+
 
 void machine_dump() {
 	int index = 0;
@@ -1156,10 +1161,50 @@ int parseNumber(unsigned char *s) {
 	return -1;
 }
 
+typedef struct
+{
+    const char* rom;
+    const char* sdcard;
+	const char* scale;
+} configuration;
+
+
+static int handler(void* user, const char* section, const char* name, const char* value)
+{
+    configuration* pconfig = (configuration*)user;
+
+    #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
+    if (MATCH("display", "scale")) {
+        pconfig->scale = strdup(value);
+    } else if (MATCH("paths", "rom")) {
+        pconfig->rom = strdup(value);
+    } else if (MATCH("paths", "sdcard")) {
+        pconfig->sdcard = strdup(value);
+    } else {
+        return 0;  /* unknown section/name, error */
+    }
+    return 1;
+}
+
+void do_wordexp(const char * in, char * out)
+{
+	wordexp_t exp_result;
+	wordexp(in, &exp_result, 0);
+	strcpy(out, exp_result.we_wordv[0]);
+	wordfree(&exp_result);
+}
+
+
 int main(int argc, char **argv) {
 	char rom_path_data[PATH_MAX];
 	char *rom_path = rom_path_data;
+
+	char configfile_path_data[PATH_MAX];
+	char *configfile_path = configfile_path_data;
+
 	char *bas_path = NULL;
+
+	char sdcard_image_path_data[PATH_MAX];
 	char *sdcard_path = NULL;
 
 	run_after_load = false;
@@ -1174,9 +1219,11 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "could not determine current work directory\n");
 		return 1;
 	}
+
 	// This causes the emulator to load ROM data from the executable's directory when
 	// no ROM file is specified on the command line.
 	strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
+
 
 	memory_init();
 	mixer = mixerCreate();
@@ -1184,6 +1231,40 @@ int main(int argc, char **argv) {
 	//read default properties
 	properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
 	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
+
+	configuration config;
+	sprintf(configfile_path, "%s/.sw/config.ini", getenv("HOME"));
+	if (ini_parse(configfile_path, handler, &config)  >=0)
+	{
+		wordexp_t exp_result;
+		if (config.rom)
+		{
+			do_wordexp(config.rom, &rom_path_data);
+		}
+
+
+		if (config.sdcard)
+		{
+			do_wordexp(config.sdcard, &sdcard_image_path_data);
+			sdcard_path = sdcard_image_path_data;
+		}
+
+		if (config.scale)
+		{
+			if (! strcmp("full", config.scale))
+			{
+				properties->video.windowSize = P_VIDEO_SIZEFULLSCREEN;
+			}
+			else
+			{
+				int tmp = atoi(config.scale);
+				if (tmp >= 1 && tmp <= 8)
+				{
+					window_scale = tmp;
+				}
+			}
+		}
+	}
 
 	argc--;
 	argv++;

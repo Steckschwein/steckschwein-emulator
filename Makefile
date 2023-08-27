@@ -38,6 +38,8 @@ CFLAGS +=-DBUILD_YM3812
 CFLAGS +=-DSSW2_0
 
 CFLAGS +=-mcmodel=large
+
+LDFLAGS=
 #
 # SDL specific flags
 #
@@ -81,7 +83,7 @@ ifeq ($(CROSS_COMPILE_WINDOWS),1)
 	LDFLAGS+=-static-libgcc -static-libstdc++ -mconsole -Wl,--subsystem,console
 endif
 
-LIBS     = #-lz
+LIBS     = -lSDL2_image -linih
 TARGET   = steckschwein-emu
 
 SRCS        = $(SOURCE_FILES)
@@ -226,6 +228,9 @@ clean_$(TARGET):
 cpu/tables.h cpu/mnemonics.h: cpu/buildtables.py cpu/6502.opcodes cpu/65c02.opcodes
 	cd cpu && python buildtables.py
 
+install: all 
+	install -s -m 0755 $(TARGET) ~/bin/steckschwein-emu
+
 $(OUTPUT_DIR):
 	$(ECHO) Creating directory $@...
 	$(MKDIR) $(OUTPUT_DIR)
@@ -252,6 +257,6 @@ $(OUTPUT_DIR)/%.res: %.rc
 
 # WebASssembly/emscripten target
 #
-# See webassembly/WebAssembly.md
+# See webassembly/WebAstembly.md
 wasm:
 	emmake make
