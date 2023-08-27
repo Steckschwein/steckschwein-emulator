@@ -9,51 +9,23 @@
 
 char javascript_text_data[65536];
 
-int semCount=0;
-
 int SDL_SetTimer(int interval, void* callback){
 	printf("SDL_SetTimer\n");
 }
 
-void SDL_KillThread(void *thread){
-	printf("SDL_KillThread %p\n", thread);
-}
-
-void * SDL_CreateSemaphore(int count)
-{
-	printf("SDL_CreateSemaphore %x\n", count);
-	semCount = count;
-	return &semCount;
-}
-
-int SDL_SemPost(void* s)
-{
-	printf("SDL_SemPost %p\n", s);
-	return ++semCount;
-}
-
-int SDL_SemWait(void* s)
-{
-	printf("SDL_SemWait %p\n", s);
-	return (semCount > 0 ? semCount-- : -1);
-}
-
 void j2c_reset()
 {
-	printf("SDL_KillThread\n");
 	machine_reset(-1);
 }
 
-void
-j2c_paste(char * buffer)
+void j2c_paste(char * buffer)
 {
 	memset(javascript_text_data, 0, 65536);
 	strcpy(javascript_text_data, buffer);
 	machine_paste(javascript_text_data);
 }
 
-void
-j2c_start_audio()
+void j2c_start_audio()
 {
 
 }

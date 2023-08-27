@@ -151,4 +151,8 @@ int  boardGetVideoAutodetect();
 
 void boardSetPeriodicCallback(BoardTimerCb cb, void* reference, UInt32 frequency);
 
+/////////////////////////////////////////////////////////////
+// Not board specific stuff....
+int boardGetYM3812Oversampling();
+
 #endif /* BOARD_H */

@@ -34,6 +34,7 @@
 #include "Adam.h"
 */
 #include "AudioMixer.h"
+#include "Steckschwein.h"
 /*
 #include "YM2413.h"
 #include "Y8950.h"
@@ -56,6 +57,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <pthread.h>
+#endif
 
 static int skipSync;
 static int pendingInt;
@@ -228,12 +234,12 @@ typedef struct Capture {
 
 static Capture cap;
 
-int boardCaptureHasData() {
-    return cap.endTime != 0 || cap.endTime64 != 0 || boardCaptureIsRecording();
-}
-
 int boardCaptureIsRecording() {
     return cap.state == CAPTURE_REC;
+}
+
+int boardCaptureHasData() {
+    return cap.endTime != 0 || cap.endTime64 != 0 || boardCaptureIsRecording();
 }
 
 int  boardCaptureIsPlaying() {
@@ -713,7 +719,8 @@ int boardRun(Mixer* mixer,
 
     boardSetFrequency(frequency);
 
-	boardRunning = 1;
+	  boardRunning = 1;
+
     memset(&boardInfo, 0, sizeof(boardInfo));
 
     VdpSyncMode vdpSyncMode = VDP_SYNC_50HZ;
@@ -751,8 +758,11 @@ int boardRun(Mixer* mixer,
             syncToRealClock(0, 0);
         }
 
+#ifdef __EMSCRIPTEN__
+        // emscripten_cancel_main_loop();
+        emscripten_set_main_loop_arg((em_arg_callback_func)boardInfo.run, boardInfo.cpuRef, 0, 1);
+#else
         boardInfo.run(boardInfo.cpuRef);
-
         if (periodicTimer != NULL) {
             boardTimerDestroy(periodicTimer);
             periodicTimer = NULL;
@@ -771,9 +781,9 @@ int boardRun(Mixer* mixer,
         if (stateTimer != NULL) {
             boardTimerDestroy(stateTimer);
         }
+#endif
     }
-
-    boardRunning = 0;
+    // boardRunning = 0;
 
     return success;
 }

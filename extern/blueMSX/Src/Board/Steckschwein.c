@@ -77,15 +77,15 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
      boardInfo->getRefreshRate   = getRefreshRate;
      boardInfo->getRamPage       = getRamPage;
 
-     boardInfo->run              = mos6502Execute;
-     boardInfo->stop             = mos6502StopExecution;
+     boardInfo->run              = (void (*)(void *))mos6502Execute;
+     boardInfo->stop             = (void (*)(void *))mos6502StopExecution;
 
-     boardInfo->setInt           = mos6502SetInt;
-     boardInfo->clearInt         = mos6502ClearInt;
-     boardInfo->setCpuTimeout    = mos6502SetTimeoutAt;
+     boardInfo->setInt           = (void (*)(void *))mos6502SetInt;
+     boardInfo->clearInt         = (void (*)(void *))mos6502ClearInt;
+     boardInfo->setCpuTimeout    = (void (*)(void *, UInt32))mos6502SetTimeoutAt;
 
-     boardInfo->setBreakpoint    = mos6502SetBreakpoint;
-     boardInfo->clearBreakpoint  = mos6502ClearBreakpoint;
+     boardInfo->setBreakpoint    = (void (*)(void *, UInt16))mos6502SetBreakpoint;
+     boardInfo->clearBreakpoint  = (void (*)(void *, UInt16))mos6502ClearBreakpoint;
 
      boardInfo->getTimeTrace     = getTimeTrace;
 

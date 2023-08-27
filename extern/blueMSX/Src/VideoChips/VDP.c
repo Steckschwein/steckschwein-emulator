@@ -1160,7 +1160,7 @@ static void write(VDP* vdp, UInt16 ioPort, UInt8 value)
         if (!(index & ~vdp->vramAccMask)) {
             vdp->vram[index] = value;
 
-            tryWatchpoint(DBGTYPE_VIDEO, index, value, vdp, peekVram);
+            tryWatchpoint(DBGTYPE_VIDEO, index, value, vdp, (WatchpointReadMemCallback)peekVram);
 //        printf("W(0x%.4x): %.2x\n", (vdp->vdpRegs[14] << 14) | vdp->vramAddress, value);
 //            *MAP_VRAM(vdp, (vdp->vdpRegs[14] << 14) | vdp->vramAddress) = value;
         }
@@ -2216,9 +2216,13 @@ static void videoDisable(VDP* vdp)
 void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int vramPages){
 
 //    DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
-
-    DebugCallbacks dbgCallbacks = { getDebugInfo, dbgWriteMemory, dbgWriteRegister, NULL };
-    VideoCallbacks videoCallbacks = { videoEnable, videoDisable };
+    DebugCallbacks dbgCallbacks = {
+      (void (*)(void *, struct DbgDevice *))getDebugInfo,
+      (int (*)(void *, char *, void *, int, int))dbgWriteMemory,
+      (int (*)(void *, char *, int, unsigned int))dbgWriteRegister,
+      NULL
+    };
+    VideoCallbacks videoCallbacks = { (void (*)(void *))videoEnable, (void (*)(void *))videoDisable };
     char* vdpVersionString;
     int vramSize;
     int i;
@@ -2231,14 +2235,14 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
 
     //vdp->deviceHandle = deviceManagerRegister(ROM_V9958, &callbacks, vdp);
 
-    vdp->timerDisplay       = boardTimerCreate(onDisplay, vdp);
-    vdp->timerDrawAreaStart = boardTimerCreate(onDrawAreaStart, vdp);
-    vdp->timerVStart        = boardTimerCreate(onVStart, vdp);
-    vdp->timerScrModeChange = boardTimerCreate(onScrModeChange, vdp);
-    vdp->timerHint          = boardTimerCreate(onHint, vdp);
-    vdp->timerVint          = boardTimerCreate(onVint, vdp);
-    vdp->timerDrawAreaEnd   = boardTimerCreate(onDrawAreaEnd, vdp);
-    vdp->timerTmsVint       = boardTimerCreate(onTmsVint, vdp);
+    vdp->timerDisplay       = boardTimerCreate((BoardTimerCb)onDisplay, vdp);
+    vdp->timerDrawAreaStart = boardTimerCreate((BoardTimerCb)onDrawAreaStart, vdp);
+    vdp->timerVStart        = boardTimerCreate((BoardTimerCb)onVStart, vdp);
+    vdp->timerScrModeChange = boardTimerCreate((BoardTimerCb)onScrModeChange, vdp);
+    vdp->timerHint          = boardTimerCreate((BoardTimerCb)onHint, vdp);
+    vdp->timerVint          = boardTimerCreate((BoardTimerCb)onVint, vdp);
+    vdp->timerDrawAreaEnd   = boardTimerCreate((BoardTimerCb)onDrawAreaEnd, vdp);
+    vdp->timerTmsVint       = boardTimerCreate((BoardTimerCb)onTmsVint, vdp);
 
     vdp->RefreshLine = RefreshLine0;
 
@@ -2325,40 +2329,40 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
 
     switch (vdp->vdpConnector) {
     case VDP_STECKSCHWEIN:
-        ioPortRegister(0x220, read,       write,      vdp);
-        ioPortRegister(0x221, readStatus, writeLatch, vdp);
+        ioPortRegister(0x220, (IoPortRead)read,       (IoPortWrite)write,      vdp);
+        ioPortRegister(0x221, (IoPortRead)readStatus, (IoPortWrite)writeLatch, vdp);
         if (vdp->vdpVersion == VDP_V9938 || vdp->vdpVersion == VDP_V9958) {
-            ioPortRegister(0x222, NULL, writePaletteLatch, vdp);
-            ioPortRegister(0x223, NULL, writeRegister,     vdp);
+            ioPortRegister(0x222, NULL, (IoPortWrite)writePaletteLatch, vdp);
+            ioPortRegister(0x223, NULL, (IoPortWrite)writeRegister,     vdp);
         }
         break;
 
     case VDP_MSX:
-        ioPortRegister(0x98, read,       write,      vdp);
-        ioPortRegister(0x99, readStatus, writeLatch, vdp);
+        ioPortRegister(0x98, (IoPortRead)read,       (IoPortWrite)write,      vdp);
+        ioPortRegister(0x99, (IoPortRead)readStatus, (IoPortWrite)writeLatch, vdp);
         if (vdp->vdpVersion == VDP_V9938 || vdp->vdpVersion == VDP_V9958) {
-            ioPortRegister(0x9a, NULL, writePaletteLatch, vdp);
-            ioPortRegister(0x9b, NULL, writeRegister,     vdp);
+            ioPortRegister(0x9a, NULL, (IoPortWrite)writePaletteLatch, vdp);
+            ioPortRegister(0x9b, NULL, (IoPortWrite)writeRegister,     vdp);
         }
         break;
 
     case VDP_SVI:
-        ioPortRegister(0x80, NULL,       write,      vdp); // vdp->vdpRegs vdp->vram Write
-        ioPortRegister(0x81, NULL,       writeLatch, vdp); // vdp->vdpRegs Address Latch
-        ioPortRegister(0x84, read,       NULL,       vdp); // vdp->vdpRegs vdp->vram Read
-        ioPortRegister(0x85, readStatus, NULL,       vdp); // vdp->vdpRegs Status Read
+        ioPortRegister(0x80, NULL,                   (IoPortWrite)write,      vdp); // vdp->vdpRegs vdp->vram Write
+        ioPortRegister(0x81, NULL,                   (IoPortWrite)writeLatch, vdp); // vdp->vdpRegs Address Latch
+        ioPortRegister(0x84, (IoPortRead)read,       NULL,       vdp); // vdp->vdpRegs vdp->vram Read
+        ioPortRegister(0x85, (IoPortRead)readStatus, NULL,       vdp); // vdp->vdpRegs Status Read
         break;
 
     case VDP_COLECO:
         for (i = 0xa0; i < 0xc0; i += 2) {
-            ioPortRegister(i,     read,       write,      vdp);
-            ioPortRegister(i + 1, readStatus, writeLatch, vdp);
+            ioPortRegister(i,     (IoPortRead)read,        (IoPortWrite)write,      vdp);
+            ioPortRegister(i + 1, (IoPortRead)readStatus,  (IoPortWrite)writeLatch, vdp);
         }
         break;
 
     case VDP_SG1000:
-        ioPortRegister(0xbe, read,       write,      vdp);
-        ioPortRegister(0xbf, readStatus, writeLatch, vdp);
+        ioPortRegister(0xbe, (IoPortRead)read,       (IoPortWrite)write,      vdp);
+        ioPortRegister(0xbf, (IoPortRead)readStatus, (IoPortWrite)writeLatch, vdp);
         break;
     }
 }

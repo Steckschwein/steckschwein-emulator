@@ -129,27 +129,27 @@ struct YM3812* ym3812Create(Mixer* mixer) {
 
 	YM3812* ym3812 = (YM3812*)calloc(1, sizeof(YM3812));
 
-    ym3812->mixer = mixer;
-    ym3812->timerRunning1 = 0;
-    ym3812->timerRunning2 = 0;
+  ym3812->mixer = mixer;
+  ym3812->timerRunning1 = 0;
+  ym3812->timerRunning2 = 0;
 
-    ym3812->timer1 = boardTimerCreate(onTimeout1, ym3812);
-    ym3812->timer2 = boardTimerCreate(onTimeout2, ym3812);
+  ym3812->timer1 = boardTimerCreate(onTimeout1, ym3812);
+  ym3812->timer2 = boardTimerCreate(onTimeout2, ym3812);
 
 //    ym3812->ykIo = ykIoCreate();
 
-    ym3812->handle = mixerRegisterChannel(mixer, MIXER_CHANNEL_MSXAUDIO, 0, ym3812Sync, ym3812SetSampleRate, ym3812);
+  ym3812->handle = mixerRegisterChannel(mixer, MIXER_CHANNEL_MSXAUDIO, 0, ym3812Sync, ym3812SetSampleRate, ym3812);
 
-    ym3812->opl = OPLCreate(OPL_TYPE_YM3812, FREQUENCY, SAMPLERATE, 256, ym3812);
-    OPLSetOversampling(ym3812->opl, boardGetYM3812Oversampling());
-    OPLResetChip(ym3812->opl);
+  ym3812->opl = OPLCreate(OPL_TYPE_YM3812, FREQUENCY, SAMPLERATE, 256, ym3812);
+  OPLSetOversampling(ym3812->opl, boardGetYM3812Oversampling());
+  OPLResetChip(ym3812->opl);
 
 	ym3812->rate = mixerGetSampleRate(mixer);
 
-	ioPortRegister(PORT_ADDR, ym3812Read, ym3812Write, ym3812);
-	ioPortRegister(PORT_DATA, ym3812Read, ym3812Write, ym3812);
+	ioPortRegister(PORT_ADDR, (IoPortRead*)ym3812Read, (IoPortWrite*)ym3812Write, ym3812);
+	ioPortRegister(PORT_DATA, (IoPortRead*)ym3812Read, (IoPortWrite*)ym3812Write, ym3812);
 
-    return ym3812;
+  return ym3812;
 }
 
 void ym3812Reset(YM3812* ym3812)

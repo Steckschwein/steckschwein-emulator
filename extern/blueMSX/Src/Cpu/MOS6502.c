@@ -5,6 +5,11 @@
 
 #include <stddef.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <pthread.h>
+#endif
+
 MOS6502* mos6502create(MOS6502TimerCb timerCb) {
 	MOS6502 *mos6502 = malloc(sizeof(MOS6502));
 	mos6502->systemTime = 0;
@@ -60,6 +65,12 @@ void mos6502Execute(MOS6502 *mos6502) {
 		step6502();
 		mos6502->systemTime = clockticks6502;
 		DEBUG ("mos6502Execute %p %x\n", mos6502, mos6502->systemTime);
+
+#ifdef __EMSCRIPTEN__ // cooperative multi task
+    emscripten_log(EM_LOG_CONSOLE, "mos6502Execute");
+    return;
+#endif
+
 	}
 }
 
