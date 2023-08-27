@@ -10,7 +10,3 @@ RUN git clone https://github.com/emscripten-core/emsdk.git && \
   ./emsdk install latest && \
   ./emsdk activate latest
 
-RUN addgroup -S schwein && adduser -S schwein -G schwein
-USER schwein
-WORKDIR /home/schwein
-
