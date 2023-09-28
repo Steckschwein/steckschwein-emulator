@@ -112,7 +112,7 @@ void uart_xmodem_write_crc(uint8_t reg, uint8_t val){
 
 void uart_xmodem_write_ack(uint8_t reg, uint8_t val){
   if(val == XMODEM_ACK){
-    if(p_prg_img_ix == (p_prg_img + prg_size)){//end of prg reached...
+    if(p_prg_img_ix == (p_prg_img + prg_size + 2)){//end of prg reached?
       protocol_ix++;// proceed to next protocol step, send EOT
     }else{
       protocol_ix = 1;//if ack, go on with next block set to block_start
@@ -334,7 +334,7 @@ uint8_t uart_read_data_bytes(uint8_t r, uint8_t **p_data, uint16_t *c) {
 		return lsr_DR;
 	} else if (r == UART_REG_RXTX) {
     uint8_t b = 0;
-    if(*p_data != (p_prg_img + prg_size)){//end of prg reached?
+    if(*p_data != (p_prg_img + prg_size + 2)){//end of prg reached?
 		  b = *(*p_data)++; //inc given ptr. if byte was read
     }
     if (--(*c) == 0) {
