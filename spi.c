@@ -133,8 +133,8 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 				}
 			}
 
-			if (scancodes[keyCode]) {
-				uint8_t i = (index >= 4 ? 3 : index >= 2 ? 2 : index);
+      uint8_t i = (index >= 4 ? 3 : index >= 2 ? 2 : index);
+			if (scancodes[keyCode] && scancodes[keyCode][i]) {
 				last_keycode = scancodes[keyCode][i];
 			} else {
 				last_keycode = keyCode; //unmapped
