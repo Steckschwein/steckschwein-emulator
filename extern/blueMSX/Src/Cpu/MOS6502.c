@@ -26,7 +26,8 @@ void mos6502SetInt(MOS6502 *mos6502) {
 }
 
 void mos6502Execute(MOS6502 *mos6502) {
-    static SystemTime lastRefreshTime = 0;
+
+  static SystemTime lastRefreshTime = 0;
 
 	while (!mos6502->terminate) {
 
@@ -35,10 +36,10 @@ void mos6502Execute(MOS6502 *mos6502) {
 				mos6502->timerCb(NULL);
 			}
 		}
-        if (mos6502->systemTime - lastRefreshTime > 222 * 3) {
-            lastRefreshTime = mos6502->systemTime;
-            mos6502->systemTime += 20 * 3;
-        }
+    if (mos6502->systemTime - lastRefreshTime > 222 * 3) {
+        lastRefreshTime = mos6502->systemTime;
+        mos6502->systemTime += 20 * 3;
+    }
 
 #ifdef ENABLE_BREAKPOINTS
 		if (mos6502->breakpointCount > 0) {

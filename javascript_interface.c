@@ -38,8 +38,7 @@ int SDL_SemWait(void* s)
 	return (semCount > 0 ? semCount-- : -1);
 }
 
-void
-j2c_reset()
+void j2c_reset()
 {
 	printf("SDL_KillThread\n");
 	machine_reset(-1);

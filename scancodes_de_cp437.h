@@ -33,17 +33,18 @@
 #define FUNC_F11     0xFB
 #define FUNC_F12     0xFC
 
-#include <SDL_keysym.h>
+#include <SDL_keycode.h>
 
 const unsigned char scancodes[][4] = {
 
 	[SDLK_BACKSPACE]	= {8, 8, 0, 8},
 	[SDLK_TAB]			= { 9, 9 ,0 ,9},
-	[SDLK_CLEAR]		= {12, 12, 0, 12},
+	[SDL_SCANCODE_CLEAR]		= {12, 12, 0, 12},
 	[SDLK_RETURN]		= {13, 13,0,13},
-	[SDLK_PAUSE]		= {19,19,0,19},
 	[SDLK_ESCAPE]		= {27,27,0,27},
+	[SDL_SCANCODE_PAUSE]		= {19,19,0,19},
 
+	[SDLK_0] = {'0', '=', 0, '}'} ,
 	[SDLK_1] = {'1', '!', 0, 0} ,
 	[SDLK_2] = {'2', '"', 0, 0} ,
 	[SDLK_3] = {'3', 0x15, 0, 0} , //�
@@ -53,7 +54,6 @@ const unsigned char scancodes[][4] = {
 	[SDLK_7] = {'7', '/', 0, '{'} ,
 	[SDLK_8] = {'8', '(', 0, '['} ,
 	[SDLK_9] = {'9', ')', 0, ']'} ,
-	[SDLK_0] = {'0', '=', 0, '}'} ,
 
 	[SDLK_SPACE] = {' ', ' ', 0, 0} ,
 
@@ -76,7 +76,7 @@ const unsigned char scancodes[][4] = {
 	[SDLK_q] = {'q', 'Q', 0, '@'},
 	[SDLK_r] = {'r', 'R', 0, 0} ,
 	[SDLK_s] = {'s', 'S', 0, 0} ,
-	[SDLK_t] = {'t', 'T', 0, 0} ,
+  [SDLK_t] = {'t', 'T', 0, 0} ,
 	[SDLK_u] = {'u', 'U', 0, 0} ,
 	[SDLK_v] = {'v', 'V', 0, 0} ,
 	[SDLK_w] = {'w', 'W', 0, 0} ,
@@ -93,5 +93,5 @@ const unsigned char scancodes[][4] = {
 	[228] = {0xe4, 0xc4, 0, 0},// ä
 	[246] = {0xf6, 0xd6, 0, 0},// ö
 	[252] = {0xfc, 0xdc, 0, 0},// ü
-	[SDLK_WORLD_63] = {0xdf, '?', 0, '\\'}// ß
+	[223] = {0xdf, '?', 0, '\\'}// ß
 };

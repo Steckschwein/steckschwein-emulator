@@ -13,9 +13,6 @@
 
 #include "scancodes_de_cp437.h"
 
-#include <SDL_keysym.h>
-#include <SDL_events.h>
-
 // VIA
 // PB0 SPICLK
 // PB1 SS1 SDCARD
@@ -28,10 +25,6 @@
 // CB1 SPICLK (=PB0)
 // CB2 MISO
 
-void spi_init() {
-
-}
-
 volatile uint8_t last_keycode = 0;
 
 uint8_t spi_handle_keyboard(uint8_t inbyte) {
@@ -42,43 +35,44 @@ uint8_t spi_handle_keyboard(uint8_t inbyte) {
 
 	if (inbyte != 0 && cmd == 0) {
 		switch (inbyte) {
-		case 0xff: //KBD_CMD_RESET:
-		case 0xf4: //KBD_CMD_SCAN_ON:
-		case 0xf5: //KBD_CMD_SCAN_OFF:
-		case 0xf3: //KBD_CMD_TYPEMATIC:
-		case 0xed: //KBD_CMD_LEDS:
-			cmd = inbyte;
-			outbyte = 0xfa; //ack KBD_CMD_ACK
-			break;
-		case 0x01: // KBD_HOST_CMD_KBD_STATUS
-		case 0x02: // KBD_HOST_CMD_CMD_STATUS
-			outbyte = 0xaa; //cmd eot - TODO emulate command state response - we always send 0xaa to signal end of transmission
-			break;
+      case 0xff: //KBD_CMD_RESET:
+      case 0xf4: //KBD_CMD_SCAN_ON:
+      case 0xf5: //KBD_CMD_SCAN_OFF:
+      case 0xf3: //KBD_CMD_TYPEMATIC:
+      case 0xed: //KBD_CMD_LEDS:
+        cmd = inbyte;
+        outbyte = 0xfa; //ack KBD_CMD_ACK
+        break;
+      case 0x01: // KBD_HOST_CMD_KBD_STATUS
+      case 0x02: // KBD_HOST_CMD_CMD_STATUS
+        outbyte = 0xaa; //cmd eot - TODO emulate command state response - we always send 0xaa to signal end of transmission
+        break;
 		}
 	} else {
 		switch (cmd) {
-		case 0xf3: //KBD_CMD_TYPEMATIC:
-		{
-			unsigned int delay = (((inbyte >> 5) & 0x03) + 1) * 250;
-			unsigned int interval = 1000 / (30 - (inbyte & 0x1c));
+      case 0xf3: //KBD_CMD_TYPEMATIC:
+      {
+        unsigned int delay = (((inbyte >> 5) & 0x03) + 1) * 250;
+        unsigned int interval = 1000 / (30 - (inbyte & 0x1c));
 
-			if (SDL_EnableKeyRepeat(delay, interval)) {
-				fprintf(stderr, "could not set keyboard delay/rate\n");
-				outbyte = 0xff;
-			} else {
-				outbyte = 0xfa;
-			}
-			break;
-		}
-		default: //output captured keycode
-			outbyte = last_keycode;
-			last_keycode = 0;
-			boardClearInt(0x08);
-		}
+        // if (SDL_EnableKeyRepeat(delay, interval)) {
+        //   fprintf(stderr, "could not set keyboard delay/rate!\n");
+        //   outbyte = 0xff;
+        // } else {
+        outbyte = 0xfa;
+        // }
+        break;
+      }
+      default: //output captured keycode
+        outbyte = last_keycode;
+        last_keycode = 0;
+        boardClearInt(0x08);
+    }
 		cmd = 0;
 	}
 	return outbyte;
 }
+
 
 void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 
@@ -87,7 +81,7 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 
 	bool is_up = (keyBrdEvent->type == SDL_KEYUP);
 
-	SDLKey keyCode = keyBrdEvent->keysym.sym;
+	SDL_Keycode keyCode = keyBrdEvent->keysym.sym;
 	switch (keyCode) {
 	case SDLK_LCTRL:
 	case SDLK_RCTRL:
@@ -147,6 +141,11 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 			}
 		}
 	}
+#ifdef EMU_AVR_KEYBOARD_IRQ
+  if (last_keycode != 0) {
+    boardSetInt(0x08);
+	}
+#endif
 }
 
 void dispatch_device(uint8_t port) {
@@ -168,12 +167,10 @@ void dispatch_device(uint8_t port) {
 		spi_sdcard_select();
 	} else if (!last_key && is_keyboard) {
 		bit_counter = 0;
-		last_key = 0;
 	} else if (!last_rtc && is_rtc) {
 		bit_counter = 0;
 		spi_rtc_select();
-	}
-	if (last_rtc && !is_rtc) {
+	}else if (last_rtc && !is_rtc) {
 		spi_rtc_deselect();
 	}
 
@@ -239,11 +236,8 @@ void dispatch_device(uint8_t port) {
 }
 
 void spi_step() {
+
 	uint8_t port = via1_pb_get_out();	//PB
 
 	dispatch_device(port);
-
-	if (last_keycode != 0) {
-		boardSetInt(0x08);
-	}
 }

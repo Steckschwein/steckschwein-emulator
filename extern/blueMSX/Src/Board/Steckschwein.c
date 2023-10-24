@@ -17,7 +17,7 @@ static void destroy() {
     ioPortUnregister(0x2e);
     deviceManagerDestroy();
     */
-    mos6502Destroy(mos6502);
+  mos6502Destroy(mos6502);
 }
 
 static void reset()

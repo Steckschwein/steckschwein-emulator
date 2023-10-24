@@ -25,8 +25,8 @@
 **
 ******************************************************************************
 */
-#include "ArchEvent.h"
 #include "glue.h"
+#include "ArchEvent.h"
 #include <SDL.h>
 #include <stdlib.h>
 
@@ -104,7 +104,7 @@ void archSemaphoreDestroy(void* semaphore)
     Semaphore* s = (Semaphore*)semaphore;
 
     DEBUG ("destroy %p %p\n", s, s->semaphore);
-    
+
     SDL_DestroySemaphore(s->semaphore);
     free(s);
 }
@@ -119,5 +119,6 @@ void archSemaphoreSignal(void* semaphore)
 void archSemaphoreWait(void* sem, int timeout){
 
    Semaphore* s = (Semaphore*)sem;
+
    while (-1 == SDL_SemWait(s->semaphore));
 }

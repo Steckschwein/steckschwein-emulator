@@ -1,0 +1,22 @@
+name: Build and Test Steckschwein-Emulator
+
+on:
+  push:
+    branches: [ "master", "featuew/*", "bugfix/*" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    container:
+      image: steckschwein/buildenv-emu:v0.0.1
+      options: --user root
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: build
+      run: make
