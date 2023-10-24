@@ -31,7 +31,7 @@ bool joystick_init() {
 			joystick1 = SDL_JoystickOpen(i);
 			if (joystick1) {
 				joystick1_number = i;
-				fprintf(stdout, "Use game controller %i: %s for joystick port 1\n", i, SDL_JoystickName(i));
+				fprintf(stdout, "Use game controller %i: '%s' for joystick port 1\n", i, SDL_JoystickName(joystick1));
 				break;
 			} else {
 				fprintf(stderr, "Could not open game controller %i: %s\n", i, SDL_GetError());
@@ -43,7 +43,7 @@ bool joystick_init() {
 			if (joystick1_number != i) {
 				joystick2 = SDL_JoystickOpen(i);
 				if (joystick2) {
-					fprintf(stdout, "Use game controller %i: %s for joystick port 2\n", i, SDL_JoystickName(i));
+  				fprintf(stdout, "Use game controller %i: '%s' for joystick port 1\n", i, SDL_JoystickName(joystick2));
 					break;
 				} else {
 					fprintf(stderr, "Could not open game controller %i: %s\n", i, SDL_GetError());
@@ -93,7 +93,7 @@ void joystick_step() {
 
 }
 
-bool handle_event(SDL_Event *event) {
+bool joystick_handle_event(SDL_Event *event) {
 
 }
 

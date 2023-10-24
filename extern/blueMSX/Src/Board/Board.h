@@ -43,7 +43,7 @@ typedef struct {
     int  casetteCount;
     */
     void* cpuRef;
-    
+
     void   (*destroy)();
     void   (*softReset)();
 /*
@@ -75,6 +75,19 @@ typedef struct {
 static BoardInfo boardInfo;
 
 void boardInit(UInt32* systemTime);
+
+int boardRun(//Machine* machine,
+             //BoardDeviceInfo* deviceInfo,
+             Mixer* mixer,
+             //char* stateFile,
+             int frequency,
+             int reversePeriod,
+             int reverseBufferCnt,
+             int (*syncCallback)(int, int));
+
+int boardRewind();
+int boardRewindOne();
+
 void boardReset();
 
 UInt64 boardSystemTime64();
@@ -137,5 +150,9 @@ void boardSetVideoAutodetect(int value);
 int  boardGetVideoAutodetect();
 
 void boardSetPeriodicCallback(BoardTimerCb cb, void* reference, UInt32 frequency);
+
+/////////////////////////////////////////////////////////////
+// Not board specific stuff....
+int boardGetYM3812Oversampling();
 
 #endif /* BOARD_H */

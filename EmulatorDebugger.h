@@ -16,6 +16,7 @@
 
 extern int showDebugOnRender;
 
+int DEBUGHandleEvent(SDL_Event *event);
 void DEBUGRenderDisplay(int width,int height);
 void DEBUGBreakToDebugger(void);
 int  DEBUGGetCurrentStatus(void);

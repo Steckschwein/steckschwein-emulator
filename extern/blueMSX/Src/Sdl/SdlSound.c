@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -100,7 +100,7 @@ static Int32 soundWrite(SdlSound* dummy, Int16 *buffer, UInt32 count)
     return 0;
 }
 
-void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 channels) 
+void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 channels)
 {
 	SDL_AudioSpec desired;
 	SDL_AudioSpec audioSpec;
@@ -122,7 +122,7 @@ void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 c
 #endif
 	desired.callback = soundCallback;
 	desired.userdata = NULL;
-    
+
 	if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
         return;
     }
@@ -139,10 +139,10 @@ void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 c
     sdlSound.started = 1;
     sdlSound.mixer = mixer;
     sdlSound.bytesPerSample = audioSpec.format == AUDIO_U8 || audioSpec.format == AUDIO_S8 ? 1 : 2;
-    
+
     mixerSetStereo(mixer, channels == 2);
-    mixerSetWriteCallback(mixer, soundWrite, NULL, audioSpec.size / sdlSound.bytesPerSample);
-    
+    mixerSetWriteCallback(mixer, (MixerWriteCallback)soundWrite, NULL, audioSpec.size / sdlSound.bytesPerSample);
+
 	SDL_PauseAudio(0);
 }
 
@@ -155,12 +155,12 @@ void archSoundDestroy(void)
     sdlSound.started = 0;
 
 }
-void archSoundResume(void) 
+void archSoundResume(void)
 {
 	SDL_PauseAudio(0);
 }
 
-void archSoundSuspend(void) 
+void archSoundSuspend(void)
 {
 	SDL_PauseAudio(1);
 }

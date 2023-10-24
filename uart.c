@@ -52,8 +52,8 @@ int prg_override_start;
 
 struct serial_state {
 	uint16_t bytes;
-	uint8_t (*read)(uint8_t r);
-	uint8_t (*write)(uint8_t r, uint8_t v);
+	uint8_t (*read)(uint8_t reg);
+	void (*write)(uint8_t reg, uint8_t val);
 };
 
 uint8_t xmodem_blocknr;
@@ -97,6 +97,96 @@ unsigned char protocol_ix = 0;
 
 uint8_t xmodem_crc16_tab_l[256];
 uint8_t xmodem_crc16_tab_h[256];
+
+
+void reset_upload() {
+	protocol_ix = 0;
+	if (p_prg_img != NULL) {
+		free(p_prg_img); //free
+		p_prg_img = NULL;
+		p_prg_img_ix = NULL;
+	}
+}
+
+long getFilesize(FILE *file){
+	long filesize = -1L;
+	if(fseek(file, 0L, SEEK_END) == EOF){
+		fprintf(stderr, "error fseek %s\n", strerror(errno));
+	}else{
+		filesize = ftell(file);
+	}
+	return filesize;
+}
+
+void readProgram(int prg_override_start, FILE *prg_file) {
+
+	long filesize = getFilesize(prg_file);
+	if (filesize == -1L) {
+		fprintf(stderr, "invalid file size %s\n", strerror(errno));
+	} else {
+		if(fseek(prg_file, 0L, SEEK_SET) == EOF){
+			fprintf(stderr, "error fseek %s\n", strerror(errno));
+			return;
+		}
+		uint8_t offs = (prg_override_start == -1 ? 2 : 0);
+		prg_size = filesize - offs; //-offs byte, if start address is given as argument
+		p_prg_size = &prg_size;
+		p_prg_img = p_prg_img_ix = malloc(2 + prg_size); //align memory for prg image, we always allocate 2 byte start address + prg. image size
+		if (p_prg_img == NULL) {
+			fprintf(stderr, "out of memory\n");
+			return;
+		}
+		if (prg_override_start != -1) {
+			*(p_prg_img + 0) = prg_override_start & 0xff;
+			*(p_prg_img + 1) = prg_override_start >> 8 & 0xff;
+		}
+		size_t r = fread((p_prg_img + (2 - offs)), 1, filesize, prg_file);
+		if (r) {
+			printf("uart() load program file for address space 0x%04x-0x%04x (size 0x%04x / read 0x%04x)\n",
+        *(p_prg_img + 0) | *(p_prg_img + 1) << 8,
+				(*(p_prg_img + 0) | *(p_prg_img + 1) << 8) + prg_size,
+				prg_size, r);
+		} else {
+			fprintf(stderr, "uart() load file start 0x%04x size 0x%04x error: %s\n",
+					(*(p_prg_img + 0) | *(p_prg_img + 1) << 8), strerror(errno));
+			free(p_prg_img);
+			p_prg_img = NULL;
+		}
+	}
+}
+
+void loadFile(){
+
+    if(prg_path == NULL)
+      return;
+
+#if __MINGW32_NO__
+		struct __stat64 attrib;
+		int rc = __stat64(prg_path, &attrib);
+#else
+		struct stat attrib;
+		int rc = stat(prg_path, &attrib);
+#endif
+		if (rc) {
+			fprintf(stderr, "could not stat file %s, error was: %s\n", prg_path, strerror(errno));
+      reset_upload();
+			return;
+		}
+		if (uart_checkUploadLmf && uart_file_lmf == attrib.st_mtime) {
+			DEBUG (stdout, "skip upload of file %s, file has not changed\n", prg_path);
+			return;
+		}
+		uart_file_lmf = attrib.st_mtime;
+		FILE *prg_file = fopen(prg_path, "rb");
+		if (!prg_file) {
+			fprintf(stderr, "uart upload read start address - cannot open file %s, error %s\n", prg_path,
+					strerror(errno));
+			reset_upload();
+			return;
+		}
+		readProgram(prg_override_start, prg_file);
+		fclose(prg_file);
+}
 
 void uart_xmodem_write_crc(uint8_t reg, uint8_t val){
 	static int c = 3;
@@ -201,95 +291,6 @@ uint8_t uart_xmodem_read_block_data(uint8_t reg){
     return b;
   }
   return XMODEM_NAK;
-}
-
-long getFilesize(FILE *file){
-	long filesize = -1L;
-	if(fseek(file, 0L, SEEK_END) == EOF){
-		fprintf(stderr, "error fseek %s\n", strerror(errno));
-	}else{
-		filesize = ftell(file);
-	}
-	return filesize;
-}
-
-void readProgram(int prg_override_start, FILE *prg_file) {
-
-	long filesize = getFilesize(prg_file);
-	if (filesize == -1L) {
-		fprintf(stderr, "invalid file size %s\n", strerror(errno));
-	} else {
-		if(fseek(prg_file, 0L, SEEK_SET) == EOF){
-			fprintf(stderr, "error fseek %s\n", strerror(errno));
-			return;
-		}
-		uint8_t offs = (prg_override_start == -1 ? 2 : 0);
-		prg_size = filesize - offs; //-offs byte, if start address is given as argument
-		p_prg_size = &prg_size;
-		p_prg_img = p_prg_img_ix = malloc(2 + prg_size); //align memory for prg image, we always allocate 2 byte start address + prg. image size
-		if (p_prg_img == NULL) {
-			fprintf(stderr, "out of memory\n");
-			return;
-		}
-		if (prg_override_start != -1) {
-			*(p_prg_img + 0) = prg_override_start & 0xff;
-			*(p_prg_img + 1) = prg_override_start >> 8 & 0xff;
-		}
-		size_t r = fread((p_prg_img + (2 - offs)), 1, filesize, prg_file);
-		if (r) {
-			printf("uart() load program file for address space 0x%04x-0x%04x (size 0x%04x / read 0x%04x)\n",
-        *(p_prg_img + 0) | *(p_prg_img + 1) << 8,
-				(*(p_prg_img + 0) | *(p_prg_img + 1) << 8) + prg_size,
-				prg_size, r);
-		} else {
-			fprintf(stderr, "uart() load file start 0x%04x size 0x%04x error: %s\n",
-					(*(p_prg_img + 0) | *(p_prg_img + 1) << 8), strerror(errno));
-			free(p_prg_img);
-			p_prg_img = NULL;
-		}
-	}
-}
-
-void loadFile(){
-
-    if(prg_path == NULL)
-      return;
-
-#if __MINGW32_NO__
-		struct __stat64 attrib;
-		int rc = __stat64(prg_path, &attrib);
-#else
-		struct stat attrib;
-		int rc = stat(prg_path, &attrib);
-#endif
-		if (rc) {
-			fprintf(stderr, "could not stat file %s, error was: %s\n", prg_path, strerror(errno));
-      reset_upload();
-			return;
-		}
-		if (uart_checkUploadLmf && uart_file_lmf == attrib.st_mtime) {
-			DEBUG (stdout, "skip upload of file %s, file has not changed\n", prg_path);
-			return;
-		}
-		uart_file_lmf = attrib.st_mtime;
-		FILE *prg_file = fopen(prg_path, "rb");
-		if (!prg_file) {
-			fprintf(stderr, "uart upload read start address - cannot open file %s, error %s\n", prg_path,
-					strerror(errno));
-			reset_upload();
-			return;
-		}
-		readProgram(prg_override_start, prg_file);
-		fclose(prg_file);
-}
-
-void reset_upload() {
-	protocol_ix = 0;
-	if (p_prg_img != NULL) {
-		free(p_prg_img); //free
-		p_prg_img = NULL;
-		p_prg_img_ix = NULL;
-	}
 }
 
 void uart_init(unsigned char *p_prg_path, int p_prg_override_start, bool checkLmf) {

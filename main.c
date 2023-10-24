@@ -12,13 +12,8 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <limits.h>
-
 #include <errno.h>
-
 #include <SDL.h>
-
-#include <wordexp.h>
-#include <ini.h>
 
 #include "cpu/fake6502.h"
 #include "disasm.h"
@@ -47,6 +42,11 @@
 #include <emscripten.h>
 #include <pthread.h>
 #endif
+#ifndef __EMSCRIPTEN__
+#include <wordexp.h>
+#include <ini.h>
+#endif
+
 
 void* emulator_loop(void *param);
 void emscripten_main_loop(void);
@@ -412,8 +412,7 @@ void createSdlSurface(int width, int height, int fullscreen) {
 	int flags = SDL_SWSURFACE | (fullscreen ? SDL_WINDOW_FULLSCREEN : SDL_WINDOW_RESIZABLE);
 
   SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "2" );
-  SDL_Window *screen = SDL_CreateWindowAndRenderer(width * window_scale, height * window_scale, flags, &window, &renderer);
-
+  int r = SDL_CreateWindowAndRenderer(width * window_scale, height * window_scale, flags, &window, &renderer);
 	SDL_RenderSetLogicalSize(renderer, width * window_scale, height * window_scale);
 
 	// try default bpp
@@ -450,13 +449,6 @@ int createOrUpdateSdlWindow() {
 
 	int fullscreen = properties->video.windowSize == P_VIDEO_SIZEFULLSCREEN;
 
-	// SDL_RWops *src  = SDL_RWFromConstMem(schwein128_png, schwein128_png_len);
-  // FILE *fd = fopen("schwein128.png","w");
-  // if(fd!=NULL){
-  //   fwrite(&schwein128_png, sizeof(char), schwein128_png_len, fd);
-  //   fclose(fd);
-  // }
-
   if(!surface){//create
     if (fullscreen) {
       zoom = properties->video.fullscreen.width / screenWidth;
@@ -468,7 +460,6 @@ int createOrUpdateSdlWindow() {
 
     createSdlSurface(screenWidth, screenHeight, fullscreen);
     // Set the window caption
-
     #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 
     #else
@@ -564,7 +555,7 @@ static void handleEvent(SDL_Event *event) {
 		break;
 	case SDL_JOYHATMOTION:
 		/**< Joystick hat position change */
-		handle_event(event);
+		joystick_handle_event(event);
 		DEBUG("joystick hat event %x b:%x t:%x s:%x\n", event->jhat.which, event->jhat.hat, event->jbutton.type,
 				event->jbutton.state);
 		break;
@@ -593,6 +584,16 @@ int archPollEvent() {
 	return doQuit;
 }
 #endif
+
+void machineDestroy(void *machine){
+	videoDestroy(video);
+	archSoundDestroy();
+	mixerDestroy(mixer);
+	propDestroy(properties);
+	spi_rtc_destroy();
+
+	DEBUGFreeUI();
+}
 
 static int emuUseSynchronousUpdate() {
 	if (properties->emulation.syncMethod == P_EMU_SYNCIGNORE) {
@@ -761,6 +762,9 @@ static void emulatorThread() {
 		reversePeriod = 50;
 		reverseBufferCnt = properties->emulation.reverseMaxTime * 1000 / reversePeriod;
 	}
+#ifdef __EMSCRIPTEN__
+  emscripten_log(EM_LOG_CONSOLE, "emulatorThread");
+#endif
 	success = boardRun(mixer, frequency, reversePeriod, reverseBufferCnt, WaitForSync);
 
 	//the emu loop
@@ -774,7 +778,6 @@ static void emulatorThread() {
 	if (!success) {
 		emulationStartFailure = 1;
 	}
-
 	archEventSet(emuStartEvent);
 }
 
@@ -874,82 +877,6 @@ void emulatorSetState(EmuState state) {
 	emuState = state;
 }
 
-void emulatorStart(const char *stateName) {
-
-	dbgEnable();
-
-//	archEmulationStartNotification();
-
-	emulatorResume();
-
-	emuExitFlag = 0;
-
-	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MOONSOUND, 1);
-	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_YAMAHA_SFG, 1);
-	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXAUDIO, 1);
-	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXMUSIC, 1);
-	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_SCC, 1);
-
-	properties->emulation.pauseSwitch = 0;
-//	switchSetPause(properties->emulation.pauseSwitch);
-
-#ifndef NO_TIMERS
-#ifndef WII
-	emuSyncEvent = archEventCreate(0);
-#endif
-	emuStartEvent = archEventCreate(0);
-#ifndef WII
-	emuTimer = archCreateTimer(emulatorGetSyncPeriod(), timerCallback);
-#endif
-#endif
-	//setDeviceInfo(&deviceInfo);
-
-//    inputEventReset();
-
-	archSoundResume();
-//    archMidiEnable(1);
-
-	emuState = EMU_PAUSED;
-	emulationStartFailure = 0;
-	//strcpy(emuStateName, stateName ? stateName : "");
-
-	//clearlog();
-
-#if SINGLE_THREADED
-	emuState = EMU_RUNNING;
-	emulatorThread();
-
-	if (emulationStartFailure) {
-		archEmulationStopNotification();
-		emuState = EMU_STOPPED;
-		archEmulationStartFailure();
-	}
-#else
-	emuThread = archThreadCreate(emulatorThread, THREAD_PRIO_HIGH);
-
-	archEventWait(emuStartEvent, 1000);
-
-	if (emulationStartFailure) {
-		archEmulationStopNotification();
-		emuState = EMU_STOPPED;
-		archEmulationStartFailure();
-	}
-	if (emuState != EMU_STOPPED) {
-		/*
-		 getDeviceInfo(&deviceInfo);
-
-		 boardSetYm2413Oversampling(properties->sound.chip.ym2413Oversampling);
-		 boardSetY8950Oversampling(properties->sound.chip.y8950Oversampling);
-		 boardSetMoonsoundOversampling(properties->sound.chip.moonsoundOversampling);
-
-		 strcpy(properties->emulation.machineName, machine->name);
-		 */
-		debuggerNotifyEmulatorStart();
-
-		emuState = EMU_RUNNING;
-	}
-#endif
-}
 
 void emulatorStop() {
 	if (emuState == EMU_STOPPED) {
@@ -1160,10 +1087,11 @@ int parseNumber(unsigned char *s) {
 	return -1;
 }
 
+#ifndef __EMSCRIPTEN__
 typedef struct
 {
-    const char* rom;
-    const char* sdcard;
+  const char* rom;
+  const char* sdcard;
 	const char* scale;
 } configuration;
 
@@ -1192,7 +1120,83 @@ void do_wordexp(const char * in, char * out)
 	strcpy(out, exp_result.we_wordv[0]);
 	wordfree(&exp_result);
 }
+#endif
 
+void emulatorStart(const char *stateName) {
+
+	dbgEnable();
+
+//	archEmulationStartNotification();
+
+	emulatorResume();
+
+	emuExitFlag = 0;
+
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MOONSOUND, 1);
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_YAMAHA_SFG, 1);
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXAUDIO, 1);
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_MSXMUSIC, 1);
+	mixerIsChannelTypeActive(mixer, MIXER_CHANNEL_SCC, 1);
+
+	properties->emulation.pauseSwitch = 0;
+//	switchSetPause(properties->emulation.pauseSwitch);
+
+#ifndef NO_TIMERS
+#ifndef WII
+	emuSyncEvent = archEventCreate(0);
+#endif
+	emuStartEvent = archEventCreate(0);
+#ifndef WII
+	emuTimer = archCreateTimer(emulatorGetSyncPeriod(), timerCallback);
+#endif
+#endif
+
+	//setDeviceInfo(&deviceInfo);
+//    inputEventReset();
+	archSoundResume();
+//    archMidiEnable(1);
+
+	emuState = EMU_PAUSED;
+	emulationStartFailure = 0;
+	//strcpy(emuStateName, stateName ? stateName : "");
+
+	//clearlog();
+
+#if SINGLE_THREADED
+	emuState = EMU_RUNNING;
+	emulatorThread();
+
+	if (emulationStartFailure) {
+		archEmulationStopNotification();
+		emuState = EMU_STOPPED;
+		archEmulationStartFailure();
+	}
+#else
+	emuThread = archThreadCreate(emulatorThread, THREAD_PRIO_HIGH);
+
+	archEventWait(emuStartEvent, 1000);
+
+	if (emulationStartFailure) {
+		archEmulationStopNotification();
+		emuState = EMU_STOPPED;
+		archEmulationStartFailure();
+	}
+	if (emuState != EMU_STOPPED) {
+		/*
+		 getDeviceInfo(&deviceInfo);
+
+		 boardSetYm2413Oversampling(properties->sound.chip.ym2413Oversampling);
+		 boardSetY8950Oversampling(properties->sound.chip.y8950Oversampling);
+		 boardSetMoonsoundOversampling(properties->sound.chip.moonsoundOversampling);
+
+		 strcpy(properties->emulation.machineName, machine->name);
+		 */
+		debuggerNotifyEmulatorStart();
+
+		emuState = EMU_RUNNING;
+	}
+#endif
+}
 
 int main(int argc, char **argv) {
 	char rom_path_data[PATH_MAX];
@@ -1223,14 +1227,15 @@ int main(int argc, char **argv) {
 	// no ROM file is specified on the command line.
 	strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
 
-
 	memory_init();
 	mixer = mixerCreate();
 
 	//read default properties
-	properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
+	properties = propCreate(0, 0, P_EMU_SYNCTOVBLANKASYNC, "Steckschwein");
 	properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
 
+
+#ifndef __EMSCRIPTEN__
 	configuration config;
 	sprintf(configfile_path, "%s/.sw/config.ini", getenv("HOME"));
 	if (ini_parse(configfile_path, handler, &config)  >=0)
@@ -1264,6 +1269,7 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
+#endif
 
 	argc--;
 	argv++;
@@ -1498,7 +1504,10 @@ int main(int argc, char **argv) {
 	//register cpu hook
 	hookexternal(instructionCb);
 
-	if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0) {
+#ifdef __EMSCRIPTEN__
+    emscripten_log(EM_LOG_CONSOLE, "error %s\n", SDL_GetError());
+#endif
 		return 1;
 	}
 
@@ -1552,6 +1561,7 @@ int main(int argc, char **argv) {
 	videoUpdateAll(video, properties);
 
 	emulatorStart("Start");
+
 #ifndef SINGLE_THREADED	//on multi-threaded the main thread will loop here
     SDL_Event event;//While the user hasn't quit
     while(!doQuit){
@@ -1565,6 +1575,10 @@ int main(int argc, char **argv) {
     }
 #endif
 
+#ifdef __EMSCRIPTEN__
+//	emscripten_cancel_main_loop();
+#endif
+
 	// For stop threads before destroy.
 	// Clean up.
 	if (SDL_WasInit(SDL_INIT_EVERYTHING)) {
@@ -1572,18 +1586,6 @@ int main(int argc, char **argv) {
 	}
 
   DEBUGFreeUI();
-
-	return 0;
-}
-
-void machineDestroy(void *machine){
-	videoDestroy(video);
-	archSoundDestroy();
-	mixerDestroy(mixer);
-	propDestroy(properties);
-	spi_rtc_destroy();
-
-	DEBUGFreeUI();
 
 	return 0;
 }
@@ -1666,9 +1668,3 @@ emulator_loop(void *param) {
 
 	return 0;
 }
-
-//#ifdef __EMSCRIPTEN__
-//	emscripten_set_main_loop(emscripten_main_loop, 0, 1);
-//#else
-//	emulator_loop(NULL);
-//#endif

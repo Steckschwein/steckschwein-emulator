@@ -19,7 +19,7 @@ endif
 CFLAGS   = -w -O3 -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror -fomit-frame-pointer
 
 # development flags (debugger support)
-# CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror
+CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror
 # CFLAGS   +=-DDEBUG_ENABLED
 # Videorenderer.c segfault inline asm, we disable it entirely
 CFLAGS   +=-DNO_ASM
@@ -91,6 +91,10 @@ OBJS        = $(patsubst %.rc,%.res,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(
 OUTPUT_OBJS = $(addprefix $(OUTPUT_DIR)/, $(OBJS))
 
 ifdef EMSCRIPTEN
+	CFLAGS+= -DSINGLE_THREADED
+	CFLAGS+=-s USE_ZLIB=1
+
+	LIBS     =
 	SOURCE_FILES += javascript_interface.c
 
 	LDFLAGS+=--shell-file webassembly/steckschwein-emu-template.html
@@ -98,12 +102,14 @@ ifdef EMSCRIPTEN
 #	LDFLAGS+=-s ASYNCIFY
 	LDFLAGS+=-s TOTAL_MEMORY=64MB
 	LDFLAGS+=-s ALLOW_MEMORY_GROWTH=1
-	LDFLAGS+=-s ASSERTIONS=1
+#	LDFLAGS+=-s ASSERTIONS=1
 #	LDFLAGS+=-s EXIT_RUNTIME=1
  	LDFLAGS+=-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
 	# To the Javascript runtime exported functions
 	LDFLAGS+=-s EXPORTED_FUNCTIONS='["_SDL_SetTimer", "_SDL_WaitEvent", "_SDL_CreateSemaphore", "_SDL_DestroySemaphore", "_SDL_SemPost", "_SDL_SemWait", "_j2c_reset", "_j2c_paste", "_j2c_start_audio", _main]'
 	LDFLAGS+=-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'
+	LDFLAGS+=-s USE_ZLIB=1 -s EXIT_RUNTIME=1
+
 #	LDFLAGS+=-s LLD_REPORT_UNDEFINED
 #	LDFLAGS+=-s ERROR_ON_UNDEFINED_SYMBOLS=0
 #	LDFLAGS+=-s WASM=0

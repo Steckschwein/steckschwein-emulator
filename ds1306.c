@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <errno.h>
@@ -33,9 +34,13 @@ char* swHomeDir(char *swDir) {
 	DIR *dir = opendir(swDir);
 	if (dir == NULL || errno == ENOENT) {
 		#if defined(_WIN32)
-		dir = _mkdir(swDir);
+		int r = _mkdir(swDir);
 		#else
-		dir = mkdir(swDir, 0755);
+		int r = mkdir(swDir, 0755);
+    if(r){
+  		fprintf(stderr, "error mkdir dir '%s'. error: %s\n", swDir, strerror(errno));
+      return NULL;
+    }
 		#endif
 	}
 	if (closedir(dir)) {

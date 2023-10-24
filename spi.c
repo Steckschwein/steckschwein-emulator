@@ -76,7 +76,7 @@ uint8_t spi_handle_keyboard(uint8_t inbyte) {
 
 void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 
-	static is_lalt = false;
+	static bool is_lalt = false;
 	static uint8_t index = 0;
 
 	bool is_up = (keyBrdEvent->type == SDL_KEYUP);
