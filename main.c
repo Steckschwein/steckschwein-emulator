@@ -1521,7 +1521,7 @@ int main(int argc, char **argv) {
 
 	dpyUpdateAckEvent = archEventCreate(0);
 
-//    keyboardInit();
+//  keyboardInit();
 
 //    emulatorInit(properties, mixer);
 	actionInit(video, properties, mixer);

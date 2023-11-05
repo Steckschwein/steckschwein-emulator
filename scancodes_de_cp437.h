@@ -35,6 +35,8 @@
 
 #include <SDL_keycode.h>
 
+#define SCAN_CODES_SIZE sizeof(scancodes) / sizeof(scancodes[0])
+
 const unsigned char scancodes[][4] = {
 
 	[SDLK_BACKSPACE]	= {8, 8, 0, 8},
@@ -90,8 +92,9 @@ const unsigned char scancodes[][4] = {
 	[SDLK_LESS] = {'<', '>', 0, '|'},
 	[SDLK_HASH] = {'#', '\'', 0, '~'},
 	[SDLK_QUOTE] = {'\'', '`', 0, 0},
+	[223] = {0xdf, '?', 0, '\\'},// ß
 	[228] = {0xe4, 0xc4, 0, 0},// ä
 	[246] = {0xf6, 0xd6, 0, 0},// ö
-	[252] = {0xfc, 0xdc, 0, 0},// ü
-	[223] = {0xdf, '?', 0, '\\'}// ß
+	[252] = {0xfc, 0xdc, 0, 0}// ü
 };
+
