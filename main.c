@@ -478,8 +478,7 @@ int createOrUpdateSdlWindow() {
       Uint32 amask = 0x000000ff;
     #endif
     SDL_SetWindowTitle(window, title);
-    SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(&schwein128_rgba, 128,128,32,4*128,
-      rmask, gmask, bmask, amask);
+    SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(&schwein128_rgba, 128,128,32,4*128, rmask, gmask, bmask, amask);
     SDL_SetWindowIcon(window, icon);
     SDL_FreeSurface(icon);
   }else{
@@ -542,7 +541,7 @@ static void handleEvent(SDL_Event *event) {
 	}
 	case SDL_KEYUP:
 //        shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
-		spi_handle_keyevent(&event->key);
+//		spi_handle_keyevent(&event->key);
 		break;
 	case SDL_WINDOWEVENT_EXPOSED:
 		updateEmuDisplay(1);
@@ -1521,7 +1520,7 @@ int main(int argc, char **argv) {
 
 	dpyUpdateAckEvent = archEventCreate(0);
 
-//  keyboardInit();
+  keyboardInit();
 
 //    emulatorInit(properties, mixer);
 	actionInit(video, properties, mixer);

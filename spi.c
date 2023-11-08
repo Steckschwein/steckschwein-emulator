@@ -73,13 +73,16 @@ uint8_t spi_handle_keyboard(uint8_t inbyte) {
 	return outbyte;
 }
 
+static uint8_t kbd_index = 0;
+
+void keyboardInit(){
+  SDL_PumpEvents();
+  kbd_index = (SDL_GetModState() & KMOD_CAPS) == KMOD_CAPS ? kbd_index | 1 : kbd_index & ~(1);
+}
 
 void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 
 	static is_lalt = false;
-	static uint8_t index = 0;
-
-  index = (SDL_GetModState() & KMOD_CAPS) == KMOD_CAPS ? index | 1 : index & ~(1);
 
 	bool is_up = (keyBrdEvent->type == SDL_KEYUP);
 
@@ -88,19 +91,20 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 	switch (keyCode) {
     case SDLK_LCTRL:
     case SDLK_RCTRL:
-      index = is_up ? (index & ~(2)) : index | 2;
+      kbd_index = is_up ? (kbd_index & ~(2)) : kbd_index | 2;
       break;
     case SDLK_CAPSLOCK:
-      break;//ignore
+      kbd_index = (SDL_GetModState() & KMOD_CAPS) == KMOD_CAPS ? kbd_index | 1 : kbd_index & ~(1);
+      break;
     case SDLK_LSHIFT:
     case SDLK_RSHIFT:
-      index = is_up ? (index & ~(1)) : index | 1;
+      kbd_index = is_up ? (kbd_index & ~(1)) : kbd_index | 1;
       break;
     case SDLK_LALT:
       is_lalt = !is_up;
       break;
     case SDLK_RALT:
-      index = is_up ? (index & ~(4)) : index | 4;
+      kbd_index = is_up ? (kbd_index & ~(4)) : kbd_index | 4;
       break;
     case SDLK_MODE:
     case SDLK_F1:
@@ -138,7 +142,7 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
           }
         }
 
-        uint8_t i = (index >= 4 ? 3 : index >= 2 ? 2 : index);
+        uint8_t i = (kbd_index >= 4 ? 3 : kbd_index >= 2 ? 2 : kbd_index);
         if (keyCode < SCAN_CODES_SIZE && scancodes[keyCode] && scancodes[keyCode][i]) {
           last_keycode = scancodes[keyCode][i];
         } else {
