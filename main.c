@@ -541,7 +541,7 @@ static void handleEvent(SDL_Event *event) {
 	}
 	case SDL_KEYUP:
 //        shortcutCheckUp(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
-//		spi_handle_keyevent(&event->key);
+		spi_handle_keyevent(&event->key);
 		break;
 	case SDL_WINDOWEVENT_EXPOSED:
 		updateEmuDisplay(1);
