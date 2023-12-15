@@ -12,8 +12,6 @@ ifndef (MINGW32)
 	MINGW32=/usr/local/Cellar/mingw-w64/6.0.0_2/toolchain-i686/i686-w64-mingw32
 endif
 
-CC=clang
-
 # Flags
 #
 # production flags (performance)
@@ -261,4 +259,4 @@ $(OUTPUT_DIR)/%.res: %.rc
 #
 # See webassembly/WebAstembly.md
 wasm:
-	CC=gcc emmake make
+	emmake make
