@@ -12,6 +12,7 @@ ifndef (MINGW32)
 	MINGW32=/usr/local/Cellar/mingw-w64/6.0.0_2/toolchain-i686/i686-w64-mingw32
 endif
 
+CC=clang
 
 # Flags
 #
@@ -236,8 +237,9 @@ $(OUTPUT_DIR):
 	$(MKDIR) $(OUTPUT_DIR)
 
 $(OUTPUT_DIR)/%.o: %.c
-	$(ECHO) Compiling $<...
-	$(SILENT)$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
+	#$(ECHO) Compiling $<...
+	#$(SILENT)$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
+	$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
 
 #$(OUTPUT_DIR)/%.o: %.cc
 #	$(ECHO) Compiling $<...
