@@ -59,6 +59,8 @@
 
 static int skipSync;
 static int pendingInt;
+static int pendingNmi;
+
 static Mixer* boardMixer = NULL;
 static int (*syncToRealClock)(int, int) = NULL;
 
@@ -459,6 +461,22 @@ int boardGetRefreshRate()
         return boardInfo.getRefreshRate();
     }
     return 0;
+}
+
+void   boardSetNmi(UInt32 nmi){
+    pendingNmi |= nmi;
+    boardInfo.setNmi(boardInfo.cpuRef);
+}
+
+void   boardClearNmi(UInt32 nmi){
+    pendingNmi &= ~nmi;
+    if (pendingNmi == 0) {
+        boardInfo.clearNmi(boardInfo.cpuRef);
+    }
+}
+
+UInt32 boardGetNmi(UInt32 nmi){
+ return pendingNmi & nmi;
 }
 
 void boardSetInt(UInt32 irq)

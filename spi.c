@@ -123,31 +123,41 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
         last_keycode = 0xf1 + (keyCode - SDLK_F1);
       break;
     case SDLK_RIGHT:
-    case SDLK_LEFT:
       if (!is_up)
         last_keycode = 0x10 + (keyCode - SDLK_RIGHT);
       break;
+    case SDLK_LEFT:
+      if (!is_up)
+        last_keycode = 0x10 + (keyCode - SDLK_LEFT);
+      break;
     case SDLK_UP:
-    case SDLK_DOWN:
       if (!is_up)
         last_keycode = 0x1e + (keyCode - SDLK_UP);
+      break;
+    case SDLK_DOWN:
+      if (!is_up)
+        last_keycode = 0x1e + (keyCode - SDLK_DOWN);
       break;
     default:
       if (!is_up) {
         if (is_lalt) {
           switch (keyCode) {
           case SDLK_r:
-            actionEmuResetHard();
+            actionEmuResetSoft();
             break;
           }
         }
 
         uint8_t i = (kbd_index >= 4 ? 3 : kbd_index >= 2 ? 2 : kbd_index);
-        if (keyCode < SCAN_CODES_SIZE && scancodes[keyCode] && scancodes[keyCode][i]) {
-          last_keycode = scancodes[keyCode][i];
+        if (keyCode == SDLK_s && i == 2) {
+            boardSetNmi(NMI);
+        } else if (keyCode < SCAN_CODES_SIZE && scancodes[keyCode] && scancodes[keyCode][i]) {
+            last_keycode = scancodes[keyCode][i];
         } else {
-          last_keycode = keyCode; //unmapped
+          last_keycode = keyCode; // unmapped
         }
+      }else{
+        boardClearNmi(NMI);
       }
     }
 #ifdef EMU_AVR_KEYBOARD_IRQ
@@ -155,6 +165,7 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
     boardSetInt(0x08);
 	}
 #endif
+
 }
 
 void dispatch_device(uint8_t port) {
