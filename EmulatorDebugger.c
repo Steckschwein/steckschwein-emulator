@@ -489,6 +489,7 @@ static void DEBUGRenderCode(int lines, int initialPC) {
 static char *labels[] = { "NV-BDIZC", "", "", "A", "X", "Y", "", "", "PC", "SP", "", "BRK", "",
 	"BR0", "BR1", "BR2", "BR3","",
   "IRQ", // pending irq
+  "NMI", // pending nmi
   NULL };
 
 static int DEBUGRenderRegisters(void) {
@@ -527,6 +528,8 @@ static int DEBUGRenderRegisters(void) {
 	yc++;
 
   DEBUGNumber(DBG_DATX, yc++, boardGetInt(0xff), 2, col_data);
+
+  DEBUGNumber(DBG_DATX, yc++, boardGetNmi(0xff), 2, col_data);
 
 	return n;// Number of code display lines
 }

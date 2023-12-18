@@ -36,6 +36,8 @@
 #include "glue.h"
 #include <stdio.h>
 
+#define NMI 0x1
+
 typedef struct {
    /*
     int  cartridgeCount;
@@ -43,7 +45,7 @@ typedef struct {
     int  casetteCount;
     */
     void* cpuRef;
-    
+
     void   (*destroy)();
     void   (*softReset)();
 /*
@@ -61,6 +63,10 @@ typedef struct {
 
     void   (*setInt)(void*);
     void   (*clearInt)(void*);
+
+    void   (*setNmi)(void*);
+    void   (*clearNmi)(void*);
+
     void   (*setCpuTimeout)(void*, UInt32);
 
     void   (*setBreakpoint)(void*, UInt16);
@@ -86,6 +92,10 @@ void boardSetFdcTimingEnable(int enable);
 
 void boardSetBreakpoint(UInt16 address);
 void boardClearBreakpoint(UInt16 address);
+
+void   boardSetNmi(UInt32 nmi);
+void   boardClearNmi(UInt32 nmi);
+UInt32 boardGetNmi(UInt32 nmi);
 
 void   boardSetInt(UInt32 irq);
 void   boardClearInt(UInt32 irq);
