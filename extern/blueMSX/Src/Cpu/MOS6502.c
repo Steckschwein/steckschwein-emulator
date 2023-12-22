@@ -12,6 +12,7 @@ MOS6502* mos6502create(MOS6502TimerCb timerCb) {
   mos6502->timerCb = timerCb;
   mos6502->intState = INT_HIGH;
   mos6502->nmiState = INT_HIGH;
+  mos6502->nmiEdge = 0;
 
   mos6502Reset(mos6502, 0);
 
@@ -51,7 +52,9 @@ void mos6502Execute(MOS6502 *mos6502) {
       }
     }
 #endif
-    if(mos6502->nmiState == INT_LOW){
+   /* If it is NMI... */
+    if (mos6502->nmiEdge) {
+      mos6502->nmiEdge = 0;
       nmi6502();
     }else if(mos6502->intState == INT_LOW){
       irq6502();
@@ -74,6 +77,9 @@ void mos6502ClearInt(MOS6502 *mos6502) {
 
 void mos6502SetNmi(MOS6502* mos6502){
   DEBUG ("mos6502SetNmi %p\n", mos6502);
+  if (mos6502->nmiState == INT_HIGH) {
+    mos6502->nmiEdge = 1;
+  }
   mos6502->nmiState = INT_LOW;
 }
 
