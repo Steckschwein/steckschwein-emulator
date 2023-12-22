@@ -156,8 +156,6 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
         } else {
           last_keycode = keyCode; // unmapped
         }
-      }else{
-        boardClearNmi(NMI);
       }
     }
 #ifdef EMU_AVR_KEYBOARD_IRQ

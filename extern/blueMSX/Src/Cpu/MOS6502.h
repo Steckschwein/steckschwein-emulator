@@ -38,6 +38,7 @@ typedef struct{
   MOS6502TimerCb    timerCb;
   int               intState;         /* Sate of interrupt line          */
   int               nmiState;
+  int               nmiEdge;
   CpuRegs           regs;
 
 #ifdef ENABLE_BREAKPOINTS
