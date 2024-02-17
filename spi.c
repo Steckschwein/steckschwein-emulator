@@ -128,7 +128,7 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
       break;
     case SDLK_LEFT:
       if (!is_up)
-        last_keycode = 0x10 + (keyCode - SDLK_LEFT);
+        last_keycode = 0x11 + (keyCode - SDLK_LEFT);
       break;
     case SDLK_UP:
       if (!is_up)
@@ -136,7 +136,7 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
       break;
     case SDLK_DOWN:
       if (!is_up)
-        last_keycode = 0x1e + (keyCode - SDLK_DOWN);
+        last_keycode = 0x1d + (keyCode - SDLK_DOWN);
       break;
     default:
       if (!is_up) {

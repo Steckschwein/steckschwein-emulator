@@ -829,8 +829,8 @@ static void copyMonitorPAL_2x2_32(Video *pVideo, FrameBuffer* frame, void* pDest
     UInt32* pDst1       = (UInt32*)pDestination;
     UInt32* pDst2       = pDst1 + dstPitch / (int)sizeof(UInt32);
     UInt32* pDst3       = pDst2;
-	int height          = frame->lines;
-	int srcWidth        = frame->maxWidth;
+    int height          = frame->lines;
+    int srcWidth        = frame->maxWidth;
     int h;
 
     rndVal *= 13;
@@ -845,119 +845,119 @@ static void copyMonitorPAL_2x2_32(Video *pVideo, FrameBuffer* frame, void* pDest
     }
 
     if(pVideo->rotate){
-		int w;
-		for (w = 0; w<srcWidth;w++) {
+      int w;
+      for (w = 0; w<srcWidth;w++) {
 
-			int dstIndex = 0;
+        int dstIndex = 0;
 
-			for (h = height; h >= 0; h--) {
+        for (h = height; h >= 0; h--) {
 
-				UInt16* pSrc = frame->line[h].buffer;
-				UInt32 colCur = (rgbTable[pSrc[0]] & 0xfcfcfc) >> 2;
-				UInt32 colPrev = colCur;
+          UInt16* pSrc = frame->line[h].buffer;
+          UInt32 colCur = (rgbTable[pSrc[0]] & 0xfcfcfc) >> 2;
+          UInt32 colPrev = colCur;
 
-				UInt32 colRgb1;
-				UInt32 colRgb2;
-				UInt32 colNext;
-				UInt32 noise;
+          UInt32 colRgb1;
+          UInt32 colRgb2;
+          UInt32 colNext;
+          UInt32 noise;
 
-				colNext = (rgbTable[pSrc[w]] & 0xfcfcfc) >> 2;
-				colRgb1 = (3 * colCur + colNext) & 0xfcfcfc;
-				colRgb2 = (4 * colNext) & 0xfcfcfc;
+          colNext = (rgbTable[pSrc[w]] & 0xfcfcfc) >> 2;
+          colRgb1 = (3 * colCur + colNext) & 0xfcfcfc;
+          colRgb2 = (4 * colNext) & 0xfcfcfc;
 
-				colCur = colNext;
+          colCur = colNext;
 
-				noise = (rnd >> 30) * 0x10101;
-				pDst2[dstIndex] = colRgb1 + noise;
-				pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
-				pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
-				dstIndex++;
-				pDst2[dstIndex] = colRgb2 + noise;
-				pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
-				pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
-				dstIndex++;
+          noise = (rnd >> 30) * 0x10101;
+          pDst2[dstIndex] = colRgb1 + noise;
+          pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+          pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+          dstIndex++;
+          pDst2[dstIndex] = colRgb2 + noise;
+          pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+          pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+          dstIndex++;
 
-				rnd *= 23;
-			}
+          rnd *= 23;
+        }
 
-			pDst3  = pDst2;
-			pDst1 += dstPitch * 2;
-			pDst2 += dstPitch * 2;
-		}
+        pDst3  = pDst2;
+        pDst1 += dstPitch * 2;
+        pDst2 += dstPitch * 2;
+      }
     }else{
-		for (h = 0; h < height; h++) {
-			UInt16* pSrc = frame->line[h].buffer;
-			UInt32 colCur = (rgbTable[pSrc[0]] & 0xfcfcfc) >> 2;
-			UInt32 colPrev = colCur;
-			int dstIndex = 0;
 
-			if (frame->line[h].doubleWidth) {
-				int width = srcWidth * 2;
-				int w;
-				for (w = 0; w < width;) {
-					UInt32 colNext;
-					UInt32 colRgb1;
-					UInt32 colRgb2;
-					UInt32 noise;
+      for (h = 0; h < height; h++) {
+        UInt16* pSrc = frame->line[h].buffer;
+        UInt32 colCur = (rgbTable[pSrc[0]] & 0xfcfcfc) >> 2;
+        UInt32 colPrev = colCur;
+        int dstIndex = 0;
 
-					colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
-					colRgb1 = (colPrev + 3 * colCur) & 0xfcfcfc;
+        if (frame->line[h].doubleWidth) {
+          int width = srcWidth * 2;
+          int w;
+          for (w = 0; w < width;) {
+            UInt32 colNext;
+            UInt32 colRgb1;
+            UInt32 colRgb2;
+            UInt32 noise;
 
-					colPrev = colCur;
-					colCur  = colNext;
+            colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
+            colRgb1 = (colPrev + 3 * colCur) & 0xfcfcfc;
 
-					colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
-					colRgb2 = (colNext + 3 * colCur) & 0xfcfcfc;
+            colPrev = colCur;
+            colCur  = colNext;
 
-					colPrev = colCur;
-					colCur  = colNext;
+            colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
+            colRgb2 = (colNext + 3 * colCur) & 0xfcfcfc;
 
-					noise = (rnd >> 30) * 0x10101;
-					pDst2[dstIndex] = colRgb1 + noise;
-					pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
-					pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
-					dstIndex++;
-					pDst2[dstIndex] = colRgb2 + noise;
-					pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
-					pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
-					dstIndex++;
+            colPrev = colCur;
+            colCur  = colNext;
 
-					rnd *= 23;
-				}
-			}
-			else {
-				int width = srcWidth;
-				int w;
-				for (w = 0; w < width;) {
-					UInt32 colRgb1;
-					UInt32 colRgb2;
-					UInt32 colNext;
-					UInt32 noise;
+            noise = (rnd >> 30) * 0x10101;
+            pDst2[dstIndex] = colRgb1 + noise;
+            pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+            pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+            dstIndex++;
+            pDst2[dstIndex] = colRgb2 + noise;
+            pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+            pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+            dstIndex++;
 
-					colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
-					colRgb1 = (3 * colCur + colNext) & 0xfcfcfc;
-					colRgb2 = (4 * colNext) & 0xfcfcfc;
+            rnd *= 23;
+          }
+        }
+        else {
+          int width = srcWidth;
+          int w;
+          for (w = 0; w < width;) {
+            UInt32 colRgb1;
+            UInt32 colRgb2;
+            UInt32 colNext;
+            UInt32 noise;
 
-					colCur = colNext;
+            colNext = (rgbTable[pSrc[w++]] & 0xfcfcfc) >> 2;
+            colRgb1 = (3 * colCur + colNext) & 0xfcfcfc;
+            colRgb2 = (4 * colNext) & 0xfcfcfc;
 
-					noise = (rnd >> 30) * 0x10101;
-					pDst2[dstIndex] = colRgb1 + noise;
-					pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
-					pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
-					dstIndex++;
-					pDst2[dstIndex] = colRgb2 + noise;
-					pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
-					pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
-					dstIndex++;
+            colCur = colNext;
 
-					rnd *= 23;
-				}
-			}
+            noise = (rnd >> 30) * 0x10101;
+            pDst2[dstIndex] = colRgb1 + noise;
+            pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+            pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+            dstIndex++;
+            pDst2[dstIndex] = colRgb2 + noise;
+            pDst1[dstIndex] = ((pDst3[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+            pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+            dstIndex++;
 
-			pDst3  = pDst2;
-			pDst1 += dstPitch * 2;
-			pDst2 += dstPitch * 2;
-		}
+            rnd *= 23;
+          }
+        }
+        pDst3  = pDst2;
+        pDst1 += dstPitch * 2;
+        pDst2 += dstPitch * 2;
+      }
     }
 }
 
@@ -1772,59 +1772,59 @@ static void copy_2x2_32_core1_SSE(UInt32* rgbTable, UInt16* pSrc, UInt32* pDst1,
         : "%eax", "%ebx", "%ecx", "%edx", "%edi", "%esi"
     );
 #else
-	__asm{
+  __asm{
         mov     esi,0
-		mov		ecx,width
-		mov		eax,pSrc
-		mov		ebx,pDst1
-		mov		edi,rgbTable
+    mov    ecx,width
+    mov    eax,pSrc
+    mov    ebx,pDst1
+    mov    edi,rgbTable
 inner_loop1:
-		mov		si,[eax]
-        movd	mm0,[edi+esi*4]
-		mov		si,[eax+2]
-		movd	mm1,[edi+esi*4]
-		mov		si,[eax+6]
-		punpckldq mm0,mm1
-		movd	mm3,[edi+esi*4]
-		mov		si,[eax+4]
-		movntq	[ebx+0],mm0
-		add		eax,8
-		movd	mm2,[edi+esi*4]
-		add		ebx,16
-		punpckldq mm2,mm3
-		dec		ecx
-		movntq	[ebx-8],mm2
-		jnz		inner_loop1
+    mov    si,[eax]
+        movd  mm0,[edi+esi*4]
+    mov    si,[eax+2]
+    movd  mm1,[edi+esi*4]
+    mov    si,[eax+6]
+    punpckldq mm0,mm1
+    movd  mm3,[edi+esi*4]
+    mov    si,[eax+4]
+    movntq  [ebx+0],mm0
+    add    eax,8
+    movd  mm2,[edi+esi*4]
+    add    ebx,16
+    punpckldq mm2,mm3
+    dec    ecx
+    movntq  [ebx-8],mm2
+    jnz    inner_loop1
 
-		;-- second line
+    ;-- second line
 
-		mov		ecx,width
-		mov		eax,pSrc
-		mov		ebx,hint
-		mov		edx,pDst2
-		mov		edi,rgbTable
+    mov    ecx,width
+    mov    eax,pSrc
+    mov    ebx,hint
+    mov    edx,pDst2
+    mov    edi,rgbTable
 inner_loop2:
-		mov		si,[eax]
-		movd	mm0,[edi+esi*4]
-		mov		si,[eax+2]
-		movd	mm1,[edi+esi*4]
-		mov		si,[eax+6]
-		punpckldq mm0,mm1
-		movd	mm3,[edi+esi*4]
-		mov		si,[eax+4]
-		prefetcht0 [eax+ebx]
-		movntq	[edx+0],mm0
-		add		eax,8
-		movd	mm2,[edi+esi*4]
-		add		edx,16
-		punpckldq mm2,mm3
-		dec		ecx
-		movntq	[edx-8],mm2
-		jnz		inner_loop2
+    mov    si,[eax]
+    movd  mm0,[edi+esi*4]
+    mov    si,[eax+2]
+    movd  mm1,[edi+esi*4]
+    mov    si,[eax+6]
+    punpckldq mm0,mm1
+    movd  mm3,[edi+esi*4]
+    mov    si,[eax+4]
+    prefetcht0 [eax+ebx]
+    movntq  [edx+0],mm0
+    add    eax,8
+    movd  mm2,[edi+esi*4]
+    add    edx,16
+    punpckldq mm2,mm3
+    dec    ecx
+    movntq  [edx-8],mm2
+    jnz    inner_loop2
 
-		emms
+    emms
 
-	}
+  }
 #endif
 }
 #endif
@@ -1930,75 +1930,75 @@ void copy_2x2_32_core2_SSE(UInt32* rgbTable, UInt16* pSrc, UInt32* pDst1, UInt32
         : "%eax", "%ebx", "%ecx", "%edx", "%edi", "%esi"
     );
 #else
-	__asm{
+  __asm{
         mov     esi,0
-		mov		ecx,width
-		mov		eax,pSrc
-		mov		ebx,pDst1
-		mov		edi,rgbTable
+    mov    ecx,width
+    mov    eax,pSrc
+    mov    ebx,pDst1
+    mov    edi,rgbTable
 inner_loop1:
-		mov		si,[eax]
-		movd	mm0,[edi+esi*4]
-		mov		si,[eax+2]
-		punpckldq mm0,mm0
-		movd	mm1,[edi+esi*4]
-		movntq	[ebx+0],mm0
+    mov    si,[eax]
+    movd  mm0,[edi+esi*4]
+    mov    si,[eax+2]
+    punpckldq mm0,mm0
+    movd  mm1,[edi+esi*4]
+    movntq  [ebx+0],mm0
 
-		punpckldq mm1,mm1
-		mov		si,[eax+4]
-		movntq	[ebx+8],mm1
+    punpckldq mm1,mm1
+    mov    si,[eax+4]
+    movntq  [ebx+8],mm1
 
-		movd	mm0,[edi+esi*4]
-		punpckldq mm0,mm0
-		mov		si,[eax+6]
-		movntq	[ebx+16],mm0
+    movd  mm0,[edi+esi*4]
+    punpckldq mm0,mm0
+    mov    si,[eax+6]
+    movntq  [ebx+16],mm0
 
-		add		ebx,32
-		movd	mm0,[edi+esi*4]
-		add		eax,8
-		punpckldq mm0,mm0
-		dec		ecx
-		movntq	[ebx+24-32],mm0
+    add    ebx,32
+    movd  mm0,[edi+esi*4]
+    add    eax,8
+    punpckldq mm0,mm0
+    dec    ecx
+    movntq  [ebx+24-32],mm0
 
-		jnz		inner_loop1
+    jnz    inner_loop1
 
-		;-- second line
+    ;-- second line
 
-		mov		ecx,width
-		mov		eax,pSrc
-		mov		edx,hint
-		mov		ebx,pDst2
-		mov		edi,rgbTable
+    mov    ecx,width
+    mov    eax,pSrc
+    mov    edx,hint
+    mov    ebx,pDst2
+    mov    edi,rgbTable
 inner_loop2:
-		mov		si,[eax]
-		movd	mm0,[edi+esi*4]
-		punpckldq mm0,mm0
-		mov		si,[eax+2]
-		movntq	[ebx+0],mm0
+    mov    si,[eax]
+    movd  mm0,[edi+esi*4]
+    punpckldq mm0,mm0
+    mov    si,[eax+2]
+    movntq  [ebx+0],mm0
 
-		movd	mm0,[edi+esi*4]
-		punpckldq mm0,mm0
-		mov		si,[eax+4]
-		movntq	[ebx+8],mm0
+    movd  mm0,[edi+esi*4]
+    punpckldq mm0,mm0
+    mov    si,[eax+4]
+    movntq  [ebx+8],mm0
 
-		movd	mm0,[edi+esi*4]
-		prefetcht0 [eax+edx]
-		punpckldq mm0,mm0
-		mov		si,[eax+6]
-		movntq	[ebx+16],mm0
+    movd  mm0,[edi+esi*4]
+    prefetcht0 [eax+edx]
+    punpckldq mm0,mm0
+    mov    si,[eax+6]
+    movntq  [ebx+16],mm0
 
-		add		ebx,32
-		movd	mm0,[edi+esi*4]
-		add		eax,8
-		punpckldq mm0,mm0
-		dec		ecx
-		movntq	[ebx+24-32],mm0
+    add    ebx,32
+    movd  mm0,[edi+esi*4]
+    add    eax,8
+    punpckldq mm0,mm0
+    dec    ecx
+    movntq  [ebx+24-32],mm0
 
-		jnz		inner_loop2
+    jnz    inner_loop2
 
-		emms
+    emms
 
-	}
+  }
 #endif
 
 }
@@ -2006,7 +2006,7 @@ inner_loop2:
 
 void copy_2x2_32_core2(UInt32* rgbTable, UInt16* pSrc, UInt32* pDst1, UInt32* pDst2, int width, int hint) {
 
-	while (width--) {
+  while (width--) {
         UInt32 col1 = rgbTable[pSrc[0]];
         UInt32 col2 = rgbTable[pSrc[1]];
         UInt32 col3 = rgbTable[pSrc[2]];
@@ -2045,8 +2045,8 @@ static void copy_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UI
     void (*core1) (UInt32*, UInt16*, UInt32*, UInt32* , int , int );
     void (*core2) (UInt32*, UInt16*, UInt32*, UInt32* , int , int );
 #ifndef NO_ASM
-	int hasSSE=0;
-	const int SSEbit=1<<25;
+  int hasSSE=0;
+  const int SSEbit=1<<25;
 
 #ifdef __GNUC__
     __asm__ (
@@ -2057,23 +2057,23 @@ static void copy_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UI
         : "=r" (hasSSE) : : "%eax", "%ebx", "%ecx", "%edx"
     );
 #else
-	__asm {
-		mov eax,1
-		cpuid
-		and edx,SSEbit
-		mov hasSSE,edx
-	}
+  __asm {
+    mov eax,1
+    cpuid
+    and edx,SSEbit
+    mov hasSSE,edx
+  }
 #endif
 
     hasSSE = 1;
-	core1=hasSSE? copy_2x2_32_core1_SSE: copy_2x2_32_core1;
-	core2=hasSSE? copy_2x2_32_core2_SSE: copy_2x2_32_core2;
+  core1=hasSSE? copy_2x2_32_core1_SSE: copy_2x2_32_core1;
+  core2=hasSSE? copy_2x2_32_core2_SSE: copy_2x2_32_core2;
 #else
-	core1=copy_2x2_32_core1;
-	core2=copy_2x2_32_core2;
+  core1=copy_2x2_32_core1;
+  core2=copy_2x2_32_core2;
 #endif
 
-	/*rdtsc_start_timer(0);*/
+  /*rdtsc_start_timer(0);*/
     dstPitch /= (int)sizeof(UInt32);
 
     if (frame->interlace == INTERLACE_ODD) {
@@ -2085,14 +2085,14 @@ static void copy_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UI
     for (h = 0; h < height; h++) {
 
         if (frame->line[h].doubleWidth)
-			core1(rgbTable,frame->line[h].buffer,pDst1,pDst2,srcWidth / 4 * 2,dstPitch * 2*4);
+      core1(rgbTable,frame->line[h].buffer,pDst1,pDst2,srcWidth / 4 * 2,dstPitch * 2*4);
         else
-			core2(rgbTable,frame->line[h].buffer,pDst1,pDst2,srcWidth / 4,dstPitch * 2*4);
+      core2(rgbTable,frame->line[h].buffer,pDst1,pDst2,srcWidth / 4,dstPitch * 2*4);
 
         pDst1 += dstPitch * 2;
         pDst2 += dstPitch * 2;
     }
-	/*rdtsc_end_timer(0);*/
+  /*rdtsc_end_timer(0);*/
 }
 
 static void copy_2x1_16(FrameBuffer* frame, void* pDestination, int dstPitch, UInt16* rgbTable)
@@ -2207,11 +2207,11 @@ static void copy_2x1_32(FrameBuffer* frame, void* pDestination, int dstPitch, UI
 
 static void hq2x_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UInt16* rgbTable)
 {
-	UInt16  ImgSrc[320 * 240];
+  UInt16  ImgSrc[320 * 240];
     UInt16* pDst        = (UInt16*)ImgSrc;
     int srcHeight       = frame->lines;
     int srcWidth        = frame->maxWidth;
-	int h;
+  int h;
 
     if (srcWidth == 0) {
         return;
@@ -2239,11 +2239,11 @@ static void hq2x_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UI
 
 static void hq3x_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UInt16* rgbTable)
 {
-	UInt16  ImgSrc[320 * 240];
+  UInt16  ImgSrc[320 * 240];
     UInt16* pDst        = (UInt16*)ImgSrc;
     int srcHeight       = frame->lines;
     int srcWidth        = frame->maxWidth;
-	int h;
+  int h;
 
     if (srcWidth == 0) {
         return;
@@ -2271,11 +2271,11 @@ static void hq3x_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UI
 
 static void scale2x_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UInt32* rgbTable)
 {
-	UInt32  ImgSrc[320 * 240];
+  UInt32  ImgSrc[320 * 240];
     UInt32* pDst        = (UInt32*)ImgSrc;
     int srcHeight       = frame->lines;
     int srcWidth        = frame->maxWidth;
-	int h;
+  int h;
 
     if (srcWidth == 0) {
         return;
@@ -2305,11 +2305,11 @@ static void scale2x_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch,
 
 static void scale2x_2x2_16(FrameBuffer* frame, void* pDestination, int dstPitch, UInt16* rgbTable)
 {
-	UInt16  ImgSrc[320 * 240];
+  UInt16  ImgSrc[320 * 240];
     UInt16* pDst        = (UInt16*)ImgSrc;
     int srcHeight       = frame->lines;
     int srcWidth        = frame->maxWidth;
-	int h;
+  int h;
 
     if (srcWidth == 0) {
         return;
@@ -2489,12 +2489,12 @@ void videoUpdateAll(Video* video, Properties* properties)
     case P_VIDEO_PALNCOMP:
         videoSetPalMode(video, VIDEO_PAL_BLUR_NOISE);
         break;
-	case P_VIDEO_PALSCALE2X:
-		videoSetPalMode(video, VIDEO_PAL_SCALE2X);
-		break;
-	case P_VIDEO_PALHQ2X:
-		videoSetPalMode(video, VIDEO_PAL_HQ2X);
-		break;
+  case P_VIDEO_PALSCALE2X:
+    videoSetPalMode(video, VIDEO_PAL_SCALE2X);
+    break;
+  case P_VIDEO_PALHQ2X:
+    videoSetPalMode(video, VIDEO_PAL_HQ2X);
+    break;
     }
 }
 
@@ -2673,7 +2673,7 @@ void scanLines_16(void* pBuffer, int width, int height, int pitch, int scanLines
 }
 
 void scanLines_32_core(UInt32* pBuf, int width, int scanLinesPct, int hint) {
-	int w;
+  int w;
         for (w = 0; w < width; w++) {
             UInt32 pixel = pBuf[w];
             UInt32 a = (((pixel & 0xff00ff) * scanLinesPct) & 0xff00ff00) >> 8;
@@ -2723,42 +2723,42 @@ void scanLines_32_core_SSE(UInt32* pBuf, int width, int scanLinesPct, int hint) 
         :
         : "m" (pBuf), "m" (width), "m" (scanLinesPct), "m" (hint)
         : "%eax", "%ebx", "%ecx"
-	);
+  );
 #else
-	__asm {
-		mov		ecx,width
-		shr		ecx,2
-		mov		eax,pBuf
-		mov		ebx,hint
-		pxor	mm0,mm0
-		movd	mm1,scanLinesPct
-		punpcklwd mm1,mm1
-		punpckldq mm1,mm1
-		psllw	mm1,8
+  __asm {
+    mov    ecx,width
+    shr    ecx,2
+    mov    eax,pBuf
+    mov    ebx,hint
+    pxor  mm0,mm0
+    movd  mm1,scanLinesPct
+    punpcklwd mm1,mm1
+    punpckldq mm1,mm1
+    psllw  mm1,8
 inner_loop:
-		movq	mm2,[eax]
-		movq	mm4,[eax+8]
-		movq	mm3,mm2
-		punpcklbw mm2,mm0
-		movq	mm5,mm4
-		pmulhuw	mm2,mm1
-		punpcklbw mm4,mm0
-		punpckhbw mm3,mm0
-		prefetcht1 [eax+ebx]
-		pmulhuw	mm4,mm1
-		punpckhbw mm5,mm0
-		add		eax,16
-		pmulhuw	mm3,mm1
-		pmulhuw	mm5,mm1
-		packuswb mm2,mm3
-		packuswb mm4,mm5
-		movq	[eax-16],mm2
-		dec		ecx
-		movq	[eax-8],mm4
+    movq  mm2,[eax]
+    movq  mm4,[eax+8]
+    movq  mm3,mm2
+    punpcklbw mm2,mm0
+    movq  mm5,mm4
+    pmulhuw  mm2,mm1
+    punpcklbw mm4,mm0
+    punpckhbw mm3,mm0
+    prefetcht1 [eax+ebx]
+    pmulhuw  mm4,mm1
+    punpckhbw mm5,mm0
+    add    eax,16
+    pmulhuw  mm3,mm1
+    pmulhuw  mm5,mm1
+    packuswb mm2,mm3
+    packuswb mm4,mm5
+    movq  [eax-16],mm2
+    dec    ecx
+    movq  [eax-8],mm4
 
-		jnz		inner_loop
-		emms
-	}
+    jnz    inner_loop
+    emms
+  }
 #endif
 
 }
@@ -2772,8 +2772,8 @@ void scanLines_32(void* pBuffer, int width, int height, int pitch, int scanLines
     void (*core) (UInt32* , int , int , int ) ;
 
 #ifndef NO_ASM
-	int hasSSE=0;
-	const int SSEbit=1<<25;
+  int hasSSE=0;
+  const int SSEbit=1<<25;
 
 #ifdef __GNUC__
     __asm__ (
@@ -2784,23 +2784,23 @@ void scanLines_32(void* pBuffer, int width, int height, int pitch, int scanLines
         : "=r" (hasSSE) : : "%eax", "%ebx", "%ecx", "%edx"
     );
 #else
-	__asm {
-		mov eax,1
-		cpuid
-		and edx,SSEbit
-		mov hasSSE,edx
-	}
+  __asm {
+    mov eax,1
+    cpuid
+    and edx,SSEbit
+    mov hasSSE,edx
+  }
 #endif
 
     hasSSE = 1;
-	core=hasSSE? scanLines_32_core_SSE: scanLines_32_core;
-	/*rdtsc_start_timer(0);*/
+  core=hasSSE? scanLines_32_core_SSE: scanLines_32_core;
+  /*rdtsc_start_timer(0);*/
 #else
-	core=scanLines_32_core;
+  core=scanLines_32_core;
 #endif
 
     if (scanLinesPct == 100) {
-  	    /*rdtsc_end_timer(0);*/
+        /*rdtsc_end_timer(0);*/
         return;
     }
 
@@ -2814,14 +2814,14 @@ void scanLines_32(void* pBuffer, int width, int height, int pitch, int scanLines
             pBuf += pitch;
         }
         /*rdtsc_end_timer(0);*/
-		return;
+    return;
     }
 
     for (h = 0; h < height; h++) {
-		core (pBuf,width,scanLinesPct,pitch*4);
+    core (pBuf,width,scanLinesPct,pitch*4);
         pBuf += pitch;
     }
-	/*rdtsc_end_timer(0);*/
+  /*rdtsc_end_timer(0);*/
 }
 
 static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int zoom,
@@ -2869,8 +2869,8 @@ static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
             if (zoom == 2) copyMonitorPAL_2x2_16(frame, pDst, dstPitch, pVideo->pRgbTable16, 1);
             else           copyPAL_1x1_16(frame, pDst, dstPitch, pVideo->pRgbTable16, 1);
             break;
-		case VIDEO_PAL_HQ2X: // Can't do 16bit hq2x so just use scale2x instead
-		case VIDEO_PAL_SCALE2X:
+    case VIDEO_PAL_HQ2X: // Can't do 16bit hq2x so just use scale2x instead
+    case VIDEO_PAL_SCALE2X:
             if (zoom==2) {
                 if (frame->line[0].doubleWidth == 0 && frame->interlace == INTERLACE_NONE) {
                     scale2x_2x2_16(frame, pDst, dstPitch, pVideo->pRgbTable16);
@@ -2906,9 +2906,9 @@ static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
             break;
         case VIDEO_PAL_MONITOR:
             if (zoom == 2)
-            	copyMonitorPAL_2x2_32(pVideo, frame, pDst, dstPitch, pVideo->pRgbTable32, 0);
+              copyMonitorPAL_2x2_32(pVideo, frame, pDst, dstPitch, pVideo->pRgbTable32, 0);
             else
-            	copyPAL_1x1_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 0);
+              copyPAL_1x1_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 0);
             break;
         case VIDEO_PAL_SHARP:
             if (zoom == 2) copySharpPAL_2x2_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 0);
@@ -2926,7 +2926,7 @@ static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
             if (zoom == 2) copyPAL_2x2_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 1);
             else           copyPAL_1x1_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 1);
             break;
-		case VIDEO_PAL_SCALE2X:
+    case VIDEO_PAL_SCALE2X:
             if (zoom==2) {
                 if (frame->line[0].doubleWidth == 0 && frame->interlace == INTERLACE_NONE) {
                     scale2x_2x2_32(frame, pDst, dstPitch, pVideo->pRgbTable32);
@@ -2939,7 +2939,7 @@ static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
                 copy_1x1_32(frame, pDst, dstPitch, pVideo->pRgbTable32);
             }
             break;
-		case VIDEO_PAL_HQ2X:
+    case VIDEO_PAL_HQ2X:
             if (zoom==2) {
                 if (frame->line[0].doubleWidth == 0 && frame->interlace == INTERLACE_NONE) {
                     if (canChangeZoom > 0) {
@@ -2975,8 +2975,8 @@ static int videoRender480(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
         switch (pVideo->palMode) {
         default:
         case VIDEO_PAL_FAST:
-		case VIDEO_PAL_SCALE2X:
-		case VIDEO_PAL_HQ2X:
+    case VIDEO_PAL_SCALE2X:
+    case VIDEO_PAL_HQ2X:
             if (zoom == 2) copy_2x1_16(frame, pDst, dstPitch, pVideo->pRgbTable16);
             else           copy_1x05_16(frame, pDst, dstPitch, pVideo->pRgbTable16);
             break;
@@ -3006,8 +3006,8 @@ static int videoRender480(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
         switch (pVideo->palMode) {
         default:
         case VIDEO_PAL_FAST:
-		case VIDEO_PAL_SCALE2X:
-		case VIDEO_PAL_HQ2X:
+    case VIDEO_PAL_SCALE2X:
+    case VIDEO_PAL_HQ2X:
             if (zoom == 2) copy_2x1_32(frame, pDst, dstPitch, pVideo->pRgbTable32);
             else           copy_1x05_32(frame, pDst, dstPitch, pVideo->pRgbTable32);
             break;
