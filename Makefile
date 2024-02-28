@@ -238,18 +238,6 @@ $(OUTPUT_DIR)/%.o: %.c
 	$(ECHO) Compiling $<...
 	$(SILENT)$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
 
-#$(OUTPUT_DIR)/%.o: %.cc
-#	$(ECHO) Compiling $<...
-#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
-#$(OUTPUT_DIR)/%.o: %.cpp
-#	$(ECHO) Compiling $<...
-#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
-#$(OUTPUT_DIR)/%.o: %.cxx
-#	$(ECHO) Compiling $<...
-#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
 $(OUTPUT_DIR)/%.res: %.rc
 	$(ECHO) Compiling $<...
 	$(SILENT)$(RC) $(CPPFLAGS) $(INCLUDE) -o $@ -i $<
