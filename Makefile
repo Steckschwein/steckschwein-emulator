@@ -4,7 +4,7 @@
 SILENT = @
 
 #
-# windows 10 build
+# windows build
 #   CROSS_COMPILE_WINDOWS=1 WIN_SDL=<sdl home> CC=<gcc home>/mingw32-gcc make clean all
 #
 ifndef (MINGW32)
@@ -18,7 +18,7 @@ endif
 CFLAGS   = -w -O3 -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror -fomit-frame-pointer
 
 # development flags (debugger support)
-#CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror
+# CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror
 # CFLAGS   +=-DDEBUG_ENABLED
 # Videorenderer.c segfault inline asm, we disable it entirely
 CFLAGS   +=-DNO_ASM
@@ -235,21 +235,8 @@ $(OUTPUT_DIR):
 	$(MKDIR) $(OUTPUT_DIR)
 
 $(OUTPUT_DIR)/%.o: %.c
-	#$(ECHO) Compiling $<...
-	#$(SILENT)$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
-	$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
-
-#$(OUTPUT_DIR)/%.o: %.cc
-#	$(ECHO) Compiling $<...
-#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
-#$(OUTPUT_DIR)/%.o: %.cpp
-#	$(ECHO) Compiling $<...
-#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
-#$(OUTPUT_DIR)/%.o: %.cxx
-#	$(ECHO) Compiling $<...
-#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
+	$(ECHO) Compiling $<...
+	$(SILENT)$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
 
 $(OUTPUT_DIR)/%.res: %.rc
 	$(ECHO) Compiling $<...
