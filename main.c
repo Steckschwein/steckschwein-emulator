@@ -1250,9 +1250,11 @@ int main(int argc, char **argv) {
       do_wordexp(config.sdcard, &sdcard_image_path_data);
       sdcard_path = sdcard_image_path_data;
     }
-    if (config.quality){
+    if (config.quality){ // TODO DRY with cmd args
       if(! strcmp("linear", config.quality)){
-        properties->video.monitorType = P_VIDEO_PALMON;
+        properties->video.monitorType = P_VIDEO_PALNONE;
+      }else if(! strcmp("composite", config.quality)){
+        properties->video.monitorType = P_VIDEO_PALCOMP;
       }
     }
     if (config.scale)
@@ -1450,7 +1452,9 @@ int main(int argc, char **argv) {
       if (nextArg(&argc, &argv, "best")) {
         properties->video.monitorType = P_VIDEO_PALHQ2X;
       } else if (nextArg(&argc, &argv, "linear")) {
-        properties->video.monitorType = P_VIDEO_PALMON;
+        properties->video.monitorType = P_VIDEO_PALNONE;
+      } else if (nextArg(&argc, &argv, "composite")) {
+        properties->video.monitorType = P_VIDEO_PALCOMP;
       } else {
         usage();
       }
