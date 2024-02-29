@@ -230,6 +230,9 @@ cpu/tables.h cpu/mnemonics.h: cpu/buildtables.py cpu/6502.opcodes cpu/65c02.opco
 install: all
 	install -s -m 0755 -D $(TARGET) $(DESTDIR)/usr/bin/steckschwein-emu
 
+deb:
+	dpkg-buildpackage
+
 $(OUTPUT_DIR):
 	$(ECHO) Creating directory $@...
 	$(MKDIR) $(OUTPUT_DIR)
