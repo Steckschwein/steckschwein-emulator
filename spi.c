@@ -136,7 +136,7 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
       break;
     case SDLK_DOWN:
       if (!is_up)
-        last_keycode = 0x1d + (keyCode - SDLK_DOWN);
+        last_keycode = 0x1f + (keyCode - SDLK_DOWN);
       break;
     default:
       if (!is_up) {
