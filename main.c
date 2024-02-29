@@ -1252,7 +1252,7 @@ int main(int argc, char **argv) {
     }
     if (config.quality){ // TODO DRY with cmd args
       if(! strcmp("linear", config.quality)){
-        properties->video.monitorType = P_VIDEO_PALMON;
+        properties->video.monitorType = P_VIDEO_PALNONE;
       }else if(! strcmp("composite", config.quality)){
         properties->video.monitorType = P_VIDEO_PALCOMP;
       }
