@@ -1,7 +1,7 @@
 #
 # Comment out if verbose comilation is wanted
 #
-SILENT = @
+#SILENT = @
 
 #
 # windows build
@@ -228,7 +228,10 @@ cpu/tables.h cpu/mnemonics.h: cpu/buildtables.py cpu/6502.opcodes cpu/65c02.opco
 	cd cpu && python buildtables.py
 
 install: all
-	install -s -m 0755 $(TARGET) ~/bin/steckschwein-emu
+	install -s -m 0755 -D $(TARGET) $(DESTDIR)/usr/bin/steckschwein-emu
+
+deb:
+	dpkg-buildpackage
 
 $(OUTPUT_DIR):
 	$(ECHO) Creating directory $@...

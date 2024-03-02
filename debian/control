@@ -1,0 +1,14 @@
+Source: steckschwein-emu
+Section: misc
+Priority: optional
+Maintainer: Thomas Woinke <thomas@steckschwein.de>
+Build-Depends:  debhelper (>= 10)    
+Standards-Version: 3.9.4
+Homepage: https://github.com/Steckschwein/steckschwein-emulator
+
+Package: steckschwein-emu
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Steckschwein Emulator
+ Emulator for the steckschwein 8bit homebrew computer
+
