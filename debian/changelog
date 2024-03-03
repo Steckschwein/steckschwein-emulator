@@ -1,3 +1,9 @@
+steckschwein-emu (0.1-2) unstable; urgency=medium
+
+  * compile using clang
+
+ -- Thomas Woinke <thomas@steckschwein.de>  Thu, 1 Mar 2024 23:00:00 -0100
+
 steckschwein-emu (0.1-1) unstable; urgency=medium
 
   * initial 
