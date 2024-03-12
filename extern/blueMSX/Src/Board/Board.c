@@ -690,7 +690,7 @@ UInt64 boardSystemTime64() {
 void boardInit(UInt32* systemTime)
 {
     static BoardTimer dummy_timer;
-	 boardSysTime = systemTime;
+    boardSysTime = systemTime;
     oldTime = *systemTime;
     boardSysTime64 = oldTime * HIRES_CYCLES_PER_LORES_CYCLE;
 
@@ -709,7 +709,7 @@ void boardInit(UInt32* systemTime)
 }
 
 int boardRun(Mixer* mixer,
-			 int frequency,
+       int frequency,
              int reversePeriod,
              int reverseBufferCnt,
              int (*syncCallback)(int, int))
@@ -731,7 +731,7 @@ int boardRun(Mixer* mixer,
 
     boardSetFrequency(frequency);
 
-	boardRunning = 1;
+    boardRunning = 1;
     memset(&boardInfo, 0, sizeof(boardInfo));
 
     VdpSyncMode vdpSyncMode = VDP_SYNC_50HZ;

@@ -13,6 +13,7 @@ MOS6502* mos6502create(MOS6502TimerCb timerCb) {
   mos6502->intState = INT_HIGH;
   mos6502->nmiState = INT_HIGH;
   mos6502->nmiEdge = 0;
+  mos6502->frequency = 3579545 * 3;
 
   mos6502Reset(mos6502, 0);
 
@@ -31,7 +32,7 @@ void mos6502Execute(MOS6502 *mos6502) {
 
     if ((Int32) (mos6502->timeout - mos6502->systemTime) <= 0) {
       if (mos6502->timerCb != NULL) {
-        mos6502->timerCb(NULL);
+        mos6502->timerCb(mos6502->ref);
       }
     }
     if (mos6502->systemTime - lastRefreshTime > 222 * 3) {

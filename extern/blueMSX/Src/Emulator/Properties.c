@@ -169,8 +169,9 @@ int stringToEnum(ValueNamePair* pair, const char* name)
 void propInitDefaults(Properties* properties, int langType, int syncMode, const char* themeName)
 {
     int i;
-/*
+
     properties->language                      = langType;
+/*
     strcpy(properties->settings.language, langToName(properties->language, 0));
 
     properties->settings.showStatePreview     = 1;

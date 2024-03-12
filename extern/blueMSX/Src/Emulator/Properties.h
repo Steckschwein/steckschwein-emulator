@@ -455,6 +455,7 @@ typedef struct {
         char macAddress[64];
     } Eth;
 } PortProperties;
+*/
 
 #define DLG_MAX_ID 32
 
@@ -473,7 +474,7 @@ typedef struct {
         long height;
     } windowPos[DLG_MAX_ID];
 } Settings;
-*/
+
 typedef struct Properties {
     EmulationProperties emulation;
     VideoProperties     video;
@@ -491,10 +492,10 @@ typedef struct Properties {
     CassetteProperties  cassette;
     FileHistory         filehistory;
     PortProperties      ports;
-    int                 language;
-    Settings            settings;
     NoWindProperties    nowind;
 	 */
+    int                 language;
+    Settings            settings;
 } Properties;
 
 Properties* propCreate(int useDefault,

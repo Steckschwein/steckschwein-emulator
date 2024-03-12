@@ -4,6 +4,8 @@
 
 #define ENABLE_BREAKPOINTS
 
+#define CPU_FREQUENCY
+
 typedef UInt32 SystemTime;
 
 typedef void (*MOS6502TimerCb)(void*);
@@ -32,6 +34,7 @@ typedef struct {
 
 typedef struct{
   SystemTime        systemTime;       /* Current system time             */
+  UInt32            frequency;        /* CPU Frequency of 65C02 (in Hz)  */
   UInt32            vdpTime;          /* Time of last access to VDP  */
   int               terminate;        /* Termination flag                */
   SystemTime        timeout;          /* User scheduled timeout          */
@@ -40,6 +43,8 @@ typedef struct{
   int               nmiState;
   int               nmiEdge;
   CpuRegs           regs;
+  void*             ref;              /* User defined pointer which is   */
+                                    /* passed to the callbacks         */
 
 #ifdef ENABLE_BREAKPOINTS
     int           breakpointCount;  /* Number of breakpoints set       */

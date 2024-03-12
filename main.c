@@ -740,7 +740,7 @@ void emulatorSuspend() {
 }
 
 void emulatorSetFrequency(int logFrequency, int *frequency) {
-  emuFrequency = (int) (EMU_FREQUENCY * pow(2.0, (logFrequency - 50) / 15.0515));
+  emuFrequency = (int) (3579545 * pow(2.0, (logFrequency - 50) / 15.0515));
 
   if (frequency != NULL) {
     *frequency = emuFrequency;
@@ -1231,8 +1231,7 @@ int main(int argc, char **argv) {
   mixer = mixerCreate();
 
   //read default properties
-  properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
-  properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
+  properties = propCreate(0, 0, P_EMU_SYNCAUTO, "Steckschwein");
 
   configuration config;
   sprintf(configfile_path, "%s/.sw/config.ini", getenv("HOME"));
