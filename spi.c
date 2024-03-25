@@ -73,79 +73,99 @@ uint8_t spi_handle_keyboard(uint8_t inbyte) {
 	return outbyte;
 }
 
+static uint8_t kbd_index = 0;
+
+void keyboardInit(){
+  SDL_PumpEvents();
+  kbd_index = (SDL_GetModState() & KMOD_CAPS) == KMOD_CAPS ? kbd_index | 1 : kbd_index & ~(1);
+}
 
 void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 
 	static is_lalt = false;
-	static uint8_t index = 0;
 
 	bool is_up = (keyBrdEvent->type == SDL_KEYUP);
 
 	SDL_Keycode keyCode = keyBrdEvent->keysym.sym;
-	switch (keyCode) {
-	case SDLK_LCTRL:
-	case SDLK_RCTRL:
-		index = is_up ? (index & ~(2)) : index | 2;
-		break;
-	case SDLK_LSHIFT:
-	case SDLK_RSHIFT:
-		index = is_up ? (index & ~(1)) : index | 1;
-		break;
-	case SDLK_LALT:
-		is_lalt = !is_up;
-		break;
-	case SDLK_RALT:
-		index = is_up ? (index & ~(4)) : index | 4;
-		break;
-	case SDLK_MODE:
-	case SDLK_F1:
-	case SDLK_F2:
-	case SDLK_F3:
-	case SDLK_F4:
-	case SDLK_F5:
-	case SDLK_F6:
-	case SDLK_F7:
-	case SDLK_F8:
-	case SDLK_F9:
-	case SDLK_F10:
-	case SDLK_F11:
-	case SDLK_F12:
-		if (is_up)
-			last_keycode = 0xf1 + (keyCode - SDLK_F1);
-		break;
-	case SDLK_RIGHT:
-	case SDLK_LEFT:
-		if (!is_up)
-			last_keycode = 0x10 + (keyCode - SDLK_RIGHT);
-		break;
-	case SDLK_UP:
-	case SDLK_DOWN:
-		if (!is_up)
-			last_keycode = 0x1e + (keyCode - SDLK_UP);
-		break;
-	default:
-		if (!is_up) {
-			if (is_lalt) {
-				switch (keyCode) {
-				case SDLK_r:
-					actionEmuResetHard();
-					break;
-				}
-			}
 
-			if (scancodes[keyCode]) {
-				uint8_t i = (index >= 4 ? 3 : index >= 2 ? 2 : index);
-				last_keycode = scancodes[keyCode][i];
-			} else {
-				last_keycode = keyCode; //unmapped
-			}
-		}
-	}
+	switch (keyCode) {
+    case SDLK_LCTRL:
+    case SDLK_RCTRL:
+      kbd_index = is_up ? (kbd_index & ~(2)) : kbd_index | 2;
+      break;
+    case SDLK_CAPSLOCK:
+      kbd_index = (SDL_GetModState() & KMOD_CAPS) == KMOD_CAPS ? kbd_index | 1 : kbd_index & ~(1);
+      break;
+    case SDLK_LSHIFT:
+    case SDLK_RSHIFT:
+      kbd_index = is_up ? (kbd_index & ~(1)) : kbd_index | 1;
+      break;
+    case SDLK_LALT:
+      is_lalt = !is_up;
+      break;
+    case SDLK_RALT:
+      kbd_index = is_up ? (kbd_index & ~(4)) : kbd_index | 4;
+      break;
+    case SDLK_MODE:
+    case SDLK_F1:
+    case SDLK_F2:
+    case SDLK_F3:
+    case SDLK_F4:
+    case SDLK_F5:
+    case SDLK_F6:
+    case SDLK_F7:
+    case SDLK_F8:
+    case SDLK_F9:
+    case SDLK_F10:
+    case SDLK_F11:
+    case SDLK_F12:
+      if (is_up)
+        last_keycode = 0xf1 + (keyCode - SDLK_F1);
+      break;
+    case SDLK_RIGHT:
+      if (!is_up)
+        last_keycode = 0x10 + (keyCode - SDLK_RIGHT);
+      break;
+    case SDLK_LEFT:
+      if (!is_up)
+        last_keycode = 0x11 + (keyCode - SDLK_LEFT);
+      break;
+    case SDLK_UP:
+      if (!is_up)
+        last_keycode = 0x1e + (keyCode - SDLK_UP);
+      break;
+    case SDLK_DOWN:
+      if (!is_up)
+        last_keycode = 0x1f + (keyCode - SDLK_DOWN);
+      break;
+    default:
+      if (!is_up) {
+        if (is_lalt) {
+          switch (keyCode) {
+          case SDLK_r:
+            actionEmuResetSoft();
+            break;
+          }
+        }
+
+        uint8_t i = (kbd_index >= 4 ? 3 : kbd_index >= 2 ? 2 : kbd_index);
+        if (keyCode == SDLK_s && i == 2) {
+            boardSetNmi(NMI);
+        } else if (keyCode < SCAN_CODES_SIZE && scancodes[keyCode] && scancodes[keyCode][i]) {
+            last_keycode = scancodes[keyCode][i];
+        } else {
+          last_keycode = keyCode; // unmapped
+        }
+      }else{
+        boardClearNmi(NMI);
+      }
+    }
 #ifdef EMU_AVR_KEYBOARD_IRQ
   if (last_keycode != 0) {
     boardSetInt(0x08);
 	}
 #endif
+
 }
 
 void dispatch_device(uint8_t port) {

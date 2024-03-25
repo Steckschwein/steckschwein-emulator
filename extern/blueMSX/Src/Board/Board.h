@@ -36,6 +36,8 @@
 #include "glue.h"
 #include <stdio.h>
 
+#define NMI 0x1
+
 typedef struct {
    /*
     int  cartridgeCount;
@@ -61,6 +63,10 @@ typedef struct {
 
     void   (*setInt)(void*);
     void   (*clearInt)(void*);
+
+    void   (*setNmi)(void*);
+    void   (*clearNmi)(void*);
+
     void   (*setCpuTimeout)(void*, UInt32);
 
     void   (*setBreakpoint)(void*, UInt16);
@@ -96,6 +102,10 @@ void boardSetFdcTimingEnable(int enable);
 void boardSetBreakpoint(UInt16 address);
 void boardClearBreakpoint(UInt16 address);
 
+void   boardSetNmi(UInt32 nmi);
+void   boardClearNmi(UInt32 nmi);
+UInt32 boardGetNmi(UInt32 nmi);
+
 void   boardSetInt(UInt32 irq);
 void   boardClearInt(UInt32 irq);
 UInt32 boardGetInt(UInt32 irq);
@@ -121,7 +131,7 @@ const char* boardGetBaseDirectory();
 
 Mixer* boardGetMixer();
 
-#define boardFrequency() (6 * 3579545)	//
+#define boardFrequency() (6 * 3579545)	//21.477 vdp clock speed
 
 static UInt32 boardSystemTime() {
     extern UInt32* boardSysTime;

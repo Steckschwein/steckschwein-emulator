@@ -6,99 +6,120 @@
 #include <stddef.h>
 
 MOS6502* mos6502create(MOS6502TimerCb timerCb) {
-	MOS6502 *mos6502 = malloc(sizeof(MOS6502));
-	mos6502->systemTime = 0;
-	mos6502->terminate = 0;
-	mos6502->timerCb = timerCb;
+  MOS6502 *mos6502 = malloc(sizeof(MOS6502));
+  mos6502->systemTime = 0;
+  mos6502->terminate = 0;
+  mos6502->timerCb = timerCb;
+  mos6502->intState = INT_HIGH;
+  mos6502->nmiState = INT_HIGH;
+  mos6502->nmiEdge = 0;
+  mos6502->frequency = 3579545 * 3;
 
-	mos6502Reset(mos6502, 0);
+  mos6502Reset(mos6502, 0);
 
-	return mos6502;
+  return mos6502;
 }
 
 void mos6502Reset(MOS6502 *mos6502, UInt32 cpuTime) {
-	reset6502();
-}
-
-void mos6502SetInt(MOS6502 *mos6502) {
-	DEBUG ("mos6502SetInt %p\n", mos6502);
-	mos6502->intState = INT_LOW;
+  reset6502();
 }
 
 void mos6502Execute(MOS6502 *mos6502) {
 
   static SystemTime lastRefreshTime = 0;
 
-	while (!mos6502->terminate) {
+  while (!mos6502->terminate) {
 
-		if ((Int32) (mos6502->timeout - mos6502->systemTime) <= 0) {
-			if (mos6502->timerCb != NULL) {
-				mos6502->timerCb(NULL);
-			}
-		}
+    if ((Int32) (mos6502->timeout - mos6502->systemTime) <= 0) {
+      if (mos6502->timerCb != NULL) {
+        mos6502->timerCb(mos6502->ref);
+      }
+    }
     if (mos6502->systemTime - lastRefreshTime > 222 * 3) {
         lastRefreshTime = mos6502->systemTime;
         mos6502->systemTime += 20 * 3;
     }
 
 #ifdef ENABLE_BREAKPOINTS
-		if (mos6502->breakpointCount > 0) {
+    if (mos6502->breakpointCount > 0) {
             if (mos6502->breakpoints[pc]) {
-            	DEBUGBreakToDebugger();
+              DEBUGBreakToDebugger();
 //                if (mos6502->breakpointCb != NULL) {
-//                	mos6502->breakpointCb(mos6502->ref, pc);
+//                  mos6502->breakpointCb(mos6502->ref, pc);
 //                    if (mos6502->terminate) {
 //                        break;
 //                    }
 //                }
-			}
-		}
+      }
+    }
 #endif
-		if(mos6502->intState == INT_LOW){
-			irq6502();
-		}
-		step6502();
-		mos6502->systemTime = clockticks6502;
-		DEBUG ("mos6502Execute %p %x\n", mos6502, mos6502->systemTime);
-	}
+   /* If it is NMI... */
+    if (mos6502->nmiEdge) {
+      mos6502->nmiEdge = 0;
+      nmi6502();
+    }else if(mos6502->intState == INT_LOW){
+      irq6502();
+    }
+    step6502();
+    mos6502->systemTime = clockticks6502;
+    DEBUG ("mos6502Execute %p %x\n", mos6502, mos6502->systemTime);
+  }
+}
+
+void mos6502SetInt(MOS6502 *mos6502) {
+  DEBUG ("mos6502SetInt %p\n", mos6502);
+  mos6502->intState = INT_LOW;
 }
 
 void mos6502ClearInt(MOS6502 *mos6502) {
-	DEBUG ("mos6502ClearInt %p\n", mos6502);
-	mos6502->intState = INT_HIGH;
+  DEBUG ("mos6502ClearInt %p\n", mos6502);
+  mos6502->intState = INT_HIGH;
+}
+
+void mos6502SetNmi(MOS6502* mos6502){
+  DEBUG ("mos6502SetNmi %p\n", mos6502);
+  if (mos6502->nmiState == INT_HIGH) {
+    mos6502->nmiEdge = 1;
+  }
+  mos6502->nmiState = INT_LOW;
+}
+
+void mos6502ClearNmi(MOS6502* mos6502){
+  DEBUG ("mos6502ClearNmi %p\n", mos6502);
+  mos6502->nmiState = INT_HIGH;
 }
 
 void mos6502SetTimeoutAt(MOS6502 *mos6502, SystemTime time) {
-//	DEBUG ("mos6502SetTimeoutAt %p\n", mos6502);
-	mos6502->timeout = time;
+//  DEBUG ("mos6502SetTimeoutAt %p\n", mos6502);
+  mos6502->timeout = time;
 }
 
 void mos6502SetBreakpoint(MOS6502 *mos6502, UInt16 address) {
-	DEBUG ("mos6502SetBreakpoint %p\n", mos6502);
+  DEBUG ("mos6502SetBreakpoint %p\n", mos6502);
 #ifdef ENABLE_BREAKPOINTS
-	if (mos6502->breakpoints[address] == 0) {
-		mos6502->breakpoints[address] = 1;
-		mos6502->breakpointCount++;
-	}
+  if (mos6502->breakpoints[address] == 0) {
+    mos6502->breakpoints[address] = 1;
+    mos6502->breakpointCount++;
+  }
 #endif
 }
 void mos6502ClearBreakpoint(MOS6502 *mos6502, UInt16 address) {
 #ifdef ENABLE_BREAKPOINTS
-	if (mos6502->breakpoints[address] != 0) {
-		mos6502->breakpointCount--;
-		mos6502->breakpoints[address] = 0;
-	}
+  if (mos6502->breakpoints[address] != 0) {
+    mos6502->breakpointCount--;
+    mos6502->breakpoints[address] = 0;
+  }
 #endif
 }
 
 void mos6502StopExecution(MOS6502 *mos6502) {
-	mos6502->terminate = 1;
+  mos6502->terminate = 1;
 }
 
 UInt32 mos6502GetTimeTrace(MOS6502 *mos6502, int offset) {
-	return mos6502->systemTime;
+  return mos6502->systemTime;
 }
 
 void mos6502Destroy(MOS6502 *mos6502) {
-	free(mos6502);
+  free(mos6502);
 }

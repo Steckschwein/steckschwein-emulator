@@ -59,7 +59,6 @@ void joystick_step() {
 	if (!writing) { //if we are not already writing, check latch to
 		//see if we need to start
 		handle_latch(joystick_latch, joystick_clock);
-		return;
 	}
 
 	//if we have started writing controller data and the latch has dropped,

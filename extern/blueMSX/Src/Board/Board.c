@@ -60,6 +60,8 @@
 
 static int skipSync;
 static int pendingInt;
+static int pendingNmi;
+
 static Mixer* boardMixer = NULL;
 static int (*syncToRealClock)(int, int) = NULL;
 
@@ -461,6 +463,22 @@ int boardGetRefreshRate()
     return 0;
 }
 
+void   boardSetNmi(UInt32 nmi){
+    pendingNmi |= nmi;
+    boardInfo.setNmi(boardInfo.cpuRef);
+}
+
+void   boardClearNmi(UInt32 nmi){
+    pendingNmi &= ~nmi;
+    if (pendingNmi == 0) {
+        boardInfo.clearNmi(boardInfo.cpuRef);
+    }
+}
+
+UInt32 boardGetNmi(UInt32 nmi){
+ return pendingNmi & nmi;
+}
+
 void boardSetInt(UInt32 irq)
 {
     pendingInt |= irq;
@@ -672,7 +690,7 @@ UInt64 boardSystemTime64() {
 void boardInit(UInt32* systemTime)
 {
     static BoardTimer dummy_timer;
-   boardSysTime = systemTime;
+    boardSysTime = systemTime;
     oldTime = *systemTime;
     boardSysTime64 = oldTime * HIRES_CYCLES_PER_LORES_CYCLE;
 

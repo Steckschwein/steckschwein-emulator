@@ -61,6 +61,10 @@ int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boa
 
      boardInfo->setInt           = mos6502SetInt;
      boardInfo->clearInt         = mos6502ClearInt;
+
+     boardInfo->setNmi           = mos6502SetNmi;
+     boardInfo->clearNmi         = mos6502ClearNmi;
+
      boardInfo->setCpuTimeout    = mos6502SetTimeoutAt;
 
      boardInfo->setBreakpoint    = mos6502SetBreakpoint;

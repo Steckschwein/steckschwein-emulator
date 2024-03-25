@@ -4,7 +4,7 @@
 SILENT = @
 
 #
-# windows 10 build
+# windows build
 #   CROSS_COMPILE_WINDOWS=1 WIN_SDL=<sdl home> CC=<gcc home>/mingw32-gcc make clean all
 #
 ifndef (MINGW32)
@@ -12,6 +12,7 @@ ifndef (MINGW32)
 	MINGW32=/usr/local/Cellar/mingw-w64/6.0.0_2/toolchain-i686/i686-w64-mingw32
 endif
 
+#CC=clang
 
 # Flags
 #
@@ -230,7 +231,10 @@ cpu/tables.h cpu/mnemonics.h: cpu/buildtables.py cpu/6502.opcodes cpu/65c02.opco
 	cd cpu && python buildtables.py
 
 install: all
-	install -s -m 0755 $(TARGET) ~/bin/steckschwein-emu
+	install -s -m 0755 -D $(TARGET) $(DESTDIR)/usr/bin/steckschwein-emu
+
+deb:
+	dpkg-buildpackage
 
 $(OUTPUT_DIR):
 	$(ECHO) Creating directory $@...
@@ -239,18 +243,6 @@ $(OUTPUT_DIR):
 $(OUTPUT_DIR)/%.o: %.c
 	$(ECHO) Compiling $<...
 	$(SILENT)$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
-
-#$(OUTPUT_DIR)/%.o: %.cc
-#	$(ECHO) Compiling $<...
-#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
-#$(OUTPUT_DIR)/%.o: %.cpp
-#	$(ECHO) Compiling $<...
-#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
-#$(OUTPUT_DIR)/%.o: %.cxx
-#	$(ECHO) Compiling $<...
-#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
 
 $(OUTPUT_DIR)/%.res: %.rc
 	$(ECHO) Compiling $<...

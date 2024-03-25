@@ -20,9 +20,9 @@ You can build a Steckschwein ROM image yourself using the [build instructions][x
 
 ### Linux Build
 
-The SDL Version 1.2 development package is available as a distribution package with most major versions of Linux:
+The SDL Version 2 development package is available as a distribution package with most major versions of Linux:
 - Red Hat: `yum install SDL-devel`
-- Debian: `apt-get install libsdl1.2-dev`
+- Debian: `apt-get install libsdl2-dev`
 
 Type `make` to build the source. The output will be `steckschwein-emu` in the current directory. Remember you will also need a `rom.bin` as described above.
 
@@ -34,9 +34,9 @@ Steps for compiling WebAssembly/HTML5 can be found [here][webassembly].
 Starting
 --------
 
-You can start `x16emu`/`x16emu.exe` either by double-clicking it, or from the command line. The latter allows you to specify additional arguments.
+You can start `steckschwein-emu`/`steckschwein-emu.exe` either by double-clicking it, or from the command line. The latter allows you to specify additional arguments.
 
-* When starting `x16emu` without arguments, it will pick up the system ROM (`rom.bin`) from the executable's directory.
+* When starting `steckschwein-emu` without arguments, it will pick up the system ROM (`rom.bin`) from the executable's directory.
 * The system ROM filename/path can be overridden with the `-rom` command line argument.
 * `-keymap` tells the KERNAL to switch to a specific keyboard layout. Use it without an argument to view the supported layouts.
 * `-sdcard` lets you specify an SD card image (partition table + FAT32).
@@ -64,7 +64,7 @@ You can start `x16emu`/`x16emu.exe` either by double-clicking it, or from the co
 * When compiled with `WITH_YM2151`, `-sound` can be used to specify the output sound device.
 * When compiled with `#define TRACE`, `-trace` will enable an instruction trace on stdout.
 
-Run `x16emu -h` to see all command line options.
+Run `steckschwein-emu -h` to see all command line options.
 
 
 Keyboard Layout
@@ -161,7 +161,7 @@ Dealing with BASIC Programs
 BASIC programs are encoded in a tokenized form, they are not simply ASCII files. If you want to edit BASIC programs on the host's text editor, you need to convert it between tokenized BASIC form and ASCII.
 
 * To convert ASCII to BASIC, reboot the machine and paste the ASCII text using Ctrl + V (Mac: Cmd + V). You can now run the program, or use the `SAVE` BASIC command to write the tokenized version to disk.
-* To convert BASIC to ASCII, start x16emu with the -echo argument, `LOAD` the BASIC file, and type `LIST`. Now copy the ASCII version from the terminal.
+* To convert BASIC to ASCII, start steckschwein-emu with the -echo argument, `LOAD` the BASIC file, and type `LIST`. Now copy the ASCII version from the terminal.
 
 
 Using the KERNAL/BASIC environment

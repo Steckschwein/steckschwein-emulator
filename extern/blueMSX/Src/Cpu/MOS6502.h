@@ -4,6 +4,8 @@
 
 #define ENABLE_BREAKPOINTS
 
+#define CPU_FREQUENCY
+
 typedef UInt32 SystemTime;
 
 typedef void (*MOS6502TimerCb)(void*);
@@ -31,13 +33,18 @@ typedef struct {
 } CpuRegs;
 
 typedef struct{
-	SystemTime    	systemTime;       /* Current system time             */
-	UInt32        	vdpTime;          /* Time of last access to VDP  */
-    int           	terminate;        /* Termination flag                */
-    SystemTime    	timeout;          /* User scheduled timeout          */
-    MOS6502TimerCb	timerCb;
-    int           	intState;         /* Sate of interrupt line          */
-    CpuRegs			regs;
+  SystemTime        systemTime;       /* Current system time             */
+  UInt32            frequency;        /* CPU Frequency of 65C02 (in Hz)  */
+  UInt32            vdpTime;          /* Time of last access to VDP  */
+  int               terminate;        /* Termination flag                */
+  SystemTime        timeout;          /* User scheduled timeout          */
+  MOS6502TimerCb    timerCb;
+  int               intState;         /* Sate of interrupt line          */
+  int               nmiState;
+  int               nmiEdge;
+  CpuRegs           regs;
+  void*             ref;              /* User defined pointer which is   */
+                                    /* passed to the callbacks         */
 
 #ifdef ENABLE_BREAKPOINTS
     int           breakpointCount;  /* Number of breakpoints set       */
@@ -55,6 +62,8 @@ void mos6502Reset(MOS6502* mos6502, UInt32 cpuTime);
 void mos6502SetInt(MOS6502* mos6502);
 void mos6502Execute(MOS6502* mos6502);
 void mos6502ClearInt(MOS6502* mos6502);
+void mos6502SetNmi(MOS6502* mos6502);
+void mos6502ClearNmi(MOS6502* mos6502);
 void mos6502SetTimeoutAt(MOS6502* mos6502, SystemTime time);
 void mos6502SetBreakpoint(MOS6502* mos6502, UInt16 address);
 void mos6502ClearBreakpoint(MOS6502* mos6502, UInt16 address);

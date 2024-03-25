@@ -31,6 +31,9 @@ Hallo Thomas... some serial
 
 */
 
+void loadFile();
+void reset_upload() ;
+
 static uint8_t uartregisters[16];
 
 extern int errno;

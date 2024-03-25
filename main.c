@@ -48,6 +48,7 @@
 #include <emscripten.h>
 #include <pthread.h>
 #endif
+void machineDestroy(void *machine);
 
 void* emulator_loop(void *param);
 void emscripten_main_loop(void);
@@ -222,6 +223,20 @@ static void usage() {
   printf("\nSteckschwein Emulator (C)2019 Michael Steil, Thomas Woinke, Marko Lauke\n");
   printf("All rights reserved. License: 2-clause BSD\n\n");
   printf("Usage: steckschwein-emu [option] ...\n\n");
+  printf("-rom <rom.bin>[,<load_addr>]\n");
+  printf("\tbios ROM file.\n");
+  printf("-ram <ramsize>\n");
+  printf("\tSpecify RAM size in KB (8, 16, 32, ..., 64).\n");
+  printf("\tThe default is 64.\n");
+  printf("-keymap <keymap>\n");
+  printf("\tEnable a specific keyboard layout decode table.\n");
+  printf("-sdcard <sdcard.img>\n");
+  printf("\tSpecify SD card image (partition map + FAT32)\n");
+  printf("-upload <file>[,<load_addr>]\n");
+  printf("-lmf - check last modified of file to upload\n");
+  printf("\tEmulate serial upload of <file> \n");
+  printf("\t(.PRG file with 2 byte start address header)\n");
+  printf("\tThe override load address is hex without a prefix.\n");
 
   /*
    printf("-prg <app.prg>[,<load_addr>]\n");
@@ -237,11 +252,6 @@ static void usage() {
    printf("\tStart the -prg/-bas program using RUN or SYS, depending\n");
    printf("\ton the load address.\n");
    */
-  printf("-debug [<address>]\n");
-  printf("\tEnable debugger. Optionally, set a breakpoint\n");
-  printf("-dump {C|R|B|V}...\n");
-  printf("\tConfigure system dump: (C)PU, (R)AM, (B)anked-RAM, (V)RAM\n");
-  printf("\tMultiple characters are possible, e.g. -dump CV ; Default: RB\n");
   printf("-echo [{iso|raw}]\n");
   printf("\tPrint all KERNAL output to the host's stdout.\n");
   printf("\tBy default, everything but printable ASCII characters get\n");
@@ -250,45 +260,35 @@ static void usage() {
   printf("\t\"raw\" will not do any substitutions.\n");
   printf("\tWith the BASIC statement \"LIST\", this can be used\n");
   printf("\tto detokenize a BASIC program.\n");
+  printf("-log {K|S|V}...\n");
+  printf("\tEnable logging of (K)eyboard, (S)peed, (V)ideo.\n");
+  printf("\tMultiple characters are possible, e.g. -log KS\n");
   printf("-gif <file.gif>[,wait]\n");
   printf("\tRecord a gif for the video output.\n");
   printf("\tUse ,wait to start paused.\n");
   printf("\tPOKE $9FB5,2 to start recording.\n");
   printf("\tPOKE $9FB5,1 to capture a single frame.\n");
   printf("\tPOKE $9FB5,0 to pause.\n");
+  printf("-scale {1|2|..8|full} - use ALT_L+F to toggle fullscreen\n");
+  printf("\tScale output to an integer multiple of 256x212\n");
+  printf("-quality {linear (default) | best}\n");
+  printf("\tScaling algorithm quality\n");
+  printf("-debug [<address>]\n");
+  printf("\tEnable debugger. Optionally, set a breakpoint\n");
+  printf("-dump {C|R|B|V}...\n");
+  printf("\tConfigure system dump: (C)PU, (R)AM, (B)anked-RAM, (V)RAM\n");
+  printf("\tMultiple characters are possible, e.g. -dump CV ; Default: RB\n");
   printf("-joy1 {NES | SNES}\n");
   printf("\tChoose what type of joystick to use, e.g. -joy1 SNES\n");
   printf("-joy2 {NES | SNES}\n");
   printf("\tChoose what type of joystick to use, e.g. -joy2 SNES\n");
-  printf("-keymap <keymap>\n");
-  printf("\tEnable a specific keyboard layout decode table.\n");
-  printf("-lmf\n");
-  printf("\tcheck last modified of file to upload\n");
-  printf("-log {K|S|V}...\n");
-  printf("\tEnable logging of (K)eyboard, (S)peed, (V)ideo.\n");
-  printf("\tMultiple characters are possible, e.g. -log KS\n");
-  printf("-quality {linear (default) | best}\n");
-  printf("\tScaling algorithm quality\n");
-  printf("-ram <ramsize>\n");
-  printf("\tSpecify RAM size in KB (8, 16, 32, ..., 64).\n");
-  printf("\tThe default is 64.\n");
-  printf("-rom <rom.bin>[,<load_addr>]\n");
-  printf("\tbios ROM file.\n");
   printf("-rotate\n");
   printf("\trotate screen 90 degree clockwise\n");
-  printf("-sdcard <sdcard.img>\n");
-  printf("\tSpecify SD card image (partition map + FAT32)\n");
-  printf("-scale {1|2|full} - use ALT_L+F to toggle fullscreen\n");
-  printf("\tScale output to an integer multiple of 640x480\n");
 #ifdef TRACE
   printf("-trace [<address>]\n");
   printf("\tPrint instruction trace. Optionally, a trigger address\n");
   printf("\tcan be specified.\n");
 #endif
-  printf("-upload <file>[,<load_addr>]\n");
-  printf("\tEmulate serial upload of <file> \n");
-  printf("\t(.PRG file with 2 byte start address header)\n");
-  printf("\tThe override load address is hex without a prefix.\n");
   printf("\n");
   printf("\nIcon from freepink on Flaticon: https://www.flaticon.com/de/autoren/freepik\n");
   exit(1);
@@ -487,8 +487,7 @@ int createOrUpdateSdlWindow() {
       Uint32 amask = 0x000000ff;
     #endif
     SDL_SetWindowTitle(window, title);
-    SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(&schwein128_rgba, 128,128,32,4*128,
-      rmask, gmask, bmask, amask);
+    SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(&schwein128_rgba, 128,128,32,4*128, rmask, gmask, bmask, amask);
     SDL_SetWindowIcon(window, icon);
     SDL_FreeSurface(icon);
   }else{
@@ -749,7 +748,7 @@ void emulatorSuspend() {
 }
 
 void emulatorSetFrequency(int logFrequency, int *frequency) {
-  emuFrequency = (int) (EMU_FREQUENCY * pow(2.0, (logFrequency - 50) / 15.0515));
+  emuFrequency = (int) (3579545 * pow(2.0, (logFrequency - 50) / 15.0515));
 
   if (frequency != NULL) {
     *frequency = emuFrequency;
@@ -1183,9 +1182,10 @@ int parseNumber(unsigned char *s) {
 
 typedef struct
 {
-    const char* rom;
-    const char* sdcard;
+  const char* rom;
+  const char* sdcard;
   const char* scale;
+  const char* quality;
 } configuration;
 
 
@@ -1196,6 +1196,8 @@ static int handler(void* user, const char* section, const char* name, const char
     #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
     if (MATCH("display", "scale")) {
         pconfig->scale = strdup(value);
+    } else if (MATCH("display", "quality")) {
+        pconfig->quality = strdup(value);
     } else if (MATCH("paths", "rom")) {
         pconfig->rom = strdup(value);
     } else if (MATCH("paths", "sdcard")) {
@@ -1244,13 +1246,16 @@ int main(int argc, char **argv) {
   // no ROM file is specified on the command line.
   strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
 
+
+  memory_init();
+  mixer = mixerCreate();
+
   //read default properties
-  properties = propCreate(0, 0, P_EMU_SYNCNONE, "Steckschwein");
-  properties->emulation.vdpSyncMode = P_VDP_SYNCAUTO;
+  properties = propCreate(0, 0, P_EMU_SYNCAUTO, "Steckschwein");
 
   configuration config;
   sprintf(configfile_path, "%s/.sw/config.ini", getenv("HOME"));
-  if (ini_parse(configfile_path, handler, &config)  >=0)
+  if (ini_parse(configfile_path, handler, &config) >=0)
   {
     wordexp_t exp_result;
     if (config.rom)
@@ -1264,7 +1269,13 @@ int main(int argc, char **argv) {
       do_wordexp(config.sdcard, &sdcard_image_path_data);
       sdcard_path = sdcard_image_path_data;
     }
-
+    if (config.quality){ // TODO DRY with cmd args
+      if(! strcmp("linear", config.quality)){
+        properties->video.monitorType = P_VIDEO_PALNONE;
+      }else if(! strcmp("composite", config.quality)){
+        properties->video.monitorType = P_VIDEO_PALCOMP;
+      }
+    }
     if (config.scale)
     {
       if (! strcmp("full", config.scale))
@@ -1306,7 +1317,6 @@ int main(int argc, char **argv) {
       if (!found) {
         usage();
       }
-      ram_size = kb / 8;
     } else if (nextArg(&argc, &argv, "-keymap")) {
       if (!argc || argv[0][0] == '-') {
         usage_keymap();
@@ -1461,7 +1471,9 @@ int main(int argc, char **argv) {
       if (nextArg(&argc, &argv, "best")) {
         properties->video.monitorType = P_VIDEO_PALHQ2X;
       } else if (nextArg(&argc, &argv, "linear")) {
-        properties->video.monitorType = P_VIDEO_PALMON;
+        properties->video.monitorType = P_VIDEO_PALNONE;
+      } else if (nextArg(&argc, &argv, "composite")) {
+        properties->video.monitorType = P_VIDEO_PALCOMP;
       } else {
         usage();
       }
@@ -1469,9 +1481,6 @@ int main(int argc, char **argv) {
       usage();
     }
   }
-
-  memory_init();
-  mixer = mixerCreate();
 
   int rom_override_start = parseNumber(rom_path);
   FILE *f = fopen(rom_path, "rb");
@@ -1542,7 +1551,7 @@ int main(int argc, char **argv) {
 
   dpyUpdateAckEvent = archEventCreate(0);
 
-//    keyboardInit();
+  keyboardInit();
 
 //    emulatorInit(properties, mixer);
   actionInit(video, properties, mixer);
