@@ -13,7 +13,7 @@ Machine* machineCreate(const char* machineName)
 
     machine->zipFile = NULL;
     machine->isZipped = 0;
-    machine->video.vdpVersion == VDP_V9958;
+    machine->video.vdpVersion = VDP_V9958;
     machine->video.vramSize = 192*1024;
 
     // TODO

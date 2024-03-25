@@ -48,7 +48,6 @@
 #include <emscripten.h>
 #include <pthread.h>
 #endif
-void machineDestroy(void *machine);
 
 void* emulator_loop(void *param);
 void emscripten_main_loop(void);
