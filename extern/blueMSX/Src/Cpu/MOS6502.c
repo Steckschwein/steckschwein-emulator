@@ -81,12 +81,10 @@ void mos6502Execute(MOS6502 *mos6502) {
         mos6502->timerCb(mos6502->ref);
       }
     }
-    /*
-    if (mos6502->systemTime - lastRefreshTime > 222 * 3) {
+    if (mos6502->systemTime - lastRefreshTime > 102 * freqAdjust) {
         lastRefreshTime = mos6502->systemTime;
-        mos6502->systemTime += 20 * 3;
+        mos6502->systemTime += 15 * freqAdjust;
     }
-    */
 
 #ifdef ENABLE_BREAKPOINTS
     if (mos6502->breakpointCount > 0) {
@@ -108,8 +106,8 @@ void mos6502Execute(MOS6502 *mos6502) {
     }else if(mos6502->intState == INT_LOW){
       irq6502();
     }
-    step6502();
-    mos6502->systemTime = mos6502clockticks() * freqAdjust;
+    uint32_t cycles = step6502();
+    mos6502->systemTime += (cycles * freqAdjust);
     DEBUG ("mos6502Execute %p %x\n", mos6502, mos6502->systemTime);
   }
 }

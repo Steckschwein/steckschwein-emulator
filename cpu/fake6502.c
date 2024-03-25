@@ -225,7 +225,7 @@ void exec6502(uint32_t tickcount) {
 	}
 }
 
-void step6502() {
+uint32_t step6502() {
 	opcode = read6502(pc++);
 	status |= FLAG_CONSTANT;
 
@@ -248,6 +248,8 @@ void step6502() {
 
 	if (callexternal)
 		(*loopexternal)(cycles);
+
+  return cycles;
 }
 
 void hookexternal(void *funcptr) {
