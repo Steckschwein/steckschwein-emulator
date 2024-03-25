@@ -9,14 +9,14 @@ static UInt32          steckschweinRamStart;
 
 static MOS6502* mos6502;
 static YM3812* ym3812;
-//static DS1306 *ds1306;
+// TODO static DS1306 *ds1306;
 
 static void destroy() {
-	ym3812Destroy(ym3812);
+  ym3812Destroy(ym3812);
 
 	// rtcDestroy(ds1306);
 
-	/*
+  /*
    r800DebugDestroy();
     ioPortUnregister(0x2e);
     deviceManagerDestroy();
@@ -31,7 +31,7 @@ static void reset()
 //    slotManagerReset();
 
     if (mos6502 != NULL) {
-    	mos6502Reset(mos6502, systemTime);
+      mos6502Reset(mos6502, systemTime);
     }
 //    deviceManagerReset();
 }
@@ -41,6 +41,7 @@ static int getRefreshRate(){
     return vdpGetRefreshRate();
 }
 
+/*
 static UInt8* getRamPage(int page) {
 
     int start;
@@ -56,17 +57,16 @@ static UInt8* getRamPage(int page) {
 
 	return steckschweinRam + start;
 }
-
+*/
 static UInt32 getTimeTrace(int offset) {
     return mos6502GetTimeTrace(mos6502, offset);
 }
 
-int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
+int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
      int success;
-     int i;
 
-     steckschweinRam = NULL;
+     int i;
 
      mos6502 = mos6502create(boardTimerCheckTimeout);
 
@@ -75,7 +75,7 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
      boardInfo->destroy          = destroy;
      boardInfo->softReset        = reset;
      boardInfo->getRefreshRate   = getRefreshRate;
-     boardInfo->getRamPage       = getRamPage;
+     boardInfo->getRamPage       = NULL;
 
      boardInfo->run              = mos6502Execute;
      boardInfo->stop             = mos6502StopExecution;
@@ -98,9 +98,9 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
      boardInit(&mos6502->systemTime);
 
      ioPortReset();
-     //ramMapperIoCreate();
 
-     mos6502Reset(mos6502, 0);
+     //ramMapperIoCreate();
+     memoryCreate(mos6502, machine->romImage);
 
      mixerReset(boardGetMixer());
 
@@ -111,18 +111,19 @@ int steckSchweinCreate(VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
 //     cpuDebugCreate(mos6502);
 
- 	  //ioPortRegister(0x2e, testPort, NULL, NULL);
+     //ioPortRegister(0x2e, testPort, NULL, NULL);
 
      //sprintf(cmosName, "%s" DIR_SEPARATOR "%s.cmos", boardGetBaseDirectory(), machine->name);
      //rtc = rtcCreate(machine->cmos.enable, machine->cmos.batteryBacked ? cmosName : 0);
 
-     int vramSize = 0x20000;//128k
-     vdpCreate(VDP_STECKSCHWEIN, VDP_V9958, vdpSyncMode, vramSize / 0x4000);
+     vdpCreate(VDP_STECKSCHWEIN, machine->video.vdpVersion, vdpSyncMode, machine->video.vramSize / 0x4000);
 
-     success = 1;//machineInitialize(machine, &msxRam, &msxRamSize, &msxRamStart);
+     success = machineInitialize(machine, &steckschweinRam, &steckschweinRamSize, &steckschweinRamStart);
      if (success) {
 //         success = boardInsertExternalDevices();
      }
+
+     mos6502Reset(mos6502, 0);
 
      if (!success) {
          destroy();

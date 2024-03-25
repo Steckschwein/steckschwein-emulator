@@ -3,7 +3,20 @@
 #include "cpu/fake6502.h"
 #include "glue.h"
 
+#include "Board.h"
+
 #include <stddef.h>
+
+#define VDP_DELAY 2 // wait states aka clockticks
+
+unsigned char vdp_delay = VDP_DELAY;
+#define delayVdpIO(mos6502, port) {                           \
+  mos6502->systemTime = 6 * ((mos6502->systemTime + 5) / 6);  \
+  if (mos6502->systemTime - mos6502->vdpTime < vdp_delay)     \
+      mos6502->systemTime = mos6502->vdpTime + vdp_delay;     \
+  mos6502->vdpTime = mos6502->systemTime;                     \
+}
+
 
 MOS6502* mos6502create(MOS6502TimerCb timerCb) {
   MOS6502 *mos6502 = malloc(sizeof(MOS6502));
@@ -13,11 +26,39 @@ MOS6502* mos6502create(MOS6502TimerCb timerCb) {
   mos6502->intState = INT_HIGH;
   mos6502->nmiState = INT_HIGH;
   mos6502->nmiEdge = 0;
-  mos6502->frequency = 3579545 * 3;
-
-  mos6502Reset(mos6502, 0);
+  mos6502->frequency = 3579545 * 3; // ~10.7 Mhz
 
   return mos6502;
+}
+
+
+UInt8 readPort(MOS6502* mos6502, UInt16 port) {
+    UInt8 value;
+
+//    delayPreIo(mos6502);
+
+    delayVdpIO(mos6502, port);
+
+    value = ioPortRead(mos6502, port);
+    // delayPostIo(mos6502);
+
+    return value;
+}
+
+void writePort(MOS6502* mos6502, UInt16 port, UInt8 value) {
+//    delayPreIo(mos6502);
+
+    delayVdpIO(mos6502, port);
+    //mos6502->writeIoPort(mos6502->ref, port, value);
+    ioPortWrite(mos6502, port, value);
+//    delayPostIo(mos6502);
+
+#ifdef ENABLE_WATCHPOINTS
+    if (mos6502->watchpointIoCb != NULL) {
+        mos6502->watchpointIoCb(mos6502->ref, port, value);
+    }
+#endif
+
 }
 
 void mos6502Reset(MOS6502 *mos6502, UInt32 cpuTime) {
@@ -28,6 +69,11 @@ void mos6502Execute(MOS6502 *mos6502) {
 
   static SystemTime lastRefreshTime = 0;
 
+  //6 * 3579545 / 10.0000 = 2 - msx emulator impl. clock speed is bound to the 21.47 Mhz VDP clock, so we have to calculate clockticks (delay) upon board freq. and CPU frequ.
+  int freqAdjust = boardFrequency() / (mos6502->frequency - 1);
+
+  vdp_delay = freqAdjust * VDP_DELAY;
+
   while (!mos6502->terminate) {
 
     if ((Int32) (mos6502->timeout - mos6502->systemTime) <= 0) {
@@ -35,10 +81,12 @@ void mos6502Execute(MOS6502 *mos6502) {
         mos6502->timerCb(mos6502->ref);
       }
     }
+    /*
     if (mos6502->systemTime - lastRefreshTime > 222 * 3) {
         lastRefreshTime = mos6502->systemTime;
         mos6502->systemTime += 20 * 3;
     }
+    */
 
 #ifdef ENABLE_BREAKPOINTS
     if (mos6502->breakpointCount > 0) {
@@ -53,7 +101,7 @@ void mos6502Execute(MOS6502 *mos6502) {
       }
     }
 #endif
-   /* If it is NMI... */
+    /* If it is NMI... */
     if (mos6502->nmiEdge) {
       mos6502->nmiEdge = 0;
       nmi6502();
@@ -61,7 +109,7 @@ void mos6502Execute(MOS6502 *mos6502) {
       irq6502();
     }
     step6502();
-    mos6502->systemTime = clockticks6502;
+    mos6502->systemTime = mos6502clockticks() * freqAdjust;
     DEBUG ("mos6502Execute %p %x\n", mos6502, mos6502->systemTime);
   }
 }

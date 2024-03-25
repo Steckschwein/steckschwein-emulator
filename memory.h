@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <Machine.h>
+#include <MOS6502.h>
 
 #define BANK_SIZE 14 // 14 bit $4000
 #define ROM_SIZE (32*1024)
@@ -23,7 +25,7 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank);
 
 uint8_t memory_get_ctrlport(uint16_t address);
 
-void memory_init();
+void memoryCreate(void* cpu, RomImage* romImage);
 void memory_save(FILE *f, bool dump_ram, bool dump_bank);
 void write6502(uint16_t address, uint8_t value);
 

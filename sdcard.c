@@ -70,7 +70,7 @@ uint8_t spi_sdcard_handle(uint8_t inbyte) {
 
 			if (last_cmd == 0x40 + 24) { //write block if it was requested
 				uint32_t lba = cmd[1] << 24 | cmd[2] << 16 | cmd[3] << 8 | cmd[4];
-				printf("Writing lba %x, block $%x (lba: %x)\n", lba + mblock, mblock, lba);
+				DEBUG("Writing lba %x, block $%x (lba: %x)\n", lba + mblock, mblock, lba);
 				for (int i = 0; i < data_length; ++i) {
 					DEBUG("%x ", p_data[i]);
 				}

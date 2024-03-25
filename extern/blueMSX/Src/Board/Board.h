@@ -30,7 +30,7 @@
 
 #include "MsxTypes.h"
 //#include "MediaDb.h"
-//#include "Machine.h"
+#include "Machine.h"
 #include "VDP.h"
 #include "AudioMixer.h"
 #include "glue.h"
@@ -81,6 +81,15 @@ typedef struct {
 static BoardInfo boardInfo;
 
 void boardInit(UInt32* systemTime);
+
+int boardRun(Machine* machine,
+             Mixer* mixer,
+             int frequency,
+             int reversePeriod,
+             int reverseBufferCnt,
+             int (*syncCallback)(int, int));
+
+void boardSetMachine(Machine* machine);
 void boardReset();
 
 UInt64 boardSystemTime64();
@@ -115,13 +124,14 @@ int boardGetNoSpriteLimits();
 
 typedef enum { HD_NONE, HD_SUNRISEIDE, HD_BEERIDE, HD_GIDE, HD_RSIDE,
                HD_MEGASCSI, HD_WAVESCSI, HD_GOUDASCSI, HD_NOWIND } HdType;
+
 HdType boardGetHdType(int hdIndex);
 
 const char* boardGetBaseDirectory();
 
 Mixer* boardGetMixer();
 
-#define boardFrequency() (6 * 3579545)	//21.477 vdp clock speed
+#define boardFrequency() (6 * 3579545)	//21.477 must be set to vdp clock speed, due to coupling of systime with vdp timing
 
 static UInt32 boardSystemTime() {
     extern UInt32* boardSysTime;

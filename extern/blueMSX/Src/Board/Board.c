@@ -33,6 +33,7 @@
 #include "Coleco.h"
 #include "Adam.h"
 */
+#include "Steckschwein.h"
 #include "AudioMixer.h"
 /*
 #include "YM2413.h"
@@ -77,7 +78,6 @@ static BoardTimer* mixerTimer;
 static BoardTimer* stateTimer;
 static BoardTimer* breakpointTimer;
 
-//static BoardInfo boardInfo;
 static UInt32 boardRamSize;
 static UInt32 boardVramSize;
 static int boardRunning = 0;
@@ -708,11 +708,12 @@ void boardInit(UInt32* systemTime)
     }
 }
 
-int boardRun(Mixer* mixer,
-       int frequency,
-             int reversePeriod,
-             int reverseBufferCnt,
-             int (*syncCallback)(int, int))
+int boardRun(Machine* machine,
+            Mixer* mixer,
+            int frequency,
+            int reversePeriod,
+            int reverseBufferCnt,
+            int (*syncCallback)(int, int))
 {
     int loadState = 0;
     int success = 1;
@@ -731,12 +732,13 @@ int boardRun(Mixer* mixer,
 
     boardSetFrequency(frequency);
 
-    boardRunning = 1;
     memset(&boardInfo, 0, sizeof(boardInfo));
 
-    VdpSyncMode vdpSyncMode = VDP_SYNC_50HZ;
+    boardRunning = 1;
 
-    success = steckSchweinCreate(vdpSyncMode, &boardInfo);
+    VdpSyncMode vdpSyncMode = VDP_SYNC_AUTO;
+
+    success = steckSchweinCreate(machine, vdpSyncMode, &boardInfo);
 
     boardCaptureInit();
 
@@ -816,6 +818,11 @@ const char* boardGetBaseDirectory() {
 Mixer* boardGetMixer()
 {
     return boardMixer;
+}
+
+void boardSetMachine(Machine* machine)
+{
+
 }
 
 void boardReset()

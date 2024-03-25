@@ -232,7 +232,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->video.detectActiveMonitor   = 1;
     properties->video.captureFps            = 60;
     properties->video.captureSize           = 1;
-    properties->video.rotate				= 0;//0 - none, 1 - 90 degree clockwise
+    properties->video.rotate				        = 0;//0 - none, 1 - 90 degree clockwise
 
     properties->video.d3d.aspectRatioType   = P_D3D_AR_NTSC;
     properties->video.d3d.cropType          = P_D3D_CROP_SIZE_MSX2_PLUS_8;
@@ -249,7 +249,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->videoIn.inputIndex          = 0;
     properties->videoIn.inputName[0]        = 0;
 
-//    properties->sound.driver                = P_SOUND_DRVDIRECTX;
+    // properties->sound.driver                = P_SOUND_DRVDIRECTX;
     properties->sound.bufSize               = 100;
     properties->sound.stabilizeDSoundTiming = 1;
 
