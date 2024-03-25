@@ -1,7 +1,7 @@
 #include "Machine.h"
 #include <stdlib.h>
 
-Machine* machineCreate(const char* machineName)
+Machine* machineCreate(RomImage* romImage, const char* machineName)
 {
     char configIni[512];
     int success;
@@ -16,6 +16,7 @@ Machine* machineCreate(const char* machineName)
     machine->video.vdpVersion = VDP_V9958;
     machine->video.vramSize = 192*1024;
 
+    machine->romImage = romImage;
     // TODO
     // sprintf(configIni, "%s/%s/config.ini", machinesDir, machineName);
     // file = fopen(configIni, "rb");
@@ -56,6 +57,14 @@ Machine* machineCreate(const char* machineName)
     machineUpdate(machine);
 
     return machine;
+}
+
+int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UInt32* mainRamStart) {
+
+  //machine->romImage
+
+  return 1;
+
 }
 
 void machineUpdate(Machine* machine){

@@ -131,7 +131,7 @@ const char* boardGetBaseDirectory();
 
 Mixer* boardGetMixer();
 
-#define boardFrequency() (6 * 3579545)	//21.477 vdp clock speed
+#define boardFrequency() (6 * 3579545)	//21.477 must be set to vdp clock speed, due to coupling of systime with vdp timing
 
 static UInt32 boardSystemTime() {
     extern UInt32* boardSysTime;

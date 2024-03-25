@@ -1,6 +1,7 @@
 #ifndef MOS6502_H
 #define MOS6502_H
 #include "MsxTypes.h"
+#include "MOS6502.h"
 
 #define ENABLE_BREAKPOINTS
 
@@ -57,6 +58,9 @@ typedef struct{
 #define INT_HIGH  1
 
 MOS6502* mos6502create(MOS6502TimerCb timerCb);
+
+UInt8 readPort(MOS6502* mos6502, UInt16 port);
+void writePort(MOS6502* mos6502, UInt16 port, UInt8 value);
 
 void mos6502Reset(MOS6502* mos6502, UInt32 cpuTime);
 void mos6502SetInt(MOS6502* mos6502);

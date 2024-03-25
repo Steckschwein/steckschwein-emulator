@@ -20,14 +20,14 @@ endif
 CFLAGS   = -w -O3 -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror -fomit-frame-pointer
 
 # development flags (debugger support)
-CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror
+# CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror
 # CFLAGS   +=-DDEBUG_ENABLED
 # Videorenderer.c segfault inline asm, we disable it entirely
 CFLAGS   +=-DNO_ASM
 
 #CFLAGS   += -DSINGLE_THREADED
 #CFLAGS   += -DNO_TIMERS
-#CFLAGS   += -DNO_HIRES_TIMERS
+CFLAGS   += -DNO_HIRES_TIMERS
 #CFLAGS   += -DTRACE
 #CFLAGS   += -DEMU_AVR_KEYBOARD_IRQ
 #CFLAGS   += -DTRACE_RTC

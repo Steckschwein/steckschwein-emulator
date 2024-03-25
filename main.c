@@ -88,7 +88,6 @@ bool trace_mode = false;
 uint16_t trace_address = 0;
 #endif
 
-static Mixer *mixer;
 
 extern unsigned char *prg_path; //extern - also used in uart
 
@@ -108,8 +107,12 @@ label_for_address(uint16_t address) {
 }
 #endif
 
-static Video *video;
 static Properties *properties;
+static Mixer *mixer;
+static Video *video;
+static Machine* machine;
+
+static RomImage* romImage;
 
 static int enableSynchronousUpdate = 1;
 static int emuMaxSpeed = 0;
@@ -133,7 +136,6 @@ static int emuExitFlag;
 static UInt32 emuSysTime = 0;
 static UInt32 emuFrequency;
 
-static Machine* machine;
 
 static int emulationStartFailure = 0;
 static int pendingDisplayEvents = 0;
@@ -208,7 +210,6 @@ void machine_reset(int prg_override_start) {
   spi_rtc_reset();
   uart_init(prg_path, prg_override_start, checkUploadLmf);
   via1_reset();
-  reset6502();
 }
 
 void machine_paste(char *s) {
@@ -225,8 +226,8 @@ static void usage() {
   printf("-rom <rom.bin>[,<load_addr>]\n");
   printf("\tbios ROM file.\n");
   printf("-ram <ramsize>\n");
-  printf("\tSpecify RAM size in KB (8, 16, 32, ..., 64).\n");
-  printf("\tThe default is 64.\n");
+  printf("\tSpecify RAM size in KB (8, 16, 32, ..., 512).\n");
+  printf("\tThe default is 512.\n");
   printf("-keymap <keymap>\n");
   printf("\tEnable a specific keyboard layout decode table.\n");
   printf("-sdcard <sdcard.img>\n");
@@ -236,7 +237,6 @@ static void usage() {
   printf("\tEmulate serial upload of <file> \n");
   printf("\t(.PRG file with 2 byte start address header)\n");
   printf("\tThe override load address is hex without a prefix.\n");
-
   /*
    printf("-prg <app.prg>[,<load_addr>]\n");
    printf("\tLoad application from the local disk into RAM\n");
@@ -457,13 +457,6 @@ int createOrUpdateSdlWindow() {
   const char *title = "Steckschwein Emulator 2.0 (blueMSX)";
 
   int fullscreen = properties->video.windowSize == P_VIDEO_SIZEFULLSCREEN;
-
-  // SDL_RWops *src  = SDL_RWFromConstMem(schwein128_png, schwein128_png_len);
-  // FILE *fd = fopen("schwein128.png","w");
-  // if(fd!=NULL){
-  //   fwrite(&schwein128_png, sizeof(char), schwein128_png_len, fd);
-  //   fclose(fd);
-  // }
 
   if(!surface){//create
     if (fullscreen) {
@@ -769,7 +762,7 @@ static void emulatorThread() {
     reverseBufferCnt = properties->emulation.reverseMaxTime * 1000 / reversePeriod;
   }
 
-  machine = machineCreate(properties->emulation.machineName);
+  machine = machineCreate(romImage, properties->emulation.machineName);
   if (machine == NULL) {
     // archShowStartEmuFailDialog();
     archEmulationStopNotification();
@@ -1245,12 +1238,10 @@ int main(int argc, char **argv) {
   // no ROM file is specified on the command line.
   strncpy(rom_path + strlen(rom_path), "/rom.bin", PATH_MAX - strlen(rom_path));
 
-
-  memory_init();
   mixer = mixerCreate();
 
   //read default properties
-  properties = propCreate(0, 0, P_EMU_SYNCAUTO, "Steckschwein");
+  properties = propCreate(0, 0, P_EMU_SYNCTOVBLANKASYNC, "Steckschwein");
 
   configuration config;
   sprintf(configfile_path, "%s/.sw/config.ini", getenv("HOME"));
@@ -1487,13 +1478,15 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Cannot open %s!\n", rom_path);
     exit(1);
   }
-  if (rom_override_start == -1) {
-    int rom_size = fread(rom, 1, ROM_SIZE, f);
-  } else {
-    int size = fread(ram + rom_override_start, 1, RAM_SIZE - rom_override_start, f);
-    write6502(0x230, 1);  //rom off
-  }
+  romImage = malloc(sizeof(RomImage));
+  romImage->address = rom_override_start;
+  romImage->image = malloc(ROM_SIZE);
+  int size = fread(romImage->image, 1, ROM_SIZE, f);
   fclose(f);
+  if(size != ROM_SIZE){
+    fprintf(stderr, "Invalid rom image %s or could not read file. Expected 0x%04x bytes ROM, but was 0x%04x!\n", rom_path, ROM_SIZE, size);
+    exit(1);
+  }
 
   if (sdcard_path) {
     sdcard_file = fopen(sdcard_path, "r+b");
@@ -1581,6 +1574,7 @@ int main(int argc, char **argv) {
   videoUpdateAll(video, properties);
 
   emulatorStart("Start");
+
 #ifndef SINGLE_THREADED  //on multi-threaded the main thread will loop here
     SDL_Event event;//While the user hasn't quit
     while(!doQuit){

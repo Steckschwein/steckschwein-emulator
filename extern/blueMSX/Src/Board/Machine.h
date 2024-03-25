@@ -2,6 +2,7 @@
 #define MACHINE_H
 
 #include "VDP.h"
+#include "glue.h"
 
 typedef enum {
     BOARD_UNKNOWN       = -1,
@@ -18,7 +19,6 @@ typedef struct {
     struct {
         VdpVersion vdpVersion;
         int vramSize;
-        int extVramSize;
     } video;
     struct {
         int enable;
@@ -28,11 +28,16 @@ typedef struct {
         UInt32 freqCPU;
         UInt32 freqSPI;
     } cpu;
+
     int isZipped;
     char *zipFile;
+
+    RomImage *romImage;
+
 } Machine;
 
-Machine* machineCreate(const char* machineName);
+Machine* machineCreate(RomImage* romImage, const char* machineName);
+int machineInitialize(Machine* machine, UInt8** mainRam, UInt32* mainRamSize, UInt32* mainRamStart);
 void machineDestroy(Machine* machine);
 void machineUpdate(Machine* machine);
 
