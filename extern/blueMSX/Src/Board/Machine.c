@@ -35,7 +35,7 @@ Machine* machineCreate(RomImage* romImage, const char* machineName)
 
     //     if (file == NULL)
     //     {
-		//         machineDestroy(machine);
+    //         machineDestroy(machine);
     //         return NULL; // Not compressed and no config.ini
     //     }
 
@@ -50,7 +50,7 @@ Machine* machineCreate(RomImage* romImage, const char* machineName)
     // success = readMachine(machine, machineName, configIni);
     // if (!success)
     // {
-  	// 	  machineDestroy(machine);
+    //     machineDestroy(machine);
     //     return NULL;
     // }
 
