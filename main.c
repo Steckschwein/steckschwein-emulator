@@ -270,7 +270,7 @@ static void usage() {
   printf("\tPOKE $9FB5,0 to pause.\n");
   printf("-scale {1|2|..8|full} - use ALT_L+F to toggle fullscreen\n");
   printf("\tScale output to an integer multiple of 256x212\n");
-  printf("-quality {linear (default) | best}\n");
+  printf("-quality {linear (default) | best | composite}\n");
   printf("\tScaling algorithm quality\n");
   printf("-debug [<address>]\n");
   printf("\tEnable debugger. Optionally, set a breakpoint\n");
@@ -1262,6 +1262,8 @@ int main(int argc, char **argv) {
     if (config.quality){ // TODO DRY with cmd args
       if(! strcmp("linear", config.quality)){
         properties->video.monitorType = P_VIDEO_PALNONE;
+      }else if(! strcmp("monitor", config.quality)){
+        properties->video.monitorType = P_VIDEO_PALMON;
       }else if(! strcmp("composite", config.quality)){
         properties->video.monitorType = P_VIDEO_PALCOMP;
       }
@@ -1462,6 +1464,8 @@ int main(int argc, char **argv) {
         properties->video.monitorType = P_VIDEO_PALHQ2X;
       } else if (nextArg(&argc, &argv, "linear")) {
         properties->video.monitorType = P_VIDEO_PALNONE;
+      } else if (nextArg(&argc, &argv, "monitor")) {
+        properties->video.monitorType = P_VIDEO_PALMON;
       } else if (nextArg(&argc, &argv, "composite")) {
         properties->video.monitorType = P_VIDEO_PALCOMP;
       } else {

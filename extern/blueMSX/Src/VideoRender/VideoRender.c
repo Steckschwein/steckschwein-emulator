@@ -822,7 +822,7 @@ static void copyMonitorPAL_2x2_16(FrameBuffer* frame, void* pDestination, int ds
 }
 
 
-static void copyMonitorPAL_2x2_32(Video *pVideo, FrameBuffer* frame, void* pDestination, int dstPitch, UInt32* rgbTable, UInt32 rnd)
+static void copyMonitorPAL_2x2_32(Video *video, FrameBuffer* frame, void* pDestination, int dstPitch, UInt32* rgbTable, UInt32 rnd)
 {
     static UInt32 rndVal = 51;
 
@@ -844,7 +844,7 @@ static void copyMonitorPAL_2x2_32(Video *pVideo, FrameBuffer* frame, void* pDest
         height--;
     }
 
-    if(pVideo->rotate){
+    if(video->rotate){
       int w;
       for (w = 0; w<srcWidth;w++) {
 
@@ -1114,7 +1114,7 @@ static void copyMonitorPAL_2x1_32(FrameBuffer* frame, void* pDestination, int ds
 }
 
 
-static void copyPAL_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UInt32* rgbTable, UInt32 rnd)
+static void copyPAL_2x2_32(Video *video, FrameBuffer* frame, void* pDestination, int dstPitch, UInt32* rgbTable, UInt32 rnd)
 {
     static UInt32 rndVal = 51;
     UInt32* pDst1       = (UInt32*)pDestination;
@@ -1133,6 +1133,10 @@ static void copyPAL_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch,
         pDst1 += dstPitch;
         pDst2 += dstPitch;
         height--;
+    }
+
+    if(video->rotate){
+      // TODO
     }
 
     for (h = 0; h < height; h++) {
@@ -2035,7 +2039,7 @@ void copy_2x2_32_core2(UInt32* rgbTable, UInt16* pSrc, UInt32* pDst1, UInt32* pD
     }
 }
 
-static void copy_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UInt32* rgbTable)
+static void copy_2x2_32(Video *video, FrameBuffer* frame, void* pDestination, int dstPitch, UInt32* rgbTable)
 {
     UInt32* pDst1       = (UInt32*)pDestination;
     UInt32* pDst2       = pDst1 + dstPitch / (int)sizeof(UInt32);
@@ -2082,15 +2086,51 @@ static void copy_2x2_32(FrameBuffer* frame, void* pDestination, int dstPitch, UI
         height--;
     }
 
-    for (h = 0; h < height; h++) {
+    if(video->rotate){
+      UInt32* pDst3       = pDst2;
+      for (int w = 0; w<srcWidth;w++) {
 
-        if (frame->line[h].doubleWidth)
-      core1(rgbTable,frame->line[h].buffer,pDst1,pDst2,srcWidth / 4 * 2,dstPitch * 2*4);
-        else
-      core2(rgbTable,frame->line[h].buffer,pDst1,pDst2,srcWidth / 4,dstPitch * 2*4);
+        int dstIndex = 0;
 
+        for (h = height; h >= 0; h--) {
+
+          UInt16* pSrc = frame->line[h].buffer;
+          UInt32 colCur = (rgbTable[pSrc[0]] & 0xfcfcfc) >> 2;
+          UInt32 colPrev = colCur;
+
+          UInt32 colRgb1;
+          UInt32 colRgb2;
+          UInt32 colNext;
+
+          colNext = (rgbTable[pSrc[w]] & 0xfcfcfc) >> 2;
+          colRgb1 = (3 * colCur + colNext) & 0xfcfcfc;
+          colRgb2 = (4 * colNext) & 0xfcfcfc;
+
+          colCur = colNext;
+
+          pDst2[dstIndex] = colRgb1;
+          pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb1 >> 1) & 0x7f7f7f);
+          dstIndex++;
+          pDst2[dstIndex] = colRgb2;
+          pDst1[dstIndex] = ((pDst1[dstIndex] >> 1) & 0x7f7f7f) + ((colRgb2 >> 1) & 0x7f7f7f);
+          dstIndex++;
+        }
+
+        pDst3  = pDst2;
         pDst1 += dstPitch * 2;
         pDst2 += dstPitch * 2;
+      }
+    }else{
+      for (h = 0; h < height; h++) {
+
+          if (frame->line[h].doubleWidth)
+        core1(rgbTable,frame->line[h].buffer,pDst1,pDst2,srcWidth / 4 * 2,dstPitch * 2*4);
+          else
+        core2(rgbTable,frame->line[h].buffer,pDst1,pDst2,srcWidth / 4,dstPitch * 2*4);
+
+          pDst1 += dstPitch * 2;
+          pDst2 += dstPitch * 2;
+      }
     }
   /*rdtsc_end_timer(0);*/
 }
@@ -2890,12 +2930,12 @@ static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
         case VIDEO_PAL_FAST:
             if (zoom == 2) {
                 if (pVideo->scanLinesEnable || pVideo->colorSaturationEnable || canChangeZoom == 0) {
-                    copy_2x2_32(frame, pDst, dstPitch, pVideo->pRgbTable32);
+                    copy_2x2_32(pVideo, frame, pDst, dstPitch, pVideo->pRgbTable32);
                 }
                 else {
                     int h = frame->lines;
                     while (--h >= 0 && !frame->line[h].doubleWidth);
-                    if (h) copy_2x2_32(frame, pDst, dstPitch, pVideo->pRgbTable32);
+                    if (h) copy_2x2_32(pVideo, frame, pDst, dstPitch, pVideo->pRgbTable32);
                     else {
                         copy_1x1_32(frame, pDst, dstPitch, pVideo->pRgbTable32);
                         zoom = 1;
@@ -2919,11 +2959,11 @@ static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
             else           copyPAL_1x1_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 1);
             break;
         case VIDEO_PAL_BLUR:
-            if (zoom == 2) copyPAL_2x2_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 0);
+            if (zoom == 2) copyPAL_2x2_32(pVideo, frame, pDst, dstPitch, pVideo->pRgbTable32, 0);
             else           copyPAL_1x1_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 0);
             break;
         case VIDEO_PAL_BLUR_NOISE:
-            if (zoom == 2) copyPAL_2x2_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 1);
+            if (zoom == 2) copyPAL_2x2_32(pVideo, frame, pDst, dstPitch, pVideo->pRgbTable32, 1);
             else           copyPAL_1x1_32(frame, pDst, dstPitch, pVideo->pRgbTable32, 1);
             break;
     case VIDEO_PAL_SCALE2X:
@@ -2932,7 +2972,7 @@ static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
                     scale2x_2x2_32(frame, pDst, dstPitch, pVideo->pRgbTable32);
                 }
                 else {
-                    copy_2x2_32(frame, pDst, dstPitch, pVideo->pRgbTable32);
+                    copy_2x2_32(pVideo, frame, pDst, dstPitch, pVideo->pRgbTable32);
                 }
             }
             else {
@@ -2952,7 +2992,7 @@ static int videoRender240(Video* pVideo, FrameBuffer* frame, int bitDepth, int z
                     }
                 }
                 else {
-                    copy_2x2_32(frame, pDst, dstPitch, pVideo->pRgbTable32);
+                    copy_2x2_32(pVideo, frame, pDst, dstPitch, pVideo->pRgbTable32);
                 }
             }
             else {
