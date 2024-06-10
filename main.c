@@ -162,7 +162,7 @@ static UInt32 emuUsageCurrent = 0;
 static int doQuit = 0;
 
 int screenWidth = 320;
-int screenHeight = 240;
+int screenHeight = 250;
 
 #define EVENT_UPDATE_DISPLAY 2
 #define EVENT_UPDATE_WINDOW  3
@@ -270,7 +270,7 @@ static void usage() {
   printf("\tPOKE $9FB5,0 to pause.\n");
   printf("-scale {1|2|..8|full} - use ALT_L+F to toggle fullscreen\n");
   printf("\tScale output to an integer multiple of 256x212\n");
-  printf("-quality {linear (default) | best | composite}\n");
+  printf("-quality {linear (default) | monitor | best | composite}\n");
   printf("\tScaling algorithm quality\n");
   printf("-debug [<address>]\n");
   printf("\tEnable debugger. Optionally, set a breakpoint\n");
