@@ -1,10 +1,10 @@
+---
 name: Build and Test Steckschwein-Emulator
 
 on:
   push:
-    branches: [ "master", "featuew/*", "bugfix/*" ]
-  pull_request:
-    branches: [ "master" ]
+    branches:
+      - master
 
 jobs:
 
@@ -15,6 +15,6 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v4
-      
+
     - name: install libs
       run: apt install libsdl2-dev libinih-dev
