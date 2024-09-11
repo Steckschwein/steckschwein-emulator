@@ -23,5 +23,4 @@ jobs:
       run: sudo apt install libsdl2-dev libinih-dev --no-install-recommends
 
     - name: build
-      working-directory: ./steckschwein-emulator
       run: make -j 8
