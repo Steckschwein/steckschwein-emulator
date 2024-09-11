@@ -33,4 +33,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: emulator-deb
-      path: ../steckschwein-emu_*_amd64.deb
+        path: ../steckschwein-emu_*_amd64.deb
