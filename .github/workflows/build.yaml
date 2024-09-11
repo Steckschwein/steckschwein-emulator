@@ -6,6 +6,9 @@ on:
     branches:
       - master
 
+permissions:                    # Füge diese Zeile hinzu
+  contents: write                # Stellt sicher, dass die Action Schreibberechtigungen für Inhalte hat
+
 jobs:
 
   build:
