@@ -20,4 +20,4 @@ jobs:
       uses: actions/checkout@v4
 
     - name: install libs
-      run: apt install libsdl2-dev libinih-dev
+      run: sudo apt install libsdl2-dev libinih-dev
