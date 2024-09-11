@@ -19,8 +19,8 @@ jobs:
     - name: checkout
       uses: actions/checkout@v4
 
-    - name: install libs
-      run: sudo apt install libsdl2-dev libinih-dev --no-install-recommends
+    - name: install stuff
+      run: sudo apt install build-essential:native debhelper libsdl2-dev libinih-dev --no-install-recommends
 
     - name: build
       run: make -j 8
