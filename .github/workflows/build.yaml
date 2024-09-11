@@ -10,13 +10,11 @@ jobs:
 
   build:
 
-    runs-on: ubuntu-latest
-    container:
-      image: steckschwein/buildenv-emu:v0.0.1
-      options: --user root
+    runs-on: ubuntu-24.04
 
     steps:
     - name: checkout
-      uses: actions/checkout@v3
-    - name: build
-      run: make
+      uses: actions/checkout@v4
+      
+    - name: install libs
+      run: apt install libsdl2-dev libinih-dev
