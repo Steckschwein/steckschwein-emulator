@@ -24,3 +24,6 @@ jobs:
 
     - name: build
       run: make -j 8
+
+    - name: make deb
+      run: make deb
