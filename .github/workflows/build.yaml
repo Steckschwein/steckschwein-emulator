@@ -22,15 +22,38 @@ jobs:
     - name: install stuff
       run: sudo apt install build-essential:native debhelper libsdl2-dev libinih-dev --no-install-recommends
 
-    - name: build
-      run: make -j 8
-
-    - name: make deb
-      run: make deb
-
+    - name: build deb
+      run: make -j 8 deb
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: emulator-deb
         path: /home/runner/work/steckschwein-emulator/steckschwein-emu_*_amd64.deb
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: emulator-deb
+          path: ./  # Where to download the artifact
+
+      - name: Create Release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ github.run_number }}
+          name: Release ${{ github.run_number }}
+          body: Automatically generated release ${{ github.run_number }}
+          draft: false
+          prerelease: false
+          artifactContentType: "application/vnd.debian.binary-package"
+          artifacts: |
+            steckschwein-emu_*_amd64.deb
