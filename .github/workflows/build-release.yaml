@@ -1,0 +1,65 @@
+---
+name: Build Steckschwein-Emulator releases
+
+on:
+  push:
+    branches:
+      - release
+
+permissions:                    # Füge diese Zeile hinzu
+  contents: write                # Stellt sicher, dass die Action Schreibberechtigungen für Inhalte hat
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, ubuntu-22.04]
+          
+    runs-on: ${{ matrix.os }}
+        
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+
+    - name: install stuff
+      run: sudo apt install build-essential:native debhelper libsdl2-dev libinih-dev --no-install-recommends
+
+    - name: build deb
+      run: make -j 8 clean deb
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: emulator-deb-${{ matrix.os }}
+        path: /home/runner/work/steckschwein-emulator/steckschwein-emu_*_amd64.deb
+
+  release:
+    needs: build
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, ubuntu-22.04]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: emulator-deb-${{ matrix.os }}
+          path: ./  # Where to download the artifact
+
+      - name: Create Release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ github.run_number }}-${{ matrix.os }}
+          name: Release ${{ github.run_number }}-${{ matrix.os }}
+          body: Automatically generated release ${{ github.run_number }}
+          draft: false
+          prerelease: false
+          artifactContentType: "application/vnd.debian.binary-package"
+          artifacts: |
+            steckschwein-emu_*_amd64.deb
