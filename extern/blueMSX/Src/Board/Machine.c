@@ -1,6 +1,35 @@
 #include "Machine.h"
 #include <stdlib.h>
 
+static int readMachine(Machine* machine, const char* machineName, const char* file)
+{
+    static char buffer[10000];
+    char* slotBuf;
+    int value;
+    int i = 0;
+/*
+    IniFile *configIni;
+
+    if (machine->isZipped)
+        configIni = iniFileOpenZipped(machine->zipFile, "config.ini");
+    else
+        configIni = iniFileOpen(file);
+
+    if (configIni == NULL)
+        return 0;
+
+    strcpy(machine->name, machineName);
+*/
+    // Read board info
+    //iniFileGetString(configIni, "Board", "type", "none", buffer, 10000);
+    //else if (0 == strcmp(buffer, "STS6502"))  machine->board.type = BOARD_STECKSCHWEIN;
+    //else if (0 == strcmp(buffer, "JC6502"))   machine->board.type = BOARD_JC;
+
+    machine->board.type = BOARD_STECKSCHWEIN;
+
+    return 1;
+}
+
 Machine* machineCreate(RomImage* romImage, const char* machineName)
 {
     char configIni[512];
@@ -47,12 +76,12 @@ Machine* machineCreate(RomImage* romImage, const char* machineName)
     //     machine->isZipped = 1;
     // }
 
-    // success = readMachine(machine, machineName, configIni);
-    // if (!success)
-    // {
-    //     machineDestroy(machine);
-    //     return NULL;
-    // }
+    success = readMachine(machine, machineName, configIni);
+    if (!success)
+    {
+      machineDestroy(machine);
+      return NULL;
+    }
 
     machineUpdate(machine);
 

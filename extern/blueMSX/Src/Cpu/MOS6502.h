@@ -1,7 +1,6 @@
 #ifndef MOS6502_H
 #define MOS6502_H
 #include "MsxTypes.h"
-#include "MOS6502.h"
 
 #define ENABLE_BREAKPOINTS
 

@@ -2154,6 +2154,12 @@ static void destroy(VDP* vdp)
     videoManagerUnregister(vdp->videoHandle);
 
     switch (vdp->vdpConnector) {
+    case VDP_JC:
+        ioPortUnregister(0x08);
+        ioPortUnregister(0x09);
+        ioPortUnregister(0x0a);
+        ioPortUnregister(0x0b);
+        break;
     case VDP_STECKSCHWEIN:
         ioPortUnregister(0x220);
         ioPortUnregister(0x221);
@@ -2330,6 +2336,15 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
         if (vdp->vdpVersion == VDP_V9938 || vdp->vdpVersion == VDP_V9958) {
             ioPortRegister(0x222, NULL, writePaletteLatch, vdp);
             ioPortRegister(0x223, NULL, writeRegister,     vdp);
+        }
+        break;
+
+    case VDP_JC:
+        ioPortRegister(0x08, read,       write,      vdp);
+        ioPortRegister(0x09, readStatus, writeLatch, vdp);
+        if (vdp->vdpVersion == VDP_V9938 || vdp->vdpVersion == VDP_V9958) {
+            ioPortRegister(0x0a, NULL, writePaletteLatch, vdp);
+            ioPortRegister(0x0b, NULL, writeRegister,     vdp);
         }
         break;
 

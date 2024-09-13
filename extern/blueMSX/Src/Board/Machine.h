@@ -8,6 +8,8 @@ typedef enum {
     BOARD_UNKNOWN       = -1,
     BOARD_1_0           = 0x0100 + 0x00,
     BOARD_2_0           = 0x0200 + 0x00,
+    BOARD_STECKSCHWEIN  = 0x0300,
+    BOARD_JC            = 0x0400, // junior computer
     BOARD_MASK          = 0xff00
 } BoardType;
 

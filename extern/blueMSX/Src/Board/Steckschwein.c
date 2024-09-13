@@ -104,7 +104,7 @@ int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boa
 
      mixerReset(boardGetMixer());
 
-     ym3812 = ym3812Create(boardGetMixer());
+     ym3812 = ym3812Create(boardGetMixer(), STECKSCHWEIN_PORT_OPL);
 
      //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
      //slotManagerCreate();
