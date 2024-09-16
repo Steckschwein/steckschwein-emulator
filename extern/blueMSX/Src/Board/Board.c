@@ -743,6 +743,7 @@ int boardRun(Machine* machine,
     VdpSyncMode vdpSyncMode = VDP_SYNC_AUTO;
     switch (boardType) {
       case BOARD_STECKSCHWEIN:
+      case BOARD_STECKSCHWEIN_2_0:
         success = steckSchweinCreate(machine, vdpSyncMode, &boardInfo);
         break;
       case BOARD_JC:

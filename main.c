@@ -49,6 +49,9 @@
 #include <pthread.h>
 #endif
 
+#define RAM_SIZE (64*1024)
+#define ROM_SIZE (32*1024)
+
 void* emulator_loop(void *param);
 void emscripten_main_loop(void);
 
@@ -60,8 +63,7 @@ char *paste_text = NULL;
 char paste_text_data[65536];
 bool pasting_bas = false;
 
-#define RAM_SIZE (64*1024)
-#define ROM_SIZE (32*1024)
+static char emuStateName[512];
 
 uint32_t ram_size = RAM_SIZE; // 64 KB default
 
@@ -762,17 +764,6 @@ static void emulatorThread() {
     reverseBufferCnt = properties->emulation.reverseMaxTime * 1000 / reversePeriod;
   }
 
-  machine = machineCreate(romImage, properties->emulation.machineName);
-  if (machine == NULL) {
-    // archShowStartEmuFailDialog();
-    archEmulationStopNotification();
-    emuState = EMU_STOPPED;
-    archEmulationStartFailure();
-    return;
-  }
-
-  boardSetMachine(machine);
-
   success = boardRun(machine, mixer, frequency, reversePeriod, reverseBufferCnt, WaitForSync);
 
   //the emu loop
@@ -905,6 +896,18 @@ void emulatorStart(const char *stateName) {
   properties->emulation.pauseSwitch = 0;
 //  switchSetPause(properties->emulation.pauseSwitch);
 
+  machine = machineCreate(romImage, properties->emulation.machineName);
+  if (machine == NULL) {
+    //archShowStartEmuFailDialog();
+    fprintf(stderr, "Could not create machine, invalid config or config not found!\n");
+    archEmulationStopNotification();
+    emuState = EMU_STOPPED;
+    archEmulationStartFailure();
+    return;
+  }
+
+  boardSetMachine(machine);
+
 #ifndef NO_TIMERS
 #ifndef WII
   emuSyncEvent = archEventCreate(0);
@@ -923,7 +926,7 @@ void emulatorStart(const char *stateName) {
 
   emuState = EMU_PAUSED;
   emulationStartFailure = 0;
-  //strcpy(emuStateName, stateName ? stateName : "");
+  strcpy(emuStateName, stateName ? stateName : "");
 
   //clearlog();
 
@@ -954,8 +957,9 @@ void emulatorStart(const char *stateName) {
      boardSetY8950Oversampling(properties->sound.chip.y8950Oversampling);
      boardSetMoonsoundOversampling(properties->sound.chip.moonsoundOversampling);
 
-     strcpy(properties->emulation.machineName, machine->name);
      */
+    strcpy(properties->emulation.machineName, machine->name);
+
     debuggerNotifyEmulatorStart();
 
     emuState = EMU_RUNNING;
@@ -1109,30 +1113,6 @@ void hookKernelPrgLoad(FILE *prg_file, int prg_override_start) {
   }
 }
 
-//called after each 6502 instruction
-void instructionCb(uint32_t cycles) {
-
-  for (uint8_t i = 0; i < cycles; i++) {
-    spi_step();
-    joystick_step();
-  }
-
-  trace();
-
-  if (!isDebuggerEnabled) {
-    hookCharOut();
-  }
-
-//  hookKernelPrgLoad(prg_file, prg_override_start);
-
-  if (pc == 0xffff) {
-    if (save_on_exit) {
-      machine_dump();
-      doQuit = 1;
-    }
-  }
-}
-
 int nextArg(int *argc, char ***argv, char *arg) {
   int n = *argc && strlen(*argv[0]) == strlen(arg) && !strncmp(*argv[0], arg, strlen(*argv[0]));
   if (n) {
@@ -1241,7 +1221,7 @@ int main(int argc, char **argv) {
   mixer = mixerCreate();
 
   //read default properties
-  properties = propCreate(0, 0, P_EMU_SYNCTOVBLANKASYNC, "Steckschwein");
+  properties = propCreate(0, 0, P_EMU_SYNCTOVBLANKASYNC, NULL);
 
   configuration config;
   sprintf(configfile_path, "%s/.sw/config.ini", getenv("HOME"));
@@ -1521,9 +1501,6 @@ int main(int argc, char **argv) {
     fclose(bas_file);
   }
 
-  //register cpu hook
-  hookexternal(instructionCb);
-
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
     return 1;
   }
@@ -1549,7 +1526,7 @@ int main(int argc, char **argv) {
 
   keyboardInit();
 
-//    emulatorInit(properties, mixer);
+  //emulatorInit(properties, mixer);
   actionInit(video, properties, mixer);
 //    langInit();
 
@@ -1577,7 +1554,7 @@ int main(int argc, char **argv) {
 
   videoUpdateAll(video, properties);
 
-  emulatorStart("Start");
+  emulatorStart(NULL);
 
 #ifndef SINGLE_THREADED  //on multi-threaded the main thread will loop here
     SDL_Event event;//While the user hasn't quit
@@ -1599,9 +1576,9 @@ int main(int argc, char **argv) {
   }
 
   videoDestroy(video);
+  propDestroy(properties);
   archSoundDestroy();
   mixerDestroy(mixer);
-  propDestroy(properties);
   spi_rtc_destroy();
 
   DEBUGFreeUI();

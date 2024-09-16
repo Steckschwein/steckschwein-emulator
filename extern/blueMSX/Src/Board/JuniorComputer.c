@@ -1,26 +1,21 @@
-#include "Steckschwein.h"
+#include "JuniorComputer.h"
 #include "MOS6502.h"
+#include "MOS6532.h"
+#include "SN76489.h"
 #include "VDP.h"
-#include "ym3812.h"
 
-UInt8* steckschweinRam;
-static UInt32          steckschweinRamSize;
-static UInt32          steckschweinRamStart;
+UInt8* jcRam;
+static UInt32          jcRamSize;
+static UInt32          jcRamStart;
 
+/* Hardware */
+static SN76489* sn76489;
 static MOS6502* mos6502;
-static YM3812* ym3812;
-// TODO static DS1306 *ds1306;
+static MOS6532* mos6532;
 
 static void destroy() {
 
   int i;
-
-  for(i=STECKSCHWEIN_PORT_OPL;i<STECKSCHWEIN_PORT_OPL+0x10;i++){
-    ioPortUnregister(i);
-  }
-
-  ym3812Destroy(ym3812);
-
 	// rtcDestroy(ds1306);
 
   /*
@@ -28,6 +23,14 @@ static void destroy() {
     ioPortUnregister(0x2e);
     deviceManagerDestroy();
     */
+
+  for(i=0xe0;i<=0xff;i++){
+    ioPortUnregister(i);
+  }
+
+
+  sn76489Destroy(sn76489);
+  mos6532Destroy(mos6532);
   mos6502Destroy(mos6502);
 }
 
@@ -53,16 +56,16 @@ static UInt8* getRamPage(int page) {
 
     int start;
 
-    start = page * 0x2000 - (int)steckschweinRamStart;
+    start = page * 0x2000 - (int)jcRamStart;
     if (page < 0) {
-        start += steckschweinRamSize;
+        start += jcRamSize;
     }
 
-    if (start < 0 || start >= (int)steckschweinRamSize) {
+    if (start < 0 || start >= (int)jcRamSize) {
         return NULL;
     }
 
-	return steckschweinRam + start;
+	return jcRam + start;
 }
 */
 static UInt32 getTimeTrace(int offset) {
@@ -71,19 +74,15 @@ static UInt32 getTimeTrace(int offset) {
 
 
 //called after each 6502 instruction
-void steckschweinInstructionCb(uint32_t cycles) {
+void jcInstructionCb(uint32_t cycles) {
 
   for (uint8_t i = 0; i < cycles; i++) {
     spi_step();
-    joystick_step();
-
+//    joystick_step();
+    mos6532Execute(mos6532);
   }
 
   trace();
-
-  if (!isDebuggerEnabled) {
-    hookCharOut();
-  }
 
 //  hookKernelPrgLoad(prg_file, prg_override_start);
 
@@ -96,7 +95,8 @@ void steckschweinInstructionCb(uint32_t cycles) {
   }
 }
 
-int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
+
+int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
   int success;
 
@@ -138,10 +138,14 @@ int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boa
 
   mixerReset(boardGetMixer());
 
-  ym3812 = ym3812Create(boardGetMixer());
+  mos6532 = mos6532Create();
+  for(i=JC_PORT_6532;i<JC_PORT_6532+128;i++){
+    ioPortRegister(i, mos6532Read, mos6532Write, mos6532);
+  }
 
-  for(i=STECKSCHWEIN_PORT_OPL;i<STECKSCHWEIN_PORT_OPL+0x10;i++){
-   ioPortRegister(i, ym3812Read, ym3812Write, ym3812);
+  sn76489 = sn76489Create(boardGetMixer());
+  for(i=0xe0;i<=0xff;i++){
+    ioPortRegister(i, NULL, sn76489WriteData, sn76489);
   }
 
   //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
@@ -154,20 +158,21 @@ int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boa
   //sprintf(cmosName, "%s" DIR_SEPARATOR "%s.cmos", boardGetBaseDirectory(), machine->name);
   //rtc = rtcCreate(machine->cmos.enable, machine->cmos.batteryBacked ? cmosName : 0);
 
-  vdpCreate(VDP_STECKSCHWEIN, machine->video.vdpVersion, vdpSyncMode, machine->video.vramSize / 0x4000);
+  vdpCreate(VDP_JC, machine->video.vdpVersion, vdpSyncMode, machine->video.vramSize / 0x4000);
 
   //register cpu hook
-  hookexternal(steckschweinInstructionCb);
+  hookexternal(jcInstructionCb);
 
-  success = machineInitialize(machine, &steckschweinRam, &steckschweinRamSize, &steckschweinRamStart);
+  success = machineInitialize(machine, &jcRam, &jcRamSize, &jcRamStart);
   if (success) {
   //         success = boardInsertExternalDevices();
   }
 
+  mos6532Reset(mos6532, 0);
   mos6502Reset(mos6502, 0);
 
   if (!success) {
-    destroy();
+      destroy();
   }
 
   return success;

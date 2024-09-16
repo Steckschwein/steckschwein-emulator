@@ -7,8 +7,6 @@ struct YM3812 {
   Int32 handle;
   UInt32 rate;
 
-  UInt16 ioPort;
-
   FM_OPL *opl;
 //    MidiIO* ykIo;
   BoardTimer *timer1;
@@ -128,14 +126,13 @@ void ym3812SetSampleRate(void* ref, UInt32 rate)
     ym3812->rate = rate;
 }
 
-struct YM3812* ym3812Create(Mixer* mixer, UInt16 ioPort) {
+struct YM3812* ym3812Create(Mixer* mixer) {
 
     YM3812* ym3812 = (YM3812*)calloc(1, sizeof(YM3812));
 
     ym3812->mixer = mixer;
     ym3812->timerRunning1 = 0;
     ym3812->timerRunning2 = 0;
-    ym3812->ioPort = ioPort;
 
     ym3812->timer1 = boardTimerCreate(onTimeout1, ym3812);
     ym3812->timer2 = boardTimerCreate(onTimeout2, ym3812);
@@ -149,9 +146,6 @@ struct YM3812* ym3812Create(Mixer* mixer, UInt16 ioPort) {
     OPLResetChip(ym3812->opl);
 
     ym3812->rate = mixerGetSampleRate(mixer);
-
-    ioPortRegister(ioPort+OPL_REG, ym3812Read, ym3812Write, ym3812);
-    ioPortRegister(ioPort+OPL_DAT, ym3812Read, ym3812Write, ym3812);
 
     return ym3812;
 }
@@ -198,9 +192,6 @@ void ym3812Destroy(YM3812* ym3812) {
     mixerUnregisterChannel(ym3812->mixer, ym3812->handle);
     boardTimerDestroy(ym3812->timer1);
     boardTimerDestroy(ym3812->timer2);
-
-    ioPortUnregister(ym3812->ioPort+OPL_REG);
-    ioPortUnregister(ym3812->ioPort+OPL_DAT);
 
     OPLDestroy(ym3812->opl);
 

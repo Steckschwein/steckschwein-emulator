@@ -1,5 +1,10 @@
 #include "Machine.h"
+#include "Properties.h"
+#include "IniFileParser.h"
+#include <stdio.h>
 #include <stdlib.h>
+
+static char machinesDir[PROP_MAXPATH]  = "";
 
 static int readMachine(Machine* machine, const char* machineName, const char* file)
 {
@@ -7,7 +12,7 @@ static int readMachine(Machine* machine, const char* machineName, const char* fi
     char* slotBuf;
     int value;
     int i = 0;
-/*
+
     IniFile *configIni;
 
     if (machine->isZipped)
@@ -19,13 +24,31 @@ static int readMachine(Machine* machine, const char* machineName, const char* fi
         return 0;
 
     strcpy(machine->name, machineName);
-*/
-    // Read board info
-    //iniFileGetString(configIni, "Board", "type", "none", buffer, 10000);
-    //else if (0 == strcmp(buffer, "STS6502"))  machine->board.type = BOARD_STECKSCHWEIN;
-    //else if (0 == strcmp(buffer, "JC6502"))   machine->board.type = BOARD_JC;
 
-    machine->board.type = BOARD_STECKSCHWEIN;
+    // Read board info
+    iniFileGetString(configIni, "Board", "type", "none", buffer, 10000);
+    if (0 == strcmp(buffer, "STECKSCHWEIN-2_0")) machine->board.type = BOARD_STECKSCHWEIN_2_0;
+    else if (0 == strcmp(buffer, "JuniorComputer")) machine->board.type = BOARD_JC;
+    else { iniFileClose(configIni); return 0; }
+
+    // Read video info
+    iniFileGetString(configIni, "Video", "version", "none", buffer, 10000);
+    if      (0 == strcmp(buffer, "V9938"))    machine->video.vdpVersion = VDP_V9938;
+    else if (0 == strcmp(buffer, "V9958"))    machine->video.vdpVersion = VDP_V9958;
+    else if (0 == strcmp(buffer, "TMS9929A")) machine->video.vdpVersion = VDP_TMS9929A;
+    else if (0 == strcmp(buffer, "TMS99x8A")) machine->video.vdpVersion = VDP_TMS99x8A;
+    else { iniFileClose(configIni); return 0; }
+
+    iniFileGetString(configIni, "Video", "vram size", "none", buffer, 10000);
+    if (0 == strcmp(buffer, "16kB")) machine->video.vramSize = 16 * 1024;
+    else if (0 == strcmp(buffer, "64kB")) machine->video.vramSize = 64 * 1024;
+    else if (0 == strcmp(buffer, "128kB")) machine->video.vramSize = 128 * 1024;
+    else if (0 == strcmp(buffer, "192kB")) machine->video.vramSize = 192 * 1024;
+    else { iniFileClose(configIni); return 0; }
+
+//    machine->slotInfoCount = i;
+
+    iniFileClose(configIni);
 
     return 1;
 }
@@ -34,7 +57,7 @@ Machine* machineCreate(RomImage* romImage, const char* machineName)
 {
     char configIni[512];
     int success;
-    // FILE *file;
+    FILE *file;
 
     Machine* machine = (Machine *)malloc(sizeof(Machine));
     if (machine == NULL)
@@ -42,18 +65,17 @@ Machine* machineCreate(RomImage* romImage, const char* machineName)
 
     machine->zipFile = NULL;
     machine->isZipped = 0;
-    machine->video.vdpVersion = VDP_V9958;
-    machine->video.vramSize = 192*1024;
 
     machine->romImage = romImage;
-    // TODO
-    // sprintf(configIni, "%s/%s/config.ini", machinesDir, machineName);
-    // file = fopen(configIni, "rb");
 
-    // if (file != NULL)
-    // {
-    //     fclose(file);
-    // }
+    sprintf(configIni, "%s/.sw/config.ini", getenv("HOME"));
+    /*sprintf(configIni, "%s/%s/config.ini", machinesDir, machineName);
+    file = fopen(configIni, "rb");
+    if (file != NULL)
+    {
+        fclose(file);
+    }
+    */
     // else
     // {
     //     // No config.ini. Is it compressed?

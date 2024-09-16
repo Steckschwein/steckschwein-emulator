@@ -5,12 +5,13 @@
 #include "glue.h"
 
 typedef enum {
-    BOARD_UNKNOWN       = -1,
-    BOARD_1_0           = 0x0100 + 0x00,
-    BOARD_2_0           = 0x0200 + 0x00,
-    BOARD_STECKSCHWEIN  = 0x0300,
-    BOARD_JC            = 0x0400, // junior computer
-    BOARD_MASK          = 0xff00
+    BOARD_UNKNOWN           = -1,
+    BOARD_1_0               = 0x0100 + 0x00,
+    BOARD_2_0               = 0x0200 + 0x00,
+    BOARD_STECKSCHWEIN      = 0x0300,     // 6502 / TMS9918 / 64k Ram
+    BOARD_STECKSCHWEIN_2_0  = 0x0400,     // 6502 / V9958 / 64/512k RAM
+    BOARD_JC                = 0x0500, // junior computer
+    BOARD_MASK              = 0xff00
 } BoardType;
 
 typedef struct {

@@ -185,7 +185,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
 */
     properties->emulation.statsDefDir[0]     = 0;
     properties->emulation.shortcutProfile[0] = 0;
-    strcpy(properties->emulation.machineName, "Steckschwein");
+    strcpy(properties->emulation.machineName, "steckschwein");
     properties->emulation.speed             = 50;//fps
     properties->emulation.syncMethod        = syncMode ? syncMode : P_EMU_SYNCAUTO;
     properties->emulation.syncMethodGdi     = P_EMU_SYNCAUTO;
