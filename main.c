@@ -22,7 +22,6 @@
 
 #include "cpu/fake6502.h"
 #include "disasm.h"
-#include "memory.h"
 #include "via.h"
 #include "uart.h"
 #include "spi.h"
@@ -49,9 +48,6 @@
 #include <pthread.h>
 #endif
 
-#define RAM_SIZE (64*1024)
-#define ROM_SIZE (32*1024)
-
 void* emulator_loop(void *param);
 void emscripten_main_loop(void);
 
@@ -64,8 +60,6 @@ char paste_text_data[65536];
 bool pasting_bas = false;
 
 static char emuStateName[512];
-
-uint32_t ram_size = RAM_SIZE; // 64 KB default
 
 extern int errno;
 
@@ -114,7 +108,7 @@ static Mixer *mixer;
 static Video *video;
 static Machine* machine;
 
-static RomImage* romImage;
+static RomImage romImage;
 
 static int enableSynchronousUpdate = 1;
 static int emuMaxSpeed = 0;
@@ -456,8 +450,6 @@ void createSdlSurface(int width, int height, int fullscreen) {
 
 int createOrUpdateSdlWindow() {
 
-  const char *title = "Steckschwein Emulator 2.0 (blueMSX)";
-
   int fullscreen = properties->video.windowSize == P_VIDEO_SIZEFULLSCREEN;
 
   if(!surface){//create
@@ -480,7 +472,7 @@ int createOrUpdateSdlWindow() {
       Uint32 bmask = 0x0000ff00;
       Uint32 amask = 0x000000ff;
     #endif
-    SDL_SetWindowTitle(window, title);
+    SDL_SetWindowTitle(window, properties->emulation.machineName);
     SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(&schwein128_rgba, 128,128,32,4*128, rmask, gmask, bmask, amask);
     SDL_SetWindowIcon(window, icon);
     SDL_FreeSurface(icon);
@@ -896,7 +888,7 @@ void emulatorStart(const char *stateName) {
   properties->emulation.pauseSwitch = 0;
 //  switchSetPause(properties->emulation.pauseSwitch);
 
-  machine = machineCreate(romImage, properties->emulation.machineName);
+  machine = machineCreate(&romImage, properties->emulation.machineName);
   if (machine == NULL) {
     //archShowStartEmuFailDialog();
     fprintf(stderr, "Could not create machine, invalid config or config not found!\n");
@@ -1087,29 +1079,6 @@ void hookCharOut() {
       printf("%c", c);
     }
     fflush(stdout);
-  }
-}
-
-void hookKernelPrgLoad(FILE *prg_file, int prg_override_start) {
-  if (prg_file) {
-    if (pc == 0xff00) {
-      // ...inject the app into RAM
-      uint8_t start_lo = fgetc(prg_file);
-      uint8_t start_hi = fgetc(prg_file);
-      uint16_t start;
-      if (prg_override_start >= 0) {
-        start = prg_override_start;
-      } else {
-        start = start_hi << 8 | start_lo;
-      }
-      if (start >= 0xe000) {
-        fprintf(stderr, "invalid program start address %x, will override kernel!\n", start);
-      } else {
-        uint16_t end = start + fread(ram + start, 1, RAM_SIZE - start, prg_file);
-      }
-      fclose(prg_file);
-      prg_file = NULL;
-    }
   }
 }
 
@@ -1456,21 +1425,8 @@ int main(int argc, char **argv) {
     }
   }
 
-  int rom_override_start = parseNumber(rom_path);
-  FILE *f = fopen(rom_path, "rb");
-  if (!f) {
-    fprintf(stderr, "Cannot open %s!\n", rom_path);
-    exit(1);
-  }
-  romImage = malloc(sizeof(RomImage));
-  romImage->address = rom_override_start;
-  romImage->image = malloc(ROM_SIZE);
-  int size = fread(romImage->image, 1, ROM_SIZE, f);
-  fclose(f);
-  if(size != ROM_SIZE){
-    fprintf(stderr, "Invalid rom image %s or could not read file. Expected 0x%04x bytes ROM, but was 0x%04x!\n", rom_path, ROM_SIZE, size);
-    exit(1);
-  }
+  romImage.address = parseNumber(rom_path);
+  romImage.romPath = rom_path; //->image = malloc(ROM_SIZE);
 
   if (sdcard_path) {
     sdcard_file = fopen(sdcard_path, "r+b");

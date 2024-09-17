@@ -4,6 +4,7 @@
 #include "Board.h"
 #include "VDP.h"
 
+// i/o related
 #define STECKSCHWEIN_PORT_OPL 0x240
 
 int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo);

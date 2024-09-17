@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <string.h>
-#include "memory.h"
 #include <glue.h>
 
 #include "cpu/mnemonics.h"				// Automatically generated mnemonic table.

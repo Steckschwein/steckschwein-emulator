@@ -1,5 +1,4 @@
 #include "ym3812.h"
-#include "memory.h"
 
 struct YM3812 {
 

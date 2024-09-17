@@ -1,51 +1,41 @@
-// Commander X16 Emulator
-// Copyright (c) 2019 Michael Steil
-// All rights reserved. License: 2-clause BSD
-
 #include <sys/types.h>
 #include <string.h>
-#include <unistd.h>
-#include "glue.h"
-#include "via.h"
-#include "uart.h"
-#include "ym3812.h"
 
-#include "memory.h"
+#include "memoryJuniorComputer.h"
 
-uint8_t ctrl_port[] = {0,0,0,0};
+typedef struct {
+    int deviceHandle;
+    UInt8* romData;
+    int slot;
+    int sslot;
+    int startPage;
+    UInt32 romMask;
+    int romMapper[4];
+} MemoryJuniorComputer;
 
-uint8_t *ram;
-uint8_t *rom;
+#define RAM_SIZE 64*1024
+#define ROM_SIZE 8*1024
 
-void *cpu;
-
-#define DEVICE_EMULATOR (0x9fb0)
-
-void memoryCreate(void *cpuRef, RomImage* romImage) {
-
-  cpu = cpuRef;
+void memoryJuniorComputerCreate(void *cpuRef, RomImage* romImage) {
 
   ram = malloc(RAM_SIZE);
+  rom = malloc(ROM_SIZE);
 
-  if(romImage){
-    rom = romImage->image;
-  }else{
-    rom = malloc(ROM_SIZE);
+  if(romImage && romImage->romPath){
+    FILE *f = fopen(romImage->romPath, "rb");
+    if (!f) {
+      fprintf(stderr, "Cannot open %s!\n", romImage->romPath);
+      exit(1);
+    }
+    int size = fread(rom, 1, ROM_SIZE, f);
+    fclose(f);
+    if(size < ROM_SIZE){
+      fprintf(stderr, "WARN: Given rom image %s is smaller then installed ROM. Expected size 0x%04x, but was 0x%04x!\n", romImage->romPath, ROM_SIZE, size);
+    }
   }
-
-  ctrl_port[0] = 0x00;
-#ifdef SSW2_0
-  ctrl_port[1] = 0x01;
-  ctrl_port[2] = 0x80;
-  ctrl_port[3] = 0x81;
-#endif
 }
 
-uint8_t memory_get_ctrlport(uint16_t address) {
-  return ctrl_port[address & 0x03];
-}
-
-void memory_destroy() {
+static void destroy() {
   free(ram);
   free(rom);
 }
@@ -54,34 +44,35 @@ void memory_destroy() {
 // interface for fake6502
 //
 // if debugOn then reads memory only for debugger; no I/O, no side effects whatsoever
-uint8_t read6502(uint16_t address) {
+static uint8_t read6502(uint16_t address) {
   return real_read6502(address, false, 0);
 }
 
-uint8_t *get_address(uint16_t address, bool debugOn){
+static uint8_t *get_address(uint16_t address, bool debugOn){
 
   uint8_t *p;
   uint32_t mem_size;
 
-  uint8_t reg = (address >> BANK_SIZE) & sizeof(ctrl_port)-1;
-  if((ctrl_port[reg] & 0x80) == 0){  // RAM/ROM)
-    p = ram;
-    mem_size = RAM_SIZE;
-  }else{
+  if(address >= 0xe000 ||
+    (address >= 0x1c00 && address < 0x2000)
+    ){  // RAM/ROM)
     p = rom;
     mem_size = ROM_SIZE;
+  }else{
+    p = ram;
+    mem_size = RAM_SIZE;
   }
 
-  uint32_t extaddr = ((ctrl_port[reg] & ((mem_size >> BANK_SIZE)-1)) << BANK_SIZE) | (address & ((1<<BANK_SIZE)-1));
+  uint32_t memoryAddr = address & (mem_size-1);
 
   if(!debugOn){//skip if called from debugger
-      DEBUG ("address: a: $%4x r: $%2x/$%2x sz: $%x ext: $%x", address, reg, ctrl_port[reg], mem_size, extaddr);
+      DEBUG ("address: a: 0x%4x sz: 0x%x ext: 0x%x", address, mem_size, memoryAddr);
   }
 
-  return &p[extaddr & (mem_size-1)];
+  return &p[memoryAddr & (mem_size-1)];
 }
 
-uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
+static uint8_t read(MemoryJuniorComputer *ref, uint16_t address, bool debugOn) {
 
   if (address >= 0x0200) {// I/O
     if (address < 0x210) // UART at $0200
@@ -92,21 +83,14 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
       return via1_read(address & 0xf);
     } else if (address < 0x0230) // VDP at $0220
     {
-      //return ioPortRead(NULL, address);
-      return readPort(cpu, address);
-    } else if (address < 0x0240) // latch/cpld regs at $0230
-    {
-      return memory_get_ctrlport(address);
+//      return readPort(cpu, address);
     } else if (address < 0x0250) // OPL2 at $0240
     {
-      //return ioPortRead(NULL, address);
-      return readPort(cpu, address);
+  //    return readPort(cpu, address);
     // } else {
     //   return emu_read(address & 0xf);
     }
   }
-#ifdef SSW2_0
-
   uint8_t *p = get_address(address, debugOn);
 
   uint8_t value = *p;
@@ -116,26 +100,9 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
   }
 
   return value;
-
-#else
-  DEBUG("read6502 %x %x\n", address, bank);
-
-  if (address < 0xe000 || (ctrl_port[0] & 1)) {
-    return ram[address]; // RAM
-  }
-  /* bank select upon ctrl_port[0] - see steckos/asminc/system.inc
-    BANK_SEL0 = 0010
-    BANK_SEL1 = 0100
-    BANK0 = 0000
-    BANK1 = 0010
-    BANK2 = 0100
-    BANK3 = 0110
-    */
-  return rom[(address & 0x1fff) | ((ctrl_port[0] & 0x06) << 12)];
-#endif
 }
 
-void write6502(uint16_t address, uint8_t value) {
+static void write(MemoryJuniorComputer *ref, uint16_t address, uint8_t value) {
 
   if (address >= 0x0200) { // I/O
     if (address < 0x210) // UART at $0200
@@ -148,50 +115,25 @@ void write6502(uint16_t address, uint8_t value) {
       return;
     } else if (address < 0x0230) // VDP at $0220
     {
-      //ioPortWrite(NULL, address, value);
-      writePort(cpu, address, value);
-      return;
-    } else if (address < 0x0240) // latch at $0x0230
-    {
-      ctrl_port[address &0x03] = value;
-      DEBUG ("ctrl_port $%2x\n", ctrl_port[address &0x03]);
+      //writePort(cpu, address, value);
       return;
     } else if (address < 0x0250) // OPL2 at $0240
     {
-      //ioPortWrite(NULL, address, value);
-      writePort(cpu, address, value);
+//      writePort(cpu, address, value);
       return;
     }
   }
-#ifdef SSW2_0
 
   uint8_t *p = get_address(address, false);
   *p = value;
 
   DEBUG (" write v: $%2x\n", value);
-
-#else
-  DEBUG("write6502 %4x %2x\n", address, value);
-
-    /*
-     if (address < 0x0310) {
-     via1_write(address & 0xf, value);
-     } else {
-     emu_write(address & 0xf, value);
-     }
-     */
-    // } else if (address < 0xe000) { // ram
-    // ram[address] = value;
-  // Writes go to ram, regardless if ROM active or not
-  ram[address] = value;
-#endif
 }
 
 //
 // saves the memory content into a file
 //
-
-void memory_save(FILE *f, bool dump_ram, bool dump_bank) {
+static void savestate(FILE *f, bool dump_ram, bool dump_bank) {
   fwrite(ram, sizeof(uint8_t), RAM_SIZE, f);
 }
 
@@ -200,7 +142,7 @@ void memory_save(FILE *f, bool dump_ram, bool dump_bank) {
 ///
 
 // Control the GIF recorder
-void emu_recorder_set(gif_recorder_command_t command) {
+static void emu_recorder_set(gif_recorder_command_t command) {
   // turning off while recording is enabled
   if (command == RECORD_GIF_PAUSE && record_gif != RECORD_GIF_DISABLED) {
     record_gif = RECORD_GIF_PAUSED; // need to save
@@ -225,7 +167,7 @@ void emu_recorder_set(gif_recorder_command_t command) {
 // 4: save_on_exit
 // 5: record_gif
 // POKE $9FB3,1:PRINT"ECHO MODE IS ON":POKE $9FB3,0
-void emu_write(uint8_t reg, uint8_t value) {
+static void emu_write(uint8_t reg, uint8_t value) {
   bool v = value != 0;
   switch (reg) {
   case 0:
@@ -247,11 +189,11 @@ void emu_write(uint8_t reg, uint8_t value) {
     emu_recorder_set((gif_recorder_command_t) value);
     break;
   default:
-    printf("WARN: Invalid register %x\n", DEVICE_EMULATOR + reg);
+    printf("WARN: Invalid register %x\n", reg);
   }
 }
 
-uint8_t emu_read(uint8_t reg) {
+static uint8_t emu_read(uint8_t reg) {
   if (reg == 0) {
     return isDebuggerEnabled ? 1 : 0;
   } else if (reg == 1) {
@@ -271,6 +213,6 @@ uint8_t emu_read(uint8_t reg) {
   } else if (reg == 15) {
     return '6'; // emulator detection
   }
-  printf("WARN: Invalid register %x\n", DEVICE_EMULATOR + reg);
+  printf("WARN: Invalid register %x\n", reg);
   return -1;
 }

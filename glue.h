@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #define WARN(...) fprintf(stderr, __VA_ARGS__)
 
@@ -43,7 +44,8 @@ typedef enum {
 
 typedef struct {
   uint16_t address;
-  uint8_t *image;
+  char *romPath;
+  //uint8_t *image;
 } RomImage;
 
 void actionEmuTogglePause();

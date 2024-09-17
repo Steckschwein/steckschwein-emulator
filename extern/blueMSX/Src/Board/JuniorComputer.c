@@ -134,7 +134,7 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
   ioPortReset();
 
   //ramMapperIoCreate();
-  memoryCreate(mos6502, machine->romImage);
+  memoryJuniorComputerCreate(mos6502, machine->romImage);
 
   mixerReset(boardGetMixer());
 

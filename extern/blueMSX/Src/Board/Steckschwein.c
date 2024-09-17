@@ -70,6 +70,29 @@ static UInt32 getTimeTrace(int offset) {
 }
 
 
+void hookKernelPrgLoad(FILE *prg_file, int prg_override_start) {
+  if (prg_file) {
+    if (pc == 0xff00) {
+      // ...inject the app into RAM
+      uint8_t start_lo = fgetc(prg_file);
+      uint8_t start_hi = fgetc(prg_file);
+      uint16_t start;
+      if (prg_override_start >= 0) {
+        start = prg_override_start;
+      } else {
+        start = start_hi << 8 | start_lo;
+      }
+      if (start >= 0xe000) {
+        fprintf(stderr, "invalid program start address 0x%4x, will override kernel!\n", start);
+      } else {
+//        uint16_t end = start + fread(ram + start, 1, RAM_SIZE - start, prg_file);
+      }
+      fclose(prg_file);
+      prg_file = NULL;
+    }
+  }
+}
+
 //called after each 6502 instruction
 void steckschweinInstructionCb(uint32_t cycles) {
 
@@ -134,7 +157,12 @@ int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boa
   ioPortReset();
 
   //ramMapperIoCreate();
-  memoryCreate(mos6502, machine->romImage);
+  if(machine->board.type == BOARD_STECKSCHWEIN ){
+    //TODO old hardware support
+    return success;
+  }else {
+    memorySteckschweinCreate(mos6502, machine->romImage);
+  }
 
   mixerReset(boardGetMixer());
 

@@ -10,11 +10,13 @@
 #define VDP_DELAY 2 // wait states aka clockticks
 
 unsigned char vdp_delay = VDP_DELAY;
-#define delayVdpIO(mos6502, port) {                           \
-  mos6502->systemTime = 6 * ((mos6502->systemTime + 5) / 6);  \
-  if (mos6502->systemTime - mos6502->vdpTime < vdp_delay)     \
-      mos6502->systemTime = mos6502->vdpTime + vdp_delay;     \
-  mos6502->vdpTime = mos6502->systemTime;                     \
+#define delayVdpIO(mos6502, port) {                             \
+  if ((port & 0xf20) == 0x220) {                                \
+    mos6502->systemTime = 6 * ((mos6502->systemTime + 5) / 6);  \
+    if (mos6502->systemTime - mos6502->vdpTime < vdp_delay)     \
+        mos6502->systemTime = mos6502->vdpTime + vdp_delay;     \
+    mos6502->vdpTime = mos6502->systemTime;                     \
+  }                                                             \
 }
 
 

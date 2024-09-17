@@ -24,7 +24,6 @@
 
 #include "disasm.h"
 #include "glue.h"
-#include "memory.h"
 #include "rendertext.h"
 #include "cpu/fake6502.h"
 
