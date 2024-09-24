@@ -10,4 +10,7 @@
 
 void memoryJuniorComputerCreate(void* cpu, RomImage* romImage);
 
+UInt8 memoryJuniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool debugOn);
+void memoryJuniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 value);
+
 #endif

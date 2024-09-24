@@ -1,8 +1,11 @@
+#include "Board.h"
 #include "JuniorComputer.h"
 #include "MOS6502.h"
 #include "MOS6532.h"
 #include "SN76489.h"
 #include "VDP.h"
+
+#include "memoryJuniorComputer.h"
 
 UInt8* jcRam;
 static UInt32          jcRamSize;
@@ -10,8 +13,9 @@ static UInt32          jcRamStart;
 
 /* Hardware */
 static SN76489* sn76489;
-static MOS6502* mos6502;
 static MOS6532* mos6532;
+
+//extern MOS6502* mos6502;
 
 static void destroy() {
 
@@ -102,7 +106,7 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
 
   int i;
 
-  mos6502 = mos6502create(boardTimerCheckTimeout);
+  mos6502 = mos6502create(memoryJuniorComputerReadAddress, memoryJuniorComputerWriteAddress, boardTimerCheckTimeout);
 
   boardInfo->cpuRef           = mos6502;
 
@@ -128,13 +132,11 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
   boardInfo->getTimeTrace     = getTimeTrace;
 
   //deviceManagerCreate();
+  memoryJuniorComputerCreate(mos6502, machine->romImage);
 
   boardInit(&mos6502->systemTime);
 
   ioPortReset();
-
-  //ramMapperIoCreate();
-  memoryJuniorComputerCreate(mos6502, machine->romImage);
 
   mixerReset(boardGetMixer());
 
@@ -147,13 +149,6 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
   for(i=0xe0;i<=0xff;i++){
     ioPortRegister(i, NULL, sn76489WriteData, sn76489);
   }
-
-  //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
-  //slotManagerCreate();
-
-  //     cpuDebugCreate(mos6502);
-
-  //ioPortRegister(0x2e, testPort, NULL, NULL);
 
   //sprintf(cmosName, "%s" DIR_SEPARATOR "%s.cmos", boardGetBaseDirectory(), machine->name);
   //rtc = rtcCreate(machine->cmos.enable, machine->cmos.batteryBacked ? cmosName : 0);

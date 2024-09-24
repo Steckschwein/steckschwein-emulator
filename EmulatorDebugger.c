@@ -234,7 +234,7 @@ static void DEBUGHandleKeyEvent(SDL_Keysym key, int isShift) {
 		break;
 
 	case DBGKEY_STEPOVER:								// Step over (F10 by default)
-		opcode = real_read6502(pc, false, 0);			// What opcode is it ?
+		opcode = read6502Debug(pc, false, 0);			// What opcode is it ?
 		if (opcode == 0x20) { 							// Is it JSR ?
 			stepBreakPoint = pc + 3;					// Then break 3 on.
 			dbgSetBreakpoint(stepBreakPoint);			// And run.
@@ -452,7 +452,7 @@ static void DEBUGRenderData(int y, int data) {
 		DEBUGAddress(DBG_MEMX, y, (uint8_t) currentBank, data & 0xFFFF, col_label);	// Show label.
 
 		for (int i = 0; i < 8; i++) {
-			int byte = real_read6502((data + i) & 0xFFFF, true, currentBank);
+			int byte = read6502Debug((data + i) & 0xFFFF, true, currentBank);
 			DEBUGNumber(DBG_MEMX + 8 + i * 3, y, byte, 2, col_data);
 			DEBUGWrite(dbgSurface, DBG_MEMX + 33 + i, y, byte, col_data);
 		}
@@ -544,7 +544,7 @@ static void DEBUGRenderStack(int bytesCount) {
 	int y = 0;
 	while (y < bytesCount) {
 		DEBUGNumber(DBG_STCK, y, data & 0xFFFF, 4, col_label);
-		int byte = real_read6502((data++) & 0xFFFF, true, 0);
+		int byte = read6502Debug((data++) & 0xFFFF, true, 0);
 		DEBUGNumber(DBG_STCK + 5, y, byte, 2, col_data);
 		DEBUGWrite(dbgSurface, DBG_STCK + 9, y, byte, col_data);
 		y++;

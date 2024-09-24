@@ -1,15 +1,20 @@
 #include "Steckschwein.h"
+#include "memorySteckschwein.h"
 #include "MOS6502.h"
-#include "VDP.h"
+#include "MOS6502Debug.h"
 #include "ym3812.h"
+#include "Board.h"
+
+// Hardware
+//static MOS6502* mos6502;
+//extern MOS6502* mos6502;
+
+static YM3812* ym3812;
+// TODO static DS1306 *ds1306;
 
 UInt8* steckschweinRam;
 static UInt32          steckschweinRamSize;
 static UInt32          steckschweinRamStart;
-
-static MOS6502* mos6502;
-static YM3812* ym3812;
-// TODO static DS1306 *ds1306;
 
 static void destroy() {
 
@@ -23,8 +28,8 @@ static void destroy() {
 
 	// rtcDestroy(ds1306);
 
+   mos6502DebugDestroy();
   /*
-   r800DebugDestroy();
     ioPortUnregister(0x2e);
     deviceManagerDestroy();
     */
@@ -125,7 +130,7 @@ int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boa
 
   int i;
 
-  mos6502 = mos6502create(boardTimerCheckTimeout);
+  mos6502 = mos6502create(memorySteckschweinReadAddress, memorySteckschweinWriteAddress, boardTimerCheckTimeout);
 
   boardInfo->cpuRef           = mos6502;
 
@@ -175,7 +180,7 @@ int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boa
   //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
   //slotManagerCreate();
 
-  //     cpuDebugCreate(mos6502);
+  mos6502DebugCreate(mos6502);
 
   //ioPortRegister(0x2e, testPort, NULL, NULL);
 

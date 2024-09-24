@@ -21,7 +21,7 @@ CFLAGS   = -w -O3 -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Wer
 
 # development flags (debugger support)
 CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror
-# CFLAGS   +=-DDEBUG_ENABLED
+#CFLAGS   +=-DDEBUG_ENABLED
 # Videorenderer.c segfault inline asm, we disable it entirely
 CFLAGS   +=-DNO_ASM
 
@@ -219,6 +219,7 @@ SOURCE_FILES += MOS6532.c
 SOURCE_FILES += SN76489.c
 SOURCE_FILES += DebugDeviceManager.c
 SOURCE_FILES += Debugger.c
+SOURCE_FILES += MOS6502Debug.c
 
 all: $(OUTPUT_DIR) $(TARGET)
 

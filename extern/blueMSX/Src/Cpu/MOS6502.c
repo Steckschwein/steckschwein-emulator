@@ -10,6 +10,7 @@
 #define VDP_DELAY 2 // wait states aka clockticks
 
 unsigned char vdp_delay = VDP_DELAY;
+
 #define delayVdpIO(mos6502, port) {                             \
   if ((port & 0xf20) == 0x220) {                                \
     mos6502->systemTime = 6 * ((mos6502->systemTime + 5) / 6);  \
@@ -20,10 +21,20 @@ unsigned char vdp_delay = VDP_DELAY;
 }
 
 
-MOS6502* mos6502create(MOS6502TimerCb timerCb) {
-  MOS6502 *mos6502 = malloc(sizeof(MOS6502));
+#define write6502(a, v) {\
+  mos6502->writeAddress(mos6502->ref, a, v);\
+}
+
+MOS6502* mos6502create(
+    MOS6502ReadCb readAddress,
+    MOS6502WriteCb writeAddress,
+    MOS6502TimerCb timerCb) {
+
+  MOS6502 *mos6502 = calloc(1, sizeof(MOS6502));
   mos6502->systemTime = 0;
   mos6502->terminate = 0;
+  mos6502->readAddress = readAddress;
+  mos6502->writeAddress = writeAddress;
   mos6502->timerCb = timerCb;
   mos6502->intState = INT_HIGH;
   mos6502->nmiState = INT_HIGH;
@@ -34,7 +45,7 @@ MOS6502* mos6502create(MOS6502TimerCb timerCb) {
 }
 
 
-UInt8 readPort(MOS6502* mos6502, UInt16 port) {
+UInt8 readAddress(MOS6502* mos6502, UInt16 port) {
     UInt8 value;
 
 //    delayPreIo(mos6502);
@@ -47,7 +58,7 @@ UInt8 readPort(MOS6502* mos6502, UInt16 port) {
     return value;
 }
 
-void writePort(MOS6502* mos6502, UInt16 port, UInt8 value) {
+void writeAddress(MOS6502* mos6502, UInt16 port, UInt8 value) {
 //    delayPreIo(mos6502);
 
     delayVdpIO(mos6502, port);

@@ -36,6 +36,7 @@
 #include "Steckschwein.h"
 #include "JuniorComputer.h"
 #include "AudioMixer.h"
+#include "MOS6502.h"
 /*
 #include "YM2413.h"
 #include "Y8950.h"
@@ -104,6 +105,8 @@ static UInt32       periodicInterval;
 static BoardTimer*  periodicTimer;
 
 void boardTimerCleanup();
+
+MOS6502* mos6502;
 
 //extern void PatchReset(BoardType boardType);
 
@@ -467,12 +470,12 @@ int boardGetRefreshRate()
     return 0;
 }
 
-void   boardSetNmi(UInt32 nmi){
+void boardSetNmi(UInt32 nmi){
     pendingNmi |= nmi;
     boardInfo.setNmi(boardInfo.cpuRef);
 }
 
-void   boardClearNmi(UInt32 nmi){
+void boardClearNmi(UInt32 nmi){
     pendingNmi &= ~nmi;
     if (pendingNmi == 0) {
         boardInfo.clearNmi(boardInfo.cpuRef);
@@ -753,10 +756,12 @@ int boardRun(Machine* machine,
         success = 0;
     }
 
-
     boardCaptureInit();
 
     if (success) {
+
+        mos6502 = boardInfo.cpuRef;
+
         syncTimer = boardTimerCreate(onSync, NULL);
         fdcTimer = boardTimerCreate(onFdcDone, NULL);
         mixerTimer = boardTimerCreate(onMixerSync, NULL);

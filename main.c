@@ -216,9 +216,9 @@ void machine_paste(char *s) {
 }
 
 static void usage() {
-  printf("\nSteckschwein Emulator (C)2019 Michael Steil, Thomas Woinke, Marko Lauke\n");
+  printf("\n6502 MSX Emulator (C)2019 Michael Steil, Thomas Woinke, Marko Lauke\n");
   printf("All rights reserved. License: 2-clause BSD\n\n");
-  printf("Usage: steckschwein-emu [option] ...\n\n");
+  printf("Usage: 6502msx-emu [option] ...\n\n");
   printf("-rom <rom.bin>[,<load_addr>]\n");
   printf("\tbios ROM file.\n");
   printf("-ram <ramsize>\n");

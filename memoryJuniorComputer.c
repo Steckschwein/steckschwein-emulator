@@ -13,8 +13,8 @@ typedef struct {
     int romMapper[4];
 } MemoryJuniorComputer;
 
-#define RAM_SIZE 64*1024
-#define ROM_SIZE 8*1024
+#define RAM_SIZE 128*1024
+#define ROM_SIZE 32*1024
 
 void memoryJuniorComputerCreate(void *cpuRef, RomImage* romImage) {
 
@@ -38,14 +38,6 @@ void memoryJuniorComputerCreate(void *cpuRef, RomImage* romImage) {
 static void destroy() {
   free(ram);
   free(rom);
-}
-
-//
-// interface for fake6502
-//
-// if debugOn then reads memory only for debugger; no I/O, no side effects whatsoever
-static uint8_t read6502(uint16_t address) {
-  return real_read6502(address, false, 0);
 }
 
 static uint8_t *get_address(uint16_t address, bool debugOn){
@@ -72,7 +64,7 @@ static uint8_t *get_address(uint16_t address, bool debugOn){
   return &p[memoryAddr & (mem_size-1)];
 }
 
-static uint8_t read(MemoryJuniorComputer *ref, uint16_t address, bool debugOn) {
+static uint8_t read(UInt16 address, bool debugOn) {
 
   if (address >= 0x0200) {// I/O
     if (address < 0x210) // UART at $0200
@@ -102,7 +94,7 @@ static uint8_t read(MemoryJuniorComputer *ref, uint16_t address, bool debugOn) {
   return value;
 }
 
-static void write(MemoryJuniorComputer *ref, uint16_t address, uint8_t value) {
+void memoryJuniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 value) {
 
   if (address >= 0x0200) { // I/O
     if (address < 0x210) // UART at $0200
@@ -137,82 +129,7 @@ static void savestate(FILE *f, bool dump_ram, bool dump_bank) {
   fwrite(ram, sizeof(uint8_t), RAM_SIZE, f);
 }
 
-///
-///
-///
 
-// Control the GIF recorder
-static void emu_recorder_set(gif_recorder_command_t command) {
-  // turning off while recording is enabled
-  if (command == RECORD_GIF_PAUSE && record_gif != RECORD_GIF_DISABLED) {
-    record_gif = RECORD_GIF_PAUSED; // need to save
-  }
-  // turning on continuous recording
-  if (command == RECORD_GIF_RESUME && record_gif != RECORD_GIF_DISABLED) {
-    record_gif = RECORD_GIF_ACTIVE;    // activate recording
-  }
-  // capture one frame
-  if (command == RECORD_GIF_SNAP && record_gif != RECORD_GIF_DISABLED) {
-    record_gif = RECORD_GIF_SINGLE;    // single-shot
-  }
-}
-
-//
-// read/write emulator state (feature flags)
-//
-// 0: debugger_enabled
-// 1: log_video
-// 2: log_keyboard
-// 3: echo_mode
-// 4: save_on_exit
-// 5: record_gif
-// POKE $9FB3,1:PRINT"ECHO MODE IS ON":POKE $9FB3,0
-static void emu_write(uint8_t reg, uint8_t value) {
-  bool v = value != 0;
-  switch (reg) {
-  case 0:
-    isDebuggerEnabled = v;
-    break;
-  case 1:
-    log_video = v;
-    break;
-  case 2:
-    log_keyboard = v;
-    break;
-  case 3:
-    echo_mode = v;
-    break;
-  case 4:
-    save_on_exit = v;
-    break;
-  case 5:
-    emu_recorder_set((gif_recorder_command_t) value);
-    break;
-  default:
-    printf("WARN: Invalid register %x\n", reg);
-  }
-}
-
-static uint8_t emu_read(uint8_t reg) {
-  if (reg == 0) {
-    return isDebuggerEnabled ? 1 : 0;
-  } else if (reg == 1) {
-    return log_video ? 1 : 0;
-  } else if (reg == 2) {
-    return log_keyboard ? 1 : 0;
-  } else if (reg == 3) {
-    return echo_mode;
-  } else if (reg == 4) {
-    return save_on_exit ? 1 : 0;
-  } else if (reg == 5) {
-    return record_gif;
-  } else if (reg == 13) {
-    return keymap;
-  } else if (reg == 14) {
-    return '1'; // emulator detection
-  } else if (reg == 15) {
-    return '6'; // emulator detection
-  }
-  printf("WARN: Invalid register %x\n", reg);
-  return -1;
+UInt8 memoryJuniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool debugOn) {
+  return read(address, debugOn);
 }

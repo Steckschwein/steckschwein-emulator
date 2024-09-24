@@ -8,7 +8,15 @@
 
 typedef UInt32 SystemTime;
 
+/*
+ * Callback types
+ */
+typedef UInt8 (*MOS6502ReadCb)(void*, UInt16, bool);
+typedef void  (*MOS6502WriteCb)(void*, UInt16, UInt8);
 typedef void (*MOS6502TimerCb)(void*);
+typedef void  (*MOS6502BreakptCb)(void*, UInt16);
+typedef void  (*MOS6502DebugCb)(void*, int, const char*);
+typedef void  (*MOS6502TrapCb)(void*, UInt8);
 
 typedef union {
   struct {
@@ -27,8 +35,10 @@ typedef struct {
     UInt8 A;
     UInt8 X;
     UInt8 Y;
+    UInt8 P;
 
-    UInt8 S;
+    UInt16 SP;
+//    UInt16 PC;
     RegisterPair PC;
 } CpuRegs;
 
@@ -38,7 +48,16 @@ typedef struct{
   UInt32            vdpTime;          /* Time of last access to VDP  */
   int               terminate;        /* Termination flag                */
   SystemTime        timeout;          /* User scheduled timeout          */
+  MOS6502ReadCb     readAddress;
+  MOS6502WriteCb    writeAddress;
   MOS6502TimerCb    timerCb;
+  MOS6502BreakptCb     breakpointCb;
+  MOS6502DebugCb       debugCb;
+  MOS6502WriteCb       watchpointMemCb;
+  MOS6502WriteCb       watchpointIoCb;
+  MOS6502TrapCb        trapCb;
+
+
   int               intState;         /* Sate of interrupt line          */
   int               nmiState;
   int               nmiEdge;
@@ -56,10 +75,15 @@ typedef struct{
 #define INT_LOW   0
 #define INT_HIGH  1
 
-MOS6502* mos6502create(MOS6502TimerCb timerCb);
+//adapt to fake6502 api
+#define write6502(a, v) mos6502->writeAddress(mos6502, a, v)
+#define read6502(a) mos6502->readAddress(mos6502, a, false)
+#define read6502Debug(a, dbg, bank) mos6502->readAddress(mos6502, a, dbg)
 
-UInt8 readPort(MOS6502* mos6502, UInt16 port);
-void writePort(MOS6502* mos6502, UInt16 port, UInt8 value);
+MOS6502* mos6502create(MOS6502ReadCb readAddress, MOS6502WriteCb writeAddress, MOS6502TimerCb timerCb);
+
+//UInt8 readAddress(MOS6502* mos6502, UInt16 port);
+//void writeAddress(MOS6502* mos6502, UInt16 port, UInt8 value);
 
 void mos6502Reset(MOS6502* mos6502, UInt32 cpuTime);
 void mos6502SetInt(MOS6502* mos6502);

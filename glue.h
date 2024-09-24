@@ -17,8 +17,6 @@
 	#define DEBUG(...)
 #endif
 
-extern bool isDebuggerEnabled;
-
 void emulatorStart(const char *stateName);
 
 typedef enum {

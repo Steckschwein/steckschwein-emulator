@@ -166,7 +166,8 @@ int stringToEnum(ValueNamePair* pair, const char* name)
 */
 #define ROOT_ELEMENT "config"
 
-#define GET_STR_VALUE_2(ini, v1,v2)      iniFileGetString(ini, ROOT_ELEMENT, #v1 "." #v2, properties->v1.v2, properties->v1.v2, sizeof(properties->v1.v2));
+#define GET_STR_VALUE_2(ini, v1,v2)       iniFileGetString(ini, ROOT_ELEMENT, #v1 "." #v2, properties->v1.v2, properties->v1.v2, sizeof(properties->v1.v2));
+#define GET_BOARD_TYPE(ini, v1,v2)        iniFileGetString(ini, "Board", "type", properties->v1.v2, properties->v1.v2, sizeof(properties->v1.v2));
 
 static void propLoad(Properties* properties){
 
@@ -174,7 +175,7 @@ static void propLoad(Properties* properties){
 
     IniFile *propFile = iniFileOpen(settFilename);
 
-    GET_STR_VALUE_2(propFile, emulation, machineName);
+    GET_BOARD_TYPE(propFile, emulation, machineName);
 
     iniFileClose(propFile);
 }
