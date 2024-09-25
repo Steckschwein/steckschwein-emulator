@@ -36,6 +36,7 @@ static void destroy() {
   sn76489Destroy(sn76489);
   mos6532Destroy(mos6532);
   mos6502Destroy(mos6502);
+  memoryJuniorComputerDestroy();
 }
 
 static void reset()

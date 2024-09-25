@@ -891,7 +891,7 @@ void emulatorStart(const char *stateName) {
   machine = machineCreate(&romImage, properties->emulation.machineName);
   if (machine == NULL) {
     //archShowStartEmuFailDialog();
-    fprintf(stderr, "Could not create machine, invalid config or config not found!\n");
+    fprintf(stderr, "Could not create machine '%s', invalid config or config not found!. Check [Board] section for valid type.\n", properties->emulation.machineName);
     archEmulationStopNotification();
     emuState = EMU_STOPPED;
     archEmulationStartFailure();

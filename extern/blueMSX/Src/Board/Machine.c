@@ -28,7 +28,7 @@ static int readMachine(Machine* machine, const char* machineName, const char* fi
     iniFileGetString(configIni, "Board", "type", "none", buffer, 10000);
     if (0 == strcmp(buffer, "Steckschwein 2.0")) machine->board.type = BOARD_STECKSCHWEIN_2_0;
     else if (0 == strcmp(buffer, "Steckschwein")) machine->board.type = BOARD_STECKSCHWEIN;
-    else if (0 == strcmp(buffer, "JuniorComputer")) machine->board.type = BOARD_JC;
+    else if (0 == strcmp(buffer, "JuniorComputer ][")) machine->board.type = BOARD_JC;
     else { iniFileClose(configIni); return 0; }
 
     // Read video info
