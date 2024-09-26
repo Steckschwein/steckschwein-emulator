@@ -75,15 +75,9 @@ typedef struct{
 #define INT_LOW   0
 #define INT_HIGH  1
 
-//adapt to fake6502 api
-#define write6502(a, v) mos6502->writeAddress(mos6502, a, v)
-#define read6502(a) mos6502->readAddress(mos6502, a, false)
-#define read6502Debug(a, dbg, bank) mos6502->readAddress(mos6502, a, dbg)
+UInt8 read6502Debug(UInt16 address, bool dbg, UInt16 bank);
 
 MOS6502* mos6502create(MOS6502ReadCb readAddress, MOS6502WriteCb writeAddress, MOS6502TimerCb timerCb);
-
-//UInt8 readAddress(MOS6502* mos6502, UInt16 port);
-//void writeAddress(MOS6502* mos6502, UInt16 port, UInt8 value);
 
 void mos6502Reset(MOS6502* mos6502, UInt32 cpuTime);
 void mos6502SetInt(MOS6502* mos6502);

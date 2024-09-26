@@ -48,6 +48,7 @@ int disasm(uint16_t pc, char *line, unsigned int max_line, bool debugOn, uint8_t
 		length = 3;
 		snprintf(line, max_line, mnemonic, read6502Debug(pc+1, debugOn, bank) | read6502Debug(pc+2, debugOn, bank)<<8);
 	}
-  DEBUG("%s\n", line);
+  DEBUG("%04x: %s\n", pc, line);
+
 	return length;
 }

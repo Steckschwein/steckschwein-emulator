@@ -21,8 +21,16 @@ unsigned char vdp_delay = VDP_DELAY;
 }
 
 
-#define write6502(a, v) {\
-  mos6502->writeAddress(mos6502->ref, a, v);\
+void write6502(UInt16 address, UInt8 value) {
+  mos6502->writeAddress(mos6502, address, value);
+}
+
+UInt8 read6502Debug(UInt16 address, bool dbg, UInt16 bank){
+  return mos6502->readAddress(mos6502, address, dbg);
+}
+
+UInt8 read6502(UInt16 address){
+  return mos6502->readAddress(mos6502, address, false);
 }
 
 MOS6502* mos6502create(

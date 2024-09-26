@@ -71,7 +71,7 @@ bool dump_ram = true;
 bool dump_bank = true;
 bool dump_vram = false;
 echo_mode_t echo_mode;
-bool save_on_exit = true;
+bool save_on_exit = false;
 gif_recorder_state_t record_gif = RECORD_GIF_DISABLED;
 char *gif_path = NULL;
 uint8_t keymap = 0; // KERNAL's default
@@ -1426,7 +1426,7 @@ int main(int argc, char **argv) {
   }
 
   romImage.address = parseNumber(rom_path);
-  romImage.romPath = rom_path; //->image = malloc(ROM_SIZE);
+  romImage.romPath = rom_path;
 
   if (sdcard_path) {
     sdcard_file = fopen(sdcard_path, "r+b");

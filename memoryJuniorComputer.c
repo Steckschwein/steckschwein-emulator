@@ -14,16 +14,14 @@ typedef struct {
     int romMapper[4];
 } MemoryJuniorComputer;
 
-#define JC_BANK_SIZE 1024
 #define JC_RAM_SIZE 128*1024
 #define JC_ROM_SIZE 32*1024  // 16*1024 8*1024
 
-#define JC_ROM_A10_A13 0B0000  // A10-A13 rom bank select 8255A
-#define JC_ALT_ROM_SEL 0       // A14
+#define JC_ROM_BANK_SIZE 8*1024
+// #define JC_ROM_A10_A13 0B0000  // A10-A13 rom bank select 8255A
+#define JC_ROM_BANK_SEL 0         // A14 low / high ROM 8k each
 
-#define JC_ROM_BANK_MASK (JC_BANK_SIZE-1) | JC_ALT_ROM_SEL | JC_ROM_A10_A13
-
-//UInt8 rombank = 0;
+#define JC_ROM_BANK_MASK (JC_ROM_BANK_SIZE-1) | JC_ROM_BANK_SEL<<14
 
 
 static long getFilesize(FILE *file){
@@ -117,26 +115,21 @@ static uint8_t read(UInt16 address, bool debugOn) {
 
 void memoryJuniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 value) {
 
-  if (address >= 0x0200) { // I/O
-    if (address < 0x210) // UART at $0200
+  if (address >= 0x0800) {// I/O
+    if (address < 0x0c00) // I/O K2
+      return 0xff;
+    else if (address < 0x1000) // I/O K3
+      return 0xff;
+    else if (address < 0x1400) // I/O K4
+      return 0xff;
+    else if (address >= 0x1600 && address < 0x1800) // 6551 ACIA
     {
-      uart_write(address & 0xf, value);
-      return;
-    } else if (address < 0x0220) // VIA at $0210
+      return 0xff;
+    } else if (address < 0x1c00) // 6532 RIOT
     {
-      via1_write(address & 0xf, value);
-      return;
-    } else if (address < 0x0230) // VDP at $0220
-    {
-      //writePort(cpu, address, value);
-      return;
-    } else if (address < 0x0250) // OPL2 at $0240
-    {
-//      writePort(cpu, address, value);
-      return;
+      return ioPortWrite(NULL, address);
     }
   }
-
   uint8_t *p = get_address(address, false);
   *p = value;
 

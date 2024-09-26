@@ -759,9 +759,6 @@ int boardRun(Machine* machine,
     boardCaptureInit();
 
     if (success) {
-
-        mos6502 = boardInfo.cpuRef;
-
         syncTimer = boardTimerCreate(onSync, NULL);
         fdcTimer = boardTimerCreate(onFdcDone, NULL);
         mixerTimer = boardTimerCreate(onMixerSync, NULL);
