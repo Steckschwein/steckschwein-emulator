@@ -60,9 +60,9 @@ void memoryJuniorComputerDestroy() {
   free(rom);
 }
 
-static uint8_t *get_address(uint16_t address, bool debugOn){
+static UInt8 *get_address(UInt16 address, bool debugOn){
 
-  uint8_t *p;
+  UInt8 *p;
   uint32_t addrMask;
 
   // RAM/ROM
@@ -85,7 +85,7 @@ static uint8_t *get_address(uint16_t address, bool debugOn){
   return &p[memoryAddr & addrMask];
 }
 
-static uint8_t read(UInt16 address, bool debugOn) {
+UInt8 memoryJuniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool debugOn) {
 
   if (address >= 0x0800) {// I/O
     if (address < 0x0c00) // I/O K2
@@ -97,9 +97,6 @@ static uint8_t read(UInt16 address, bool debugOn) {
     else if (address >= 0x1600 && address < 0x1800) // 6551 ACIA
     {
       return 0xff;
-    } else if (address < 0x1c00) // 6532 RIOT
-    {
-      return ioPortRead(NULL, address);
     }
   }
   uint8_t *p = get_address(address, debugOn);
@@ -125,9 +122,6 @@ void memoryJuniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 va
     else if (address >= 0x1600 && address < 0x1800) // 6551 ACIA
     {
       return 0xff;
-    } else if (address < 0x1c00) // 6532 RIOT
-    {
-      return ioPortWrite(NULL, address);
     }
   }
   uint8_t *p = get_address(address, false);
@@ -141,9 +135,4 @@ void memoryJuniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 va
 //
 static void savestate(FILE *f, bool dump_ram, bool dump_bank) {
   fwrite(ram, sizeof(uint8_t), JC_RAM_SIZE, f);
-}
-
-
-UInt8 memoryJuniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool debugOn) {
-  return read(address, debugOn);
 }

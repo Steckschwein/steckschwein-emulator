@@ -3,6 +3,7 @@
 #include "MOS6502.h"
 #include "MOS6532.h"
 #include "SN76489.h"
+#include "Speaker.h"
 #include "VDP.h"
 
 #include "memoryJuniorComputer.h"
@@ -13,6 +14,7 @@ static UInt32          jcRamStart;
 
 /* Hardware */
 static SN76489* sn76489;
+static Speaker* speaker;
 static MOS6532* mos6532;
 
 //extern MOS6502* mos6502;
@@ -32,7 +34,7 @@ static void destroy() {
     ioPortUnregister(i);
   }
 
-
+  speakerDestroy(speaker);
   sn76489Destroy(sn76489);
   mos6532Destroy(mos6532);
   mos6502Destroy(mos6502);
@@ -45,9 +47,17 @@ static void reset()
 
 //    slotManagerReset();
 
+    if (mos6532Reset != NULL){
+      mos6532Reset(mos6532, systemTime);
+    }
     if (mos6502 != NULL) {
       mos6502Reset(mos6502, systemTime);
     }
+    if (sn76489 != NULL) {
+      sn76489Reset(sn76489);
+    }
+    if(speaker != NULL)
+      speakerReset(speaker);
 //    deviceManagerReset();
 }
 
@@ -100,6 +110,30 @@ void jcInstructionCb(uint32_t cycles) {
   }
 }
 
+static UInt8 juniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool debugOn){
+
+  if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
+  {
+    bool ramSel = (address & 0x80) == 0;
+    return mos6532Read(mos6532, ramSel, address, debugOn);
+  }
+  return memoryJuniorComputerReadAddress(mos6502, address, debugOn);
+}
+
+static void juniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 value){
+
+  if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
+  {
+    bool ramSel = (address & 0x80) == 0;
+    mos6532Write(mos6532, ramSel, address, value);
+
+    if(mos6532->ddr_b & 0x01 && mos6532->ipr_b & 0x01){
+      speakerWriteData(speaker, 0, 1);
+    }
+  }
+  memoryJuniorComputerWriteAddress(mos6502, address, value);
+
+}
 
 int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
@@ -107,7 +141,7 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
 
   int i;
 
-  mos6502 = mos6502create(memoryJuniorComputerReadAddress, memoryJuniorComputerWriteAddress, boardTimerCheckTimeout);
+  mos6502 = mos6502create(juniorComputerReadAddress, juniorComputerWriteAddress, boardTimerCheckTimeout);
 
   boardInfo->cpuRef           = mos6502;
 
@@ -150,6 +184,8 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
   for(i=0xe0;i<=0xff;i++){
     ioPortRegister(i, NULL, sn76489WriteData, sn76489);
   }
+
+  speaker = speakerCreate(boardGetMixer());
 
   //sprintf(cmosName, "%s" DIR_SEPARATOR "%s.cmos", boardGetBaseDirectory(), machine->name);
   //rtc = rtcCreate(machine->cmos.enable, machine->cmos.batteryBacked ? cmosName : 0);

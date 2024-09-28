@@ -294,7 +294,7 @@ static bool DEBUGBuildCmdLine(SDL_Keysym keysym) {
 	// right now, let's have a rudimentary input: only backspace to delete last char
 	// later, I want a real input line with delete, backspace, left and right cursor
 	// devs like their comfort ;)
-  Uint32 key = keysym.sym;
+  UInt32 key = keysym.sym;
 	if (currentLineLen <= sizeof(cmdLine)) {
 		if ((key >= SDLK_SPACE && key <= SDLK_AT) || (key >= SDLK_LEFTBRACKET && key <= SDLK_z)
 				|| (key >= SDLK_0 && key <= SDLK_0)) {

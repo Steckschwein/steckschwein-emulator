@@ -399,10 +399,10 @@ SDL_Surface *__SDL_SetVideoMode(int width, int height, int bpp){
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 
 #else
-  Uint32 rmask = 0x000000ff;
-  Uint32 gmask = 0x0000ff00;
-  Uint32 bmask = 0x00ff0000;
-  Uint32 amask = 0x00000000;
+  UInt32 rmask = 0x000000ff;
+  UInt32 gmask = 0x0000ff00;
+  UInt32 bmask = 0x00ff0000;
+  UInt32 amask = 0x00000000;
 #endif
 
   SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height, bpp,
@@ -467,10 +467,10 @@ int createOrUpdateSdlWindow() {
     #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 
     #else
-      Uint32 rmask = 0xff000000;
-      Uint32 gmask = 0x00ff0000;
-      Uint32 bmask = 0x0000ff00;
-      Uint32 amask = 0x000000ff;
+      UInt32 rmask = 0xff000000;
+      UInt32 gmask = 0x00ff0000;
+      UInt32 bmask = 0x0000ff00;
+      UInt32 amask = 0x000000ff;
     #endif
     SDL_SetWindowTitle(window, properties->emulation.machineName);
     SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(&schwein128_rgba, 128,128,32,4*128, rmask, gmask, bmask, amask);
@@ -516,7 +516,7 @@ static void handleEvent(SDL_Event *event) {
 //        shortcutCheckown(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
   {
     int keyNum;
-    Uint8 *keyBuf = SDL_GetKeyboardState(&keyNum);
+    UInt8 *keyBuf = SDL_GetKeyboardState(&keyNum);
     if (keyBuf != NULL) {
       if (keyBuf[SDL_SCANCODE_LALT]) {
         if (event->key.keysym.sym == SDLK_f) {
@@ -1444,7 +1444,7 @@ int main(int argc, char **argv) {
   if (bas_path) {
     FILE *bas_file = fopen(bas_path, "r");
     if (!bas_file) {
-      fprintf(stderr, "Cannot open %s!\n", bas_path);
+      fprintf(stderr, " en %s!\n", bas_path);
       exit(1);
     }
     paste_text = paste_text_data;

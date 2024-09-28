@@ -61,7 +61,7 @@ void memory_destroy() {
   free(rom);
 }
 
-UInt8 *get_address(UInt16 address, bool debugOn){
+static UInt8 *get_address(UInt16 address, bool debugOn){
 
   UInt8 *p;
   UInt32 mem_size;
