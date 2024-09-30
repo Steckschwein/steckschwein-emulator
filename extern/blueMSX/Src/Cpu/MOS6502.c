@@ -47,8 +47,8 @@ MOS6502* mos6502create(
   mos6502->intState = INT_HIGH;
   mos6502->nmiState = INT_HIGH;
   mos6502->nmiEdge = 0;
-//  mos6502->frequency = 3579545 * 3; // ~10.7 Mhz
   mos6502->frequency = 3579545 / 3; // ~1 Mhz
+//  mos6502->frequency = 3579545 * 3; // ~10.7 Mhz
 
   return mos6502;
 }

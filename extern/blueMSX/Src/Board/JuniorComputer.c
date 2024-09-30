@@ -127,12 +127,11 @@ static void juniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 v
     bool ramSel = (address & 0x80) == 0;
     mos6532Write(mos6532, ramSel, address, value);
 
-    if(mos6532->ddr_b & 0x01 && mos6532->ipr_b & 0x01){
-      speakerWriteData(speaker, 0, 1);
+    if(mos6532->ddr_b & 0x01){
+      speakerWriteData(speaker, mos6532->ipr_b & 0x01);
     }
   }
   memoryJuniorComputerWriteAddress(mos6502, address, value);
-
 }
 
 int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
