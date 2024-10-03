@@ -844,6 +844,8 @@ void emulatorResume() {
   if (emuState == EMU_SUSPENDED) {
     emuSysTime = 0;
 
+    archSoundResume();
+//    archMidiEnable(1);
     emuState = EMU_RUNNING;
     archUpdateEmuDisplay(0);
   }

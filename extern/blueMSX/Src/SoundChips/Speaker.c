@@ -84,6 +84,7 @@ void speakerDestroy(Speaker* speaker)
 void speakerReset(Speaker* speaker)
 {
     Speaker* p = speaker;
+    speaker->value = 0;
 }
 
 

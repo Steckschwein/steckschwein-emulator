@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -108,7 +108,7 @@ typedef struct {
 } MixerChannel;
 
 struct Mixer
-{ 
+{
     MixerWriteCallback writeCallback;
     void*  writeRef;
     Int32  fragmentSize;
@@ -143,7 +143,7 @@ static void updateVolumes(Mixer* mixer);
 
 ///////////////////////////////////////////////////////
 
-static void mixerRecalculateType(Mixer* mixer, int audioType) 
+static void mixerRecalculateType(Mixer* mixer, int audioType)
 {
     AudioTypeInfo* type    = mixer->audioTypeInfo + audioType;
     int i;
@@ -182,7 +182,7 @@ void mixerSetStereo(Mixer* mixer, Int32 stereo)
     if (mixer->logging == 1) {
         mixerStopLog(mixer);
     }
-        
+
     mixer->stereo = stereo;
     mixer->index = 0;
 
@@ -196,7 +196,7 @@ void mixerSetMasterVolume(Mixer* mixer, Int32 volume)
     int i;
 
     mixer->masterVolume = pow(10.0, (volume - 100) / 60.0) - pow(10.0, -100 / 60.0);
-    
+
     for (i = 0; i < MIXER_CHANNEL_TYPE_COUNT; i++) {
         mixerRecalculateType(mixer, i);
     }
@@ -225,7 +225,7 @@ void mixerSetChannelTypePan(Mixer* mixer, Int32 type, Int32 pan)
     mixerRecalculateType(mixer, type);
 }
 
-void mixerEnableChannelType(Mixer* mixer, Int32 type, Int32 enable) 
+void mixerEnableChannelType(Mixer* mixer, Int32 type, Int32 enable)
 {
     mixer->audioTypeInfo[type].enable = enable;
     mixerRecalculateType(mixer, type);
@@ -244,7 +244,7 @@ Int32 mixerGetChannelTypeVolume(Mixer* mixer, Int32 type, int leftRight)
 
     for (i = 0; i < mixer->channelCount; i++) {
         if (mixer->channels[i].type == type) {
-            Int32 channelVol = leftRight ? 
+            Int32 channelVol = leftRight ?
                                mixer->channels[i].volIntRight :
                                mixer->channels[i].volIntLeft;
             if (channelVol > volume) {
@@ -295,7 +295,7 @@ static void recalculateChannelVolume(Mixer* mixer, MixerChannel* channel)
     }
 }
 
-static void updateVolumes(Mixer* mixer) 
+static void updateVolumes(Mixer* mixer)
 {
     int i;
     int diff = archGetSystemUpTime(50) - mixer->oldTick;
@@ -318,7 +318,7 @@ static void updateVolumes(Mixer* mixer)
             if (newVol < 0) newVol = 0;
             mixer->channels[i].volIntRight = newVol;
         }
-        
+
         if (0){//archMidiGetNoteOn()) {
             mixer->midi.volIntLeft  = MIN(100, mixer->channels[MIXER_CHANNEL_MIDI].volumeLeft / 7);
             mixer->midi.volIntRight = MIN(100, mixer->channels[MIXER_CHANNEL_MIDI].volumeRight/ 7);
@@ -417,7 +417,7 @@ Int32 mixerRegisterChannel(Mixer* mixer, Int32 audioType, Int32 stereo, MixerUpd
     return channel->handle;
 }
 
-void mixerUnregisterChannel(Mixer* mixer, Int32 handle) 
+void mixerUnregisterChannel(Mixer* mixer, Int32 handle)
 {
     int i;
 
@@ -494,7 +494,7 @@ void mixerSync(Mixer* mixer)
         }
         return;
     }
-    
+
     for (i = 0; i < mixer->channelCount; i++) {
         if (mixer->channels[i].updateCallback != NULL) {
             chBuff[i] = mixer->channels[i].updateCallback(mixer->channels[i].ref, count);
@@ -579,7 +579,7 @@ void mixerSync(Mixer* mixer)
                 else {
                     chanLeft = mixer->channels[i].volumeLeft * *chBuff[i]++;
                 }
-            
+
                 mixer->channels[i].volCntLeft  += (chanLeft > 0 ? chanLeft : -chanLeft) / 2048;
                 mixer->channels[i].volCntRight += (chanLeft > 0 ? chanLeft : -chanLeft) / 2048;
                 left  += chanLeft;
@@ -594,7 +594,7 @@ void mixerSync(Mixer* mixer)
             if (left  < -32767) left  = -32767;
 
             buffer[mixer->index++] = (Int16)left;
-            
+
             if (mixer->index == mixer->fragmentSize) {
                 if (mixer->writeCallback != NULL) {
                     mixer->writeCallback(mixer->writeRef, buffer, mixer->fragmentSize);
@@ -612,7 +612,7 @@ void mixerSync(Mixer* mixer)
     if (mixer->volIndex >= 441) {
         Int32 newVolumeLeft  = mixer->volCntLeft  / mixer->volIndex / 164;
         Int32 newVolumeRight = mixer->volCntRight / mixer->volIndex / 164;
-    
+
         if (newVolumeLeft > 100) {
             newVolumeLeft = 100;
         }
@@ -659,7 +659,7 @@ void mixerSync(Mixer* mixer)
     }
 }
 
-void mixerStartLog(Mixer* mixer, char* fileName) 
+void mixerStartLog(Mixer* mixer, char* fileName)
 {
     if (mixer->logging == 1) {
         mixerStopLog(mixer);
@@ -675,7 +675,7 @@ int mixerIsLogging(Mixer* mixer) {
     return mixer->logging;
 }
 
-void mixerStopLog(Mixer* mixer) 
+void mixerStopLog(Mixer* mixer)
 {
     WavHeader header;
     int fileSize;
@@ -685,9 +685,9 @@ void mixerStopLog(Mixer* mixer)
     }
 
     mixer->logging = 0;
-    
+
     fileSize = ftell(mixer->file);
-    
+
     header.riff                     = str2ul("RIFF");
     header.fileSize                 = fileSize - 8;
     header.wave                     = str2ul("WAVE");

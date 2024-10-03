@@ -56,6 +56,9 @@ static void reset()
     if (mos6502 != NULL) {
       mos6502Reset(mos6502, systemTime);
     }
+    if (mos6551 != NULL) {
+      mos6551Reset(mos6551, systemTime);
+    }
     if (sn76489 != NULL) {
       sn76489Reset(sn76489);
     }

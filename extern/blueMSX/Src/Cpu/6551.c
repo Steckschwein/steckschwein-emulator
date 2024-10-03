@@ -297,6 +297,10 @@ bool acia_init_none( MOS6551 *acia )
   return true;
 }
 
+void mos6551Reset(MOS6551 *mos6551, UInt32 systemTime){
+  acia_init(mos6551, mos6551->backendType);
+}
+
 MOS6551* mos6551Create(MOS6502 *cpu, UInt8 backendType){
 
   MOS6551 *mos6551 = (MOS6551*)calloc(1, sizeof(MOS6551));

@@ -147,6 +147,8 @@ typedef struct
 MOS6551* mos6551Create(MOS6502 *cpu, UInt8 backendType);
 UInt8 mos6551Destroy(MOS6551 *mos6551);
 
+void mos6551Reset(MOS6551 *mos6551, UInt32 systemTime);
+
 void acia_init( MOS6551 *acia, UInt8 backendType );
 void mos6551Execute( MOS6551 *acia, unsigned int cycles );
 void mos6551Write( MOS6551 *acia, UInt16 addr, UInt8 data );
