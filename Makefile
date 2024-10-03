@@ -69,8 +69,8 @@ ifdef CROSS_COMPILE_WINDOWS
 	CFLAGS+=-Wno-error=deprecated-declarations
 #	CFLAGS+=-Wno-error=incompatible-pointer-types
 	CFLAGS+=-Wno-error=maybe-uninitialized
-#	CFLAGS+=-DENABLE_VRAM_DECAY \
-	CFLAGS+=-D_REENTRANT
+#	CFLAGS+=-DENABLE_VRAM_DECAY
+#	CFLAGS+=-D_REENTRANT
 else
 	CFLAGS+=-std=c99
 endif
@@ -216,7 +216,10 @@ SOURCE_FILES += Steckschwein.c
 SOURCE_FILES += JuniorComputer.c
 SOURCE_FILES += MOS6502.c
 SOURCE_FILES += MOS6532.c
-# SOURCE_FILES += 6551.c
+SOURCE_FILES += 6551.c
+SOURCE_FILES += 6551_loopback.c
+SOURCE_FILES += 6551_com.c
+#SOURCE_FILES += 6551_modem.c
 SOURCE_FILES += SN76489.c
 SOURCE_FILES += Speaker.c
 SOURCE_FILES += DebugDeviceManager.c

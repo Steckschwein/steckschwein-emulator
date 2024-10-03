@@ -18,19 +18,6 @@ typedef void  (*MOS6502BreakptCb)(void*, UInt16);
 typedef void  (*MOS6502DebugCb)(void*, int, const char*);
 typedef void  (*MOS6502TrapCb)(void*, UInt8);
 
-typedef union {
-  struct {
-#ifdef __BIG_ENDIAN__
-      UInt8 h;
-      UInt8 l;
-#else
-      UInt8 l;
-      UInt8 h;
-#endif
-  } B;
-  UInt16 W;
-} RegisterPair;
-
 typedef struct {
     UInt8 A;
     UInt8 X;
@@ -38,8 +25,7 @@ typedef struct {
     UInt8 P;
 
     UInt16 SP;
-//    UInt16 PC;
-    RegisterPair PC;
+    UInt16 PC;
 } CpuRegs;
 
 typedef struct{

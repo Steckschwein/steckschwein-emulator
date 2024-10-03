@@ -2,6 +2,7 @@
 #include "JuniorComputer.h"
 #include "MOS6502.h"
 #include "MOS6532.h"
+#include "6551.h"
 #include "SN76489.h"
 #include "Speaker.h"
 #include "VDP.h"
@@ -13,9 +14,10 @@ static UInt32          jcRamSize;
 static UInt32          jcRamStart;
 
 /* Hardware */
-static SN76489* sn76489;
-static Speaker* speaker;
-static MOS6532* mos6532;
+static SN76489 *sn76489;
+static Speaker *speaker;
+static MOS6532 *mos6532;
+static MOS6551 *mos6551;
 
 //extern MOS6502* mos6502;
 
@@ -38,6 +40,7 @@ static void destroy() {
   sn76489Destroy(sn76489);
   mos6532Destroy(mos6532);
   mos6502Destroy(mos6502);
+
   memoryJuniorComputerDestroy();
 }
 
@@ -95,6 +98,7 @@ void jcInstructionCb(uint32_t cycles) {
     spi_step();
 //    joystick_step();
     mos6532Execute(mos6532);
+    mos6551Execute(mos6551, 1);
   }
 
   trace();
@@ -116,6 +120,8 @@ static UInt8 juniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool de
   {
     bool ramSel = (address & 0x80) == 0;
     return mos6532Read(mos6532, ramSel, address, debugOn);
+  }else if(address >= JC_PORT_6551 && address < (JC_PORT_6551+JC_PORT_6551_SIZE)){ // 6532 RIOT){
+    return mos6551Read(mos6551, address);
   }
   return memoryJuniorComputerReadAddress(mos6502, address, debugOn);
 }
@@ -130,8 +136,11 @@ static void juniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 v
     if(mos6532->ddr_b & 0x01){
       speakerWriteData(speaker, mos6532->ipr_b & 0x01);
     }
+  }else if(address >= JC_PORT_6551 && address < (JC_PORT_6551+JC_PORT_6551_SIZE)){ // 6532 RIOT){
+      mos6551Write(mos6551, address, value);
+  }else{
+    memoryJuniorComputerWriteAddress(mos6502, address, value);
   }
-  memoryJuniorComputerWriteAddress(mos6502, address, value);
 }
 
 int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
@@ -174,10 +183,12 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
 
   mixerReset(boardGetMixer());
 
+
+  // socat -d -d pty,link=/tmp/ttyJC0,raw,echo=0 pty,link=/tmp/ttyJC1,raw,echo=0
+
+  mos6551 = mos6551Create(mos6502, ACIA_TYPE_COM);
+
   mos6532 = mos6532Create();
-  for(i=JC_PORT_6532;i<JC_PORT_6532+128;i++){
-    ioPortRegister(i, mos6532Read, mos6532Write, mos6532);
-  }
 
   sn76489 = sn76489Create(boardGetMixer());
   for(i=0xe0;i<=0xff;i++){

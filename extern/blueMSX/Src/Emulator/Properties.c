@@ -308,7 +308,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->sound.mixerChannel[MIXER_CHANNEL_PCM].pan = 50;
     properties->sound.mixerChannel[MIXER_CHANNEL_PCM].volume = 95;
 
-    properties->sound.mixerChannel[MIXER_CHANNEL_IO].enable = 0;
+    properties->sound.mixerChannel[MIXER_CHANNEL_IO].enable = 1;
     properties->sound.mixerChannel[MIXER_CHANNEL_IO].pan = 70;
     properties->sound.mixerChannel[MIXER_CHANNEL_IO].volume = 50;
 

@@ -7,6 +7,9 @@
 #define JC_PORT_VDP 0xc08
 #define JC_PORT_SND 0x808
 
+#define JC_PORT_6551 0x1600
+#define JC_PORT_6551_SIZE 512
+
 #define JC_PORT_6532_SIZE 1024
 #define JC_PORT_6532 0x1800
 

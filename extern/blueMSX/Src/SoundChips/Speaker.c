@@ -33,6 +33,8 @@ struct Speaker {
     Int32  handle;
     Int32  debugHandle;
 
+    UInt16 value;
+
     /* Audio buffer */
     float buffer[AUDIO_MONO_BUFFER_SIZE];
 };
@@ -48,27 +50,6 @@ void speakerLoadState(Speaker* speaker)
     char tag[32];
     int i;
 
-    speaker->latch            = saveStateGet(state, "latch",           0);
-    speaker->shiftReg         = saveStateGet(state, "shiftReg",        0);
-    speaker->noiseFreq        = saveStateGet(state, "noiseFreq",       1);
-
-    speaker->ctrlVolume       = saveStateGet(state, "ctrlVolume",      0);
-    speaker->oldSampleVolume  = saveStateGet(state, "oldSampleVolume", 0);
-    speaker->daVolume         = saveStateGet(state, "daVolume",        0);
-
-    for (i = 0; i < 8; i++) {
-        sprintf(tag, "reg%d", i);
-        speaker->regs[i] = saveStateGet(state, tag, 0);
-    }
-
-    for (i = 0; i < 4; i++) {
-        sprintf(tag, "toneFrequency%d", i);
-        speaker->toneFrequency[i] = saveStateGet(state, tag, 0);
-
-        sprintf(tag, "toneFlipFlop%d", i);
-        speaker->toneFlipFlop[i] = saveStateGet(state, tag, 0);
-    }
-
     saveStateClose(state);
     */
 }
@@ -77,33 +58,9 @@ void speakerSaveState(Speaker* speaker)
 {
   /*
     SaveState* state = saveStateOpenForWrite("speaker");
-    char tag[32];
     int i;
 
-    saveStateSet(state, "latch",           speaker->latch);
-    saveStateSet(state, "shiftReg",        speaker->shiftReg);
-    saveStateSet(state, "noiseFreq",       speaker->noiseFreq);
-
-    saveStateSet(state, "ctrlVolume",      speaker->ctrlVolume);
-    saveStateSet(state, "oldSampleVolume", speaker->oldSampleVolume);
-    saveStateSet(state, "daVolume",        speaker->daVolume);
-
-    for (i = 0; i < 8; i++) {
-        sprintf(tag, "reg%d", i);
-        saveStateSet(state, tag, speaker->regs[i]);
-    }
-
-    for (i = 0; i < 4; i++) {
-        sprintf(tag, "toneFrequency%d", i);
-        saveStateSet(state, tag, speaker->toneFrequency[i]);
-
-        sprintf(tag, "toneFlipFlop%d", i);
-        saveStateSet(state, tag, speaker->toneFlipFlop[i]);
-
-        speaker->toneInterpol[i] = 0;
-    }
-
-    speaker->clock = 0;
+    saveStateSet(state, "value",      speaker->value);
 
     saveStateClose(state);
     */
@@ -137,7 +94,6 @@ typedef struct {
 } oscillator;
 
 #define	PI 3.14159265358979323846
-const int SAMPLE_RATE = 44100;
 
 oscillator* oscillate(float rate, float volume) {
   oscillator* o = calloc(1, sizeof(oscillator));
@@ -152,8 +108,6 @@ float next(oscillator *os) {
   return sinf(os->current_step) * os->volume;
 }
 
-oscillator* A4_oscillator;
-
 Speaker* speakerCreate(Mixer* mixer)
 {
     DebugCallbacks dbgCallbacks = { getDebugInfo, NULL, NULL, NULL };
@@ -161,24 +115,19 @@ Speaker* speakerCreate(Mixer* mixer)
 
     speaker->mixer = mixer;
 
-    speaker->handle = mixerRegisterChannel(mixer, MIXER_CHANNEL_MSXAUDIO, 0, speakerSync, NULL, speaker);
+    speaker->handle = mixerRegisterChannel(mixer, MIXER_CHANNEL_IO, 0, speakerSync, NULL, speaker);
     speaker->debugHandle = debugDeviceRegister(DBGTYPE_AUDIO, "Speaker", &dbgCallbacks, speaker);
 
     speakerReset(speaker);
 
-    float A4_freq = (float)SAMPLE_RATE / 440.00f;
-    A4_oscillator = oscillate(A4_freq, 0.8f);
-
     return speaker;
 }
-
-UInt8 pin;
 
 void speakerWriteData(Speaker* speaker, UInt8 data)
 {
     Speaker* p = speaker;
+    p->value = (data & 0x01) << 1;
 
-    pin = data;
     mixerSync(p->mixer);
 }
 
@@ -189,10 +138,7 @@ static Int32* speakerSync(void* ref, UInt32 count)
     UInt32 j;
 
     for(j = 0; j < count; j++) {
-
-      float v = next(A4_oscillator);
-
-      p->buffer[j] = pin<<5;
+      p->buffer[j] = p->value;
     }
 
     return p->buffer;

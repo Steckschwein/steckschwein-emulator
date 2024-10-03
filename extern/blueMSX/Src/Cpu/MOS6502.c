@@ -4,7 +4,6 @@
 #include "glue.h"
 
 #include "Board.h"
-
 #include <stddef.h>
 
 #define VDP_DELAY 2 // wait states aka clockticks

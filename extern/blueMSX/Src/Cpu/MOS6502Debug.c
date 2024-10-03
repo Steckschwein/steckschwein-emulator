@@ -87,7 +87,7 @@ static int dbgWriteRegister(MOS6502Debug* dbg, char* name, int regIndex, UInt32 
     case 14: dbg->mos6502->regs.X = (UInt8)value; break;
     case 15: dbg->mos6502->regs.Y = (UInt8)value; break;
     case 10: dbg->mos6502->regs.SP = (UInt16)value; break;
-    case 11: dbg->mos6502->regs.PC.W = (UInt16)value; break;
+    case 11: dbg->mos6502->regs.PC = (UInt16)value; break;
     }
 
     return 1;
