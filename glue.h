@@ -17,6 +17,12 @@
 	#define DEBUG(...)
 #endif
 
+typedef struct {
+  uint16_t address;
+  char *romPath;
+  //uint8_t *image;
+} RomImage;
+
 void emulatorStart(const char *stateName);
 
 typedef enum {
@@ -39,12 +45,6 @@ typedef enum {
 	RECORD_GIF_SINGLE,
 	RECORD_GIF_ACTIVE
 } gif_recorder_state_t;
-
-typedef struct {
-  uint16_t address;
-  char *romPath;
-  //uint8_t *image;
-} RomImage;
 
 void actionEmuTogglePause();
 void actionEmuStepBack();

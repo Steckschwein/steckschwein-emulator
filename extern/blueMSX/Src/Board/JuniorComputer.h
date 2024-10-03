@@ -4,8 +4,11 @@
 #include "Board.h"
 #include "VDP.h"
 
-#define JC_PORT_VDP 0xc08
-#define JC_PORT_SND 0x808
+#define JC_PORT_K2 0x0800
+#define JC_PORT_K3 0x0c00
+#define JC_PORT_K4 0x1000
+
+#define JC_PORT_SIZE 1024
 
 #define JC_PORT_6551 0x1600
 #define JC_PORT_6551_SIZE 512

@@ -46,13 +46,13 @@ MOS6502* mos6502create(
   mos6502->intState = INT_HIGH;
   mos6502->nmiState = INT_HIGH;
   mos6502->nmiEdge = 0;
+  mos6502->frequency = 3579545 * 3; // ~10.7 Mhz
   mos6502->frequency = 3579545 / 3; // ~1 Mhz
-//  mos6502->frequency = 3579545 * 3; // ~10.7 Mhz
 
   return mos6502;
 }
 
-
+/*
 UInt8 readAddress(MOS6502* mos6502, UInt16 port) {
     UInt8 value;
 
@@ -81,6 +81,7 @@ void writeAddress(MOS6502* mos6502, UInt16 port, UInt8 value) {
 #endif
 
 }
+*/
 
 void mos6502Reset(MOS6502 *mos6502, UInt32 cpuTime) {
   reset6502();

@@ -199,9 +199,9 @@ void DEBUGSetBreakPoint(int newBreakPoint) {
 	dbgSetBreakpoint(newBreakPoint);
 }
 
-void DEBUGClearBreakPoint(int breakPoint) {
+void DEBUGClearBreakPoint(int brkAddress) {
 	breakPoint = -1;
-	dbgClearBreakpoint(breakPoint);
+	dbgClearBreakpoint(brkAddress);
 }
 
 // *******************************************************************************************

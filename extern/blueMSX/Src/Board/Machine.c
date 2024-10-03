@@ -26,7 +26,7 @@ static int readMachine(Machine* machine, const char* machineName, const char* fi
     strcpy(machine->name, machineName);
     // Read board info
     iniFileGetString(configIni, "Board", "type", "none", buffer, 10000);
-    if (0 == strcmp(buffer, "Steckschwein 2.0")) machine->board.type = BOARD_STECKSCHWEIN_2_0;
+    if (0 == strcmp(buffer, "Steckschwein-2.0")) machine->board.type = BOARD_STECKSCHWEIN_2_0;
     else if (0 == strcmp(buffer, "Steckschwein")) machine->board.type = BOARD_STECKSCHWEIN;
     else if (0 == strcmp(buffer, "JuniorComputer ][")) machine->board.type = BOARD_JC;
     else { iniFileClose(configIni); return 0; }

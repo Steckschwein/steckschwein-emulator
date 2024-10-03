@@ -63,6 +63,8 @@ static char emuStateName[512];
 
 extern int errno;
 
+RomImage romImage;
+
 bool log_video = false;
 bool log_speed = false;
 bool log_keyboard = false;
@@ -86,6 +88,7 @@ uint16_t trace_address = 0;
 
 
 extern unsigned char *prg_path; //extern - also used in uart
+extern UInt16 prg_override_start;
 
 bool checkUploadLmf = false; //check lmf of the upload file, if not changed no recurring uploads
 bool run_after_load = false;
@@ -107,8 +110,6 @@ static Properties *properties;
 static Mixer *mixer;
 static Video *video;
 static Machine* machine;
-
-static RomImage romImage;
 
 static int enableSynchronousUpdate = 1;
 static int emuMaxSpeed = 0;
@@ -203,7 +204,6 @@ void machine_dump() {
 }
 
 void machine_reset(int prg_override_start) {
-  spi_rtc_reset();
   uart_init(prg_path, prg_override_start, checkUploadLmf);
   via1_reset();
 }
@@ -1159,8 +1159,9 @@ void do_wordexp(const char * in, char * out)
   wordfree(&exp_result);
 }
 
-
 int main(int argc, char **argv) {
+
+
   char rom_path_data[PATH_MAX];
   char *rom_path = rom_path_data;
 
@@ -1537,7 +1538,6 @@ int main(int argc, char **argv) {
   propDestroy(properties);
   archSoundDestroy();
   mixerDestroy(mixer);
-  spi_rtc_destroy();
 
   DEBUGFreeUI();
 

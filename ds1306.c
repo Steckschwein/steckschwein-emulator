@@ -54,7 +54,7 @@ char* nvramFilePath(char *nvramFile) {
 	return nvramFile;
 }
 
-void spi_rtc_reset() {
+void ds1306Reset() {
 
 	char nvramFile[FILENAME_MAX];
 	char *nvramFileStr = nvramFilePath(&nvramFile);
@@ -71,7 +71,7 @@ void spi_rtc_reset() {
   regs[RTC_CONTROL] = 1<<6; //set WP (write protect enabled after reset)
 }
 
-void spi_rtc_destroy() {
+void ds1306Destroy() {
 
 	char nvramFile[FILENAME_MAX];
 	char *nvramFileStr = nvramFilePath(&nvramFile);

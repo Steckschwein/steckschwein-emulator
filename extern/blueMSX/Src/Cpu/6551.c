@@ -153,6 +153,9 @@ void mos6551Execute( MOS6551 *acia, unsigned int cycles )
   if( 0 == acia->framecycle )
     return;
 
+  if(acia->backendType == ACIA_TYPE_NONE)
+    return;
+
   acia->cycles += cycles;
   while( acia->framecycle <= acia->cycles )
   {

@@ -4,21 +4,10 @@
 
 #include "memoryJuniorComputer.h"
 
-typedef struct {
-    int deviceHandle;
-    UInt8* romData;
-    int slot;
-    int sslot;
-    int startPage;
-    UInt32 romMask;
-    int romMapper[4];
-} MemoryJuniorComputer;
-
 #define JC_RAM_SIZE 128*1024
 #define JC_ROM_SIZE 32*1024  // 16*1024 8*1024
 
 #define JC_ROM_BANK_SIZE 8*1024
-// #define JC_ROM_A10_A13 0B0000  // A10-A13 rom bank select 8255A
 #define JC_ROM_BANK_SEL 0         // A14 low / high ROM 8k each
 
 #define JC_ROM_BANK_MASK (JC_ROM_BANK_SIZE-1) | JC_ROM_BANK_SEL<<14
@@ -35,15 +24,29 @@ static long getFilesize(FILE *file){
 	return filesize;
 }
 
+extern unsigned char *prg_path;
+extern UInt16 prg_override_start;
+
 void memoryJuniorComputerCreate(void *cpuRef, RomImage* romImage) {
 
   ram = calloc(1, JC_RAM_SIZE);
   rom = calloc(1, JC_ROM_SIZE);
 
+  if(prg_path && prg_override_start){
+    FILE* f = fopen(prg_path, "rb");
+    if (!f) {
+      fprintf(stderr, "Cannot open program image %s!\n", prg_path);
+      exit(1);
+    }
+    int size = fread(ram+prg_override_start, 1, JC_RAM_SIZE, f);
+    fprintf(stdout, "INFO: Load program image %s to $%04x-$%04x.\n", prg_path, prg_override_start, prg_override_start+size);
+    fclose(f);
+  }
+
   if(romImage && romImage->romPath){
     FILE* f = fopen(romImage->romPath, "rb");
     if (!f) {
-      fprintf(stderr, "Cannot open %s!\n", romImage->romPath);
+      fprintf(stderr, "ERROR: Could not open ROM image '%s'!\n", romImage->romPath);
       exit(1);
     }
     int size = fread(rom, 1, JC_ROM_SIZE, f);
@@ -54,21 +57,22 @@ void memoryJuniorComputerCreate(void *cpuRef, RomImage* romImage) {
   }
 }
 
-
 void memoryJuniorComputerDestroy() {
   free(ram);
   free(rom);
 }
 
-static UInt8 *get_address(UInt16 address, bool debugOn){
+static bool isRom(UInt16 address){
+  return address >= 0xe000 || address >= 0x1c00 && address < 0x2000;
+}
+
+static UInt8* get_address(UInt16 address, bool debugOn){
 
   UInt8 *p;
   uint32_t addrMask;
 
   // RAM/ROM
-  if(address >= 0xe000 ||
-     address >= 0x1c00 && address < 0x2000
-    ){
+  if(isRom(address)){
     p = rom;
     addrMask = JC_ROM_BANK_MASK;
   }else{
@@ -87,18 +91,6 @@ static UInt8 *get_address(UInt16 address, bool debugOn){
 
 UInt8 memoryJuniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool debugOn) {
 
-  if (address >= 0x0800) {// I/O
-    if (address < 0x0c00) // I/O K2
-      return 0xff;
-    else if (address < 0x1000) // I/O K3
-      return 0xff;
-    else if (address < 0x1400) // I/O K4
-      return 0xff;
-    else if (address >= 0x1600 && address < 0x1800) // 6551 ACIA
-    {
-      return 0xff;
-    }
-  }
   uint8_t *p = get_address(address, debugOn);
 
   uint8_t value = *p;
@@ -112,18 +104,10 @@ UInt8 memoryJuniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool deb
 
 void memoryJuniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 value) {
 
-  if (address >= 0x0800) {// I/O
-    if (address < 0x0c00) // I/O K2
-      return 0xff;
-    else if (address < 0x1000) // I/O K3
-      return 0xff;
-    else if (address < 0x1400) // I/O K4
-      return 0xff;
-    else if (address >= 0x1600 && address < 0x1800) // 6551 ACIA
-    {
-      return 0xff;
-    }
+  if(isRom(address)){
+    return;
   }
+
   uint8_t *p = get_address(address, false);
   *p = value;
 

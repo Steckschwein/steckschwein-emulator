@@ -64,14 +64,6 @@ static bool com_put_byte(UInt8 data)
 
 bool acia_init_com(MOS6551 *acia )
 {
-  //oric = acia->oric;
-
-  acia->done = com_done;
-  acia->stat = com_stat;
-  acia->has_byte = com_has_byte;
-  acia->get_byte = com_get_byte;
-  acia->put_byte = com_put_byte;
-
   char *aciabackendname = "com:19200,8,N,1,/tmp/ttyJC1";
 
   if(5 == sscanf(aciabackendname, "com:%d,%d,%c,%d,%s",
@@ -82,7 +74,12 @@ bool acia_init_com(MOS6551 *acia )
     {
       if(com_open())
       {
-        //oric->aciabackend = ACIA_TYPE_COM;
+        acia->done = com_done;
+        acia->stat = com_stat;
+        acia->has_byte = com_has_byte;
+        acia->get_byte = com_get_byte;
+        acia->put_byte = com_put_byte;
+
         return true;
       }
     }
@@ -185,7 +182,7 @@ static bool com_open(void)
   com_fd = open(com_name, O_RDWR | O_NOCTTY | O_NDELAY);
   if( -1 == com_fd )
   {
-    //printf("open failed\n");
+    fprintf(stderr, "open %s failed\n", com_name);
     return false;
   }
 

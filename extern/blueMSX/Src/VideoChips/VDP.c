@@ -34,6 +34,7 @@
 #include "DebugDeviceManager.h"
 #include "FrameBuffer.h"
 #include "JuniorComputer.h"
+#include "Steckschwein.h"
 //#include "ArchVideoIn.h"
 //#include "Language.h"
 #include <string.h>
@@ -2156,16 +2157,11 @@ static void destroy(VDP* vdp)
 
     switch (vdp->vdpConnector) {
     case VDP_JC:
-        ioPortUnregister(0x08);
-        ioPortUnregister(0x09);
-        ioPortUnregister(0x0a);
-        ioPortUnregister(0x0b);
-        break;
     case VDP_STECKSCHWEIN:
-        ioPortUnregister(0x220);
-        ioPortUnregister(0x221);
-        ioPortUnregister(0x222);
-        ioPortUnregister(0x223);
+        ioPortUnregister(STECKSCHWEIN_PORT_VDP+0);
+        ioPortUnregister(STECKSCHWEIN_PORT_VDP+1);
+        ioPortUnregister(STECKSCHWEIN_PORT_VDP+2);
+        ioPortUnregister(STECKSCHWEIN_PORT_VDP+3);
         break;
     case VDP_MSX:
         ioPortUnregister(0x98);
@@ -2220,7 +2216,7 @@ static void videoDisable(VDP* vdp)
     vdp->videoEnabled = 0;
 }
 
-void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int vramPages){
+void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int vramPages, UInt16 ioBase){
 
 //    DeviceCallbacks callbacks = { destroy, reset, saveState, loadState };
 
@@ -2332,20 +2328,12 @@ void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int
 
     switch (vdp->vdpConnector) {
     case VDP_JC:
-        ioPortRegister(JC_PORT_VDP+0, read,       write,      vdp);
-        ioPortRegister(JC_PORT_VDP+1, readStatus, writeLatch, vdp);
-        if (vdp->vdpVersion == VDP_V9938 || vdp->vdpVersion == VDP_V9958) {
-            ioPortRegister(JC_PORT_VDP+2, NULL, writePaletteLatch, vdp);
-            ioPortRegister(JC_PORT_VDP+3, NULL, writeRegister,     vdp);
-        }
-        break;
-
     case VDP_STECKSCHWEIN:
-        ioPortRegister(0x220, read,       write,      vdp);
-        ioPortRegister(0x221, readStatus, writeLatch, vdp);
+        ioPortRegister(ioBase+0, read,       write,      vdp);
+        ioPortRegister(ioBase+1, readStatus, writeLatch, vdp);
         if (vdp->vdpVersion == VDP_V9938 || vdp->vdpVersion == VDP_V9958) {
-            ioPortRegister(0x222, NULL, writePaletteLatch, vdp);
-            ioPortRegister(0x223, NULL, writeRegister,     vdp);
+            ioPortRegister(ioBase+2, NULL, writePaletteLatch, vdp);
+            ioPortRegister(ioBase+3, NULL, writeRegister,     vdp);
         }
         break;
 

@@ -40,7 +40,7 @@ typedef enum {
 
 static const char* VdpNames[] = { "V9938", "V9958", "TMS9929A", "TMS99x8A" };
 
-void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int vramPages);
+void vdpCreate(VdpConnector connector, VdpVersion version, VdpSyncMode sync, int vramPages, UInt16 ioBase);
 
 int  vdpGetRefreshRate();
 

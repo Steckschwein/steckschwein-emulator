@@ -25,8 +25,8 @@
 
 #define	RTC_USER_RAM_BASE	0x20
 
-void spi_rtc_reset();
-void spi_rtc_destroy();
+void ds1306Reset();
+void ds1306Destroy();
 
 void spi_rtc_select();
 void spi_rtc_deselect();// chip select /CE high

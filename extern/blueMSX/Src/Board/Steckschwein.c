@@ -33,6 +33,8 @@ static void destroy() {
     ioPortUnregister(0x2e);
     deviceManagerDestroy();
     */
+  ds1306Destroy();
+
   mos6502Destroy(mos6502);
 }
 
@@ -41,10 +43,11 @@ static void reset()
     UInt32 systemTime = boardSystemTime();
 
 //    slotManagerReset();
+  ds1306Reset();
 
-    if (mos6502 != NULL) {
-      mos6502Reset(mos6502, systemTime);
-    }
+  if (mos6502 != NULL) {
+    mos6502Reset(mos6502, systemTime);
+  }
 //    deviceManagerReset();
 }
 
@@ -187,7 +190,7 @@ int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boa
   //sprintf(cmosName, "%s" DIR_SEPARATOR "%s.cmos", boardGetBaseDirectory(), machine->name);
   //rtc = rtcCreate(machine->cmos.enable, machine->cmos.batteryBacked ? cmosName : 0);
 
-  vdpCreate(VDP_STECKSCHWEIN, machine->video.vdpVersion, vdpSyncMode, machine->video.vramSize / 0x4000);
+  vdpCreate(VDP_STECKSCHWEIN, machine->video.vdpVersion, vdpSyncMode, machine->video.vramSize / 0x4000, STECKSCHWEIN_PORT_VDP);
 
   //register cpu hook
   hookexternal(steckschweinInstructionCb);

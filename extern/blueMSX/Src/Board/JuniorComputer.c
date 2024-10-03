@@ -48,8 +48,6 @@ static void reset()
 {
     UInt32 systemTime = boardSystemTime();
 
-//    slotManagerReset();
-
     if (mos6532Reset != NULL){
       mos6532Reset(mos6532, systemTime);
     }
@@ -62,9 +60,9 @@ static void reset()
     if (sn76489 != NULL) {
       sn76489Reset(sn76489);
     }
-    if(speaker != NULL)
+    if(speaker != NULL) {
       speakerReset(speaker);
-//    deviceManagerReset();
+    }
 }
 
 
@@ -106,11 +104,9 @@ void jcInstructionCb(uint32_t cycles) {
 
   trace();
 
-//  hookKernelPrgLoad(prg_file, prg_override_start);
-
   if (pc == 0xffff) {
     if (save_on_exit) {
-      machine_dump();
+      //machine_dump();
       //doQuit = 1;
       actionEmuStop();
     }
@@ -119,7 +115,9 @@ void jcInstructionCb(uint32_t cycles) {
 
 static UInt8 juniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool debugOn){
 
-  if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
+  if (address >= JC_PORT_K2 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
+    return ioPortRead(NULL, address);
+  }else if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
   {
     bool ramSel = (address & 0x80) == 0;
     return mos6532Read(mos6532, ramSel, address, debugOn);
@@ -131,7 +129,9 @@ static UInt8 juniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool de
 
 static void juniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 value){
 
-  if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
+  if (address >= JC_PORT_K2 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
+    ioPortWrite(NULL, address, value);
+  }else  if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
   {
     bool ramSel = (address & 0x80) == 0;
     mos6532Write(mos6532, ramSel, address, value);
@@ -186,24 +186,25 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
 
   mixerReset(boardGetMixer());
 
-
-  // socat -d -d pty,link=/tmp/ttyJC0,raw,echo=0 pty,link=/tmp/ttyJC1,raw,echo=0
-
+  // use socat to loopback serial device
+  // $> socat -d -d pty,link=/tmp/ttyJC0,raw,echo=0 pty,link=/tmp/ttyJC1,raw,echo=0
+  // $> screen /tmp/ttyJC0 19200
   mos6551 = mos6551Create(mos6502, ACIA_TYPE_COM);
 
   mos6532 = mos6532Create();
 
   sn76489 = sn76489Create(boardGetMixer());
+/*
   for(i=0xe0;i<=0xff;i++){
     ioPortRegister(i, NULL, sn76489WriteData, sn76489);
   }
-
+*/
   speaker = speakerCreate(boardGetMixer());
 
   //sprintf(cmosName, "%s" DIR_SEPARATOR "%s.cmos", boardGetBaseDirectory(), machine->name);
   //rtc = rtcCreate(machine->cmos.enable, machine->cmos.batteryBacked ? cmosName : 0);
 
-  vdpCreate(VDP_JC, machine->video.vdpVersion, vdpSyncMode, machine->video.vramSize / 0x4000);
+  vdpCreate(VDP_JC, machine->video.vdpVersion, vdpSyncMode, machine->video.vramSize / 0x4000, JC_PORT_K3+0x08);
 
   //register cpu hook
   hookexternal(jcInstructionCb);
