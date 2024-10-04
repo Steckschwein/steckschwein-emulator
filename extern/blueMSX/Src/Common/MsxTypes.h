@@ -26,6 +26,7 @@
 ******************************************************************************
 */
 #include <stdbool.h>
+#include <stdlib.h>
 
 #ifndef BLUEMSX_TYPES
 #define BLUEMSX_TYPES

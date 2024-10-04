@@ -2,9 +2,7 @@
 #include "EmulatorDebugger.h"
 #include "cpu/fake6502.h"
 #include "glue.h"
-
 #include "Board.h"
-#include <stddef.h>
 
 #define VDP_DELAY 2 // wait states aka clockticks
 
@@ -35,7 +33,8 @@ UInt8 read6502(UInt16 address){
 MOS6502* mos6502create(
     MOS6502ReadCb readAddress,
     MOS6502WriteCb writeAddress,
-    MOS6502TimerCb timerCb) {
+    MOS6502TimerCb timerCb,
+    UInt32 frequency) {
 
   MOS6502 *mos6502 = calloc(1, sizeof(MOS6502));
   mos6502->systemTime = 0;
@@ -46,8 +45,8 @@ MOS6502* mos6502create(
   mos6502->intState = INT_HIGH;
   mos6502->nmiState = INT_HIGH;
   mos6502->nmiEdge = 0;
-  mos6502->frequency = 3579545 * 3; // ~10.7 Mhz
-  mos6502->frequency = 3579545 / 3; // ~1 Mhz
+
+  mos6502->frequency = frequency;
 
   return mos6502;
 }

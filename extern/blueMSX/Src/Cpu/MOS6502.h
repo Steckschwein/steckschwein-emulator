@@ -4,8 +4,6 @@
 
 #define ENABLE_BREAKPOINTS
 
-#define CPU_FREQUENCY
-
 typedef UInt32 SystemTime;
 
 /*
@@ -63,7 +61,7 @@ typedef struct{
 
 UInt8 read6502Debug(UInt16 address, bool dbg, UInt16 bank);
 
-MOS6502* mos6502create(MOS6502ReadCb readAddress, MOS6502WriteCb writeAddress, MOS6502TimerCb timerCb);
+MOS6502* mos6502create(MOS6502ReadCb readAddress, MOS6502WriteCb writeAddress, MOS6502TimerCb timerCb, UInt32 frequency);
 
 void mos6502Reset(MOS6502* mos6502, UInt32 cpuTime);
 void mos6502SetInt(MOS6502* mos6502);

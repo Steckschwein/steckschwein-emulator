@@ -214,6 +214,9 @@ SOURCE_FILES += IoPort.c
 SOURCE_FILES += IniFileParser.c
 SOURCE_FILES += Steckschwein.c
 SOURCE_FILES += JuniorComputer.c
+SOURCE_FILES += juniorComputerFloppyGfxCard.c
+SOURCE_FILES += juniorComputerIoCard.c
+
 SOURCE_FILES += MOS6502.c
 SOURCE_FILES += MOS6532.c
 SOURCE_FILES += 6551.c
@@ -225,6 +228,7 @@ SOURCE_FILES += Speaker.c
 SOURCE_FILES += DebugDeviceManager.c
 SOURCE_FILES += Debugger.c
 SOURCE_FILES += MOS6502Debug.c
+
 
 all: $(OUTPUT_DIR) $(TARGET)
 

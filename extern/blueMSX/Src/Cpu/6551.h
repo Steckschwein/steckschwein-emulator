@@ -21,7 +21,6 @@
 #ifndef MOS6551_H_
 #define MOS6551_H_
 
-#include <stddef.h>
 #include "MsxTypes.h"
 #include "MOS6502.h"
 

@@ -20,16 +20,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef STECKSCHWEIN_H
-#define STECKSCHWEIN_H
+#include "juniorComputerIoCard.h"
 
-#include "Board.h"
-#include "VDP.h"
+JuniorComputerIoCard* juniorComputerIoCardCreate(){
 
-// i/o related
-#define STECKSCHWEIN_PORT_VDP 0x220
-#define STECKSCHWEIN_PORT_OPL 0x240
+  JuniorComputerIoCard *card = calloc(1, sizeof(JuniorComputerIoCard));
 
-int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo);
+  card->sn76489 = sn76489Create(boardGetMixer());
 
-#endif
+  return card;
+}
+
+const UInt8 IO_CARD_MAGIC[] = { 0x65, 0x22, 0x65, 0x22 };   // Magic number of IO-Card
+
+UInt8 jcIoCardRead(UInt16 address){
+  if((address & 0x3ff) >= 0x3fc){
+    return IO_CARD_MAGIC[address & 0x03];
+  }
+  return 0xff;
+}
+
+void jcIoCardWrite(UInt16 address, UInt8 value){
+
+}
+
+void juniorComputerIoCardDestroy(JuniorComputerIoCard *card){
+  if(card->sn76489)
+    sn76489Destroy(card->sn76489);
+  free(card);
+}
+
+void juniorComputerIoCardReset(JuniorComputerIoCard *card){
+  if (card->sn76489 != NULL) {
+    sn76489Reset(card->sn76489);
+  }
+}

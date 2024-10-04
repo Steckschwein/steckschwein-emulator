@@ -46,9 +46,17 @@ static int readMachine(Machine* machine, const char* machineName, const char* fi
     else if (0 == strcmp(buffer, "192kB")) machine->video.vramSize = 192 * 1024;
     else { iniFileClose(configIni); return 0; }
 
-//    machine->slotInfoCount = i;
+ // Read CPU info
+    iniFileGetString(configIni, "CPU", "6502 Frequency", "none", buffer, 10000);
+    if (0 == sscanf(buffer, "%dHz", &value)) {
+        value = 3579545;
+        //mos6502->frequency = 3579545 * 3; // ~10.7 Mhz
+    }
+    machine->cpu.freqCPU = value;
+
 
     iniFileClose(configIni);
+//    machine->slotInfoCount = i;
 
     return 1;
 }

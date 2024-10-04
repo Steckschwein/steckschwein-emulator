@@ -127,7 +127,7 @@ Speaker* speakerCreate(Mixer* mixer)
 void speakerWriteData(Speaker* speaker, UInt8 data)
 {
     Speaker* p = speaker;
-    p->value = (data & 0x01) << 1;
+    p->value = (data & 0x01);
 
     mixerSync(p->mixer);
 }
