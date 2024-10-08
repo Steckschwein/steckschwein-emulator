@@ -9,7 +9,6 @@
 #include <time.h>
 
 #include "uart.h"
-#include "memory.h"
 #include "glue.h"
 
 #define UART_CHECK_UPLOAD_INTERVAL_SECONDS 3

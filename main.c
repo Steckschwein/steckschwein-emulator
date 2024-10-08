@@ -22,7 +22,6 @@
 
 #include "cpu/fake6502.h"
 #include "disasm.h"
-#include "memory.h"
 #include "via.h"
 #include "uart.h"
 #include "spi.h"
@@ -60,12 +59,11 @@ char *paste_text = NULL;
 char paste_text_data[65536];
 bool pasting_bas = false;
 
-#define RAM_SIZE (64*1024)
-#define ROM_SIZE (32*1024)
-
-uint32_t ram_size = RAM_SIZE; // 64 KB default
+static char emuStateName[512];
 
 extern int errno;
+
+RomImage romImage;
 
 bool log_video = false;
 bool log_speed = false;
@@ -75,7 +73,7 @@ bool dump_ram = true;
 bool dump_bank = true;
 bool dump_vram = false;
 echo_mode_t echo_mode;
-bool save_on_exit = true;
+bool save_on_exit = false;
 gif_recorder_state_t record_gif = RECORD_GIF_DISABLED;
 char *gif_path = NULL;
 uint8_t keymap = 0; // KERNAL's default
@@ -90,6 +88,7 @@ uint16_t trace_address = 0;
 
 
 extern unsigned char *prg_path; //extern - also used in uart
+extern UInt16 prg_override_start;
 
 bool checkUploadLmf = false; //check lmf of the upload file, if not changed no recurring uploads
 bool run_after_load = false;
@@ -111,8 +110,6 @@ static Properties *properties;
 static Mixer *mixer;
 static Video *video;
 static Machine* machine;
-
-static RomImage* romImage;
 
 static int enableSynchronousUpdate = 1;
 static int emuMaxSpeed = 0;
@@ -207,7 +204,6 @@ void machine_dump() {
 }
 
 void machine_reset(int prg_override_start) {
-  spi_rtc_reset();
   uart_init(prg_path, prg_override_start, checkUploadLmf);
   via1_reset();
 }
@@ -220,9 +216,9 @@ void machine_paste(char *s) {
 }
 
 static void usage() {
-  printf("\nSteckschwein Emulator (C)2019 Michael Steil, Thomas Woinke, Marko Lauke\n");
+  printf("\n6502 MSX Emulator (C)2019 Michael Steil, Thomas Woinke, Marko Lauke\n");
   printf("All rights reserved. License: 2-clause BSD\n\n");
-  printf("Usage: steckschwein-emu [option] ...\n\n");
+  printf("Usage: 6502msx-emu [option] ...\n\n");
   printf("-rom <rom.bin>[,<load_addr>]\n");
   printf("\tbios ROM file.\n");
   printf("-ram <ramsize>\n");
@@ -403,10 +399,10 @@ SDL_Surface *__SDL_SetVideoMode(int width, int height, int bpp){
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 
 #else
-  Uint32 rmask = 0x000000ff;
-  Uint32 gmask = 0x0000ff00;
-  Uint32 bmask = 0x00ff0000;
-  Uint32 amask = 0x00000000;
+  UInt32 rmask = 0x000000ff;
+  UInt32 gmask = 0x0000ff00;
+  UInt32 bmask = 0x00ff0000;
+  UInt32 amask = 0x00000000;
 #endif
 
   SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height, bpp,
@@ -454,8 +450,6 @@ void createSdlSurface(int width, int height, int fullscreen) {
 
 int createOrUpdateSdlWindow() {
 
-  const char *title = "Steckschwein Emulator 2.0 (blueMSX)";
-
   int fullscreen = properties->video.windowSize == P_VIDEO_SIZEFULLSCREEN;
 
   if(!surface){//create
@@ -473,12 +467,12 @@ int createOrUpdateSdlWindow() {
     #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 
     #else
-      Uint32 rmask = 0xff000000;
-      Uint32 gmask = 0x00ff0000;
-      Uint32 bmask = 0x0000ff00;
-      Uint32 amask = 0x000000ff;
+      UInt32 rmask = 0xff000000;
+      UInt32 gmask = 0x00ff0000;
+      UInt32 bmask = 0x0000ff00;
+      UInt32 amask = 0x000000ff;
     #endif
-    SDL_SetWindowTitle(window, title);
+    SDL_SetWindowTitle(window, properties->emulation.machineName);
     SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(&schwein128_rgba, 128,128,32,4*128, rmask, gmask, bmask, amask);
     SDL_SetWindowIcon(window, icon);
     SDL_FreeSurface(icon);
@@ -522,7 +516,7 @@ static void handleEvent(SDL_Event *event) {
 //        shortcutCheckown(shortcuts, HOTKEY_TYPE_KEYBOARD, keyboardGetModifiers(), event->key.keysym.sym);
   {
     int keyNum;
-    Uint8 *keyBuf = SDL_GetKeyboardState(&keyNum);
+    UInt8 *keyBuf = SDL_GetKeyboardState(&keyNum);
     if (keyBuf != NULL) {
       if (keyBuf[SDL_SCANCODE_LALT]) {
         if (event->key.keysym.sym == SDLK_f) {
@@ -762,17 +756,6 @@ static void emulatorThread() {
     reverseBufferCnt = properties->emulation.reverseMaxTime * 1000 / reversePeriod;
   }
 
-  machine = machineCreate(romImage, properties->emulation.machineName);
-  if (machine == NULL) {
-    // archShowStartEmuFailDialog();
-    archEmulationStopNotification();
-    emuState = EMU_STOPPED;
-    archEmulationStartFailure();
-    return;
-  }
-
-  boardSetMachine(machine);
-
   success = boardRun(machine, mixer, frequency, reversePeriod, reverseBufferCnt, WaitForSync);
 
   //the emu loop
@@ -861,6 +844,8 @@ void emulatorResume() {
   if (emuState == EMU_SUSPENDED) {
     emuSysTime = 0;
 
+    archSoundResume();
+//    archMidiEnable(1);
     emuState = EMU_RUNNING;
     archUpdateEmuDisplay(0);
   }
@@ -905,6 +890,18 @@ void emulatorStart(const char *stateName) {
   properties->emulation.pauseSwitch = 0;
 //  switchSetPause(properties->emulation.pauseSwitch);
 
+  machine = machineCreate(&romImage, properties->emulation.machineName);
+  if (machine == NULL) {
+    //archShowStartEmuFailDialog();
+    fprintf(stderr, "Could not create machine '%s', invalid config or config not found!. Check [Board] section for valid type.\n", properties->emulation.machineName);
+    archEmulationStopNotification();
+    emuState = EMU_STOPPED;
+    archEmulationStartFailure();
+    return;
+  }
+
+  boardSetMachine(machine);
+
 #ifndef NO_TIMERS
 #ifndef WII
   emuSyncEvent = archEventCreate(0);
@@ -923,7 +920,7 @@ void emulatorStart(const char *stateName) {
 
   emuState = EMU_PAUSED;
   emulationStartFailure = 0;
-  //strcpy(emuStateName, stateName ? stateName : "");
+  strcpy(emuStateName, stateName ? stateName : "");
 
   //clearlog();
 
@@ -954,8 +951,9 @@ void emulatorStart(const char *stateName) {
      boardSetY8950Oversampling(properties->sound.chip.y8950Oversampling);
      boardSetMoonsoundOversampling(properties->sound.chip.moonsoundOversampling);
 
-     strcpy(properties->emulation.machineName, machine->name);
      */
+    strcpy(properties->emulation.machineName, machine->name);
+
     debuggerNotifyEmulatorStart();
 
     emuState = EMU_RUNNING;
@@ -1086,53 +1084,6 @@ void hookCharOut() {
   }
 }
 
-void hookKernelPrgLoad(FILE *prg_file, int prg_override_start) {
-  if (prg_file) {
-    if (pc == 0xff00) {
-      // ...inject the app into RAM
-      uint8_t start_lo = fgetc(prg_file);
-      uint8_t start_hi = fgetc(prg_file);
-      uint16_t start;
-      if (prg_override_start >= 0) {
-        start = prg_override_start;
-      } else {
-        start = start_hi << 8 | start_lo;
-      }
-      if (start >= 0xe000) {
-        fprintf(stderr, "invalid program start address %x, will override kernel!\n", start);
-      } else {
-        uint16_t end = start + fread(ram + start, 1, RAM_SIZE - start, prg_file);
-      }
-      fclose(prg_file);
-      prg_file = NULL;
-    }
-  }
-}
-
-//called after each 6502 instruction
-void instructionCb(uint32_t cycles) {
-
-  for (uint8_t i = 0; i < cycles; i++) {
-    spi_step();
-    joystick_step();
-  }
-
-  trace();
-
-  if (!isDebuggerEnabled) {
-    hookCharOut();
-  }
-
-//  hookKernelPrgLoad(prg_file, prg_override_start);
-
-  if (pc == 0xffff) {
-    if (save_on_exit) {
-      machine_dump();
-      doQuit = 1;
-    }
-  }
-}
-
 int nextArg(int *argc, char ***argv, char *arg) {
   int n = *argc && strlen(*argv[0]) == strlen(arg) && !strncmp(*argv[0], arg, strlen(*argv[0]));
   if (n) {
@@ -1208,8 +1159,9 @@ void do_wordexp(const char * in, char * out)
   wordfree(&exp_result);
 }
 
-
 int main(int argc, char **argv) {
+
+
   char rom_path_data[PATH_MAX];
   char *rom_path = rom_path_data;
 
@@ -1241,7 +1193,7 @@ int main(int argc, char **argv) {
   mixer = mixerCreate();
 
   //read default properties
-  properties = propCreate(0, 0, P_EMU_SYNCTOVBLANKASYNC, "Steckschwein");
+  properties = propCreate(0, 0, P_EMU_SYNCTOVBLANKASYNC, NULL);
 
   configuration config;
   sprintf(configfile_path, "%s/.sw/config.ini", getenv("HOME"));
@@ -1476,21 +1428,8 @@ int main(int argc, char **argv) {
     }
   }
 
-  int rom_override_start = parseNumber(rom_path);
-  FILE *f = fopen(rom_path, "rb");
-  if (!f) {
-    fprintf(stderr, "Cannot open %s!\n", rom_path);
-    exit(1);
-  }
-  romImage = malloc(sizeof(RomImage));
-  romImage->address = rom_override_start;
-  romImage->image = malloc(ROM_SIZE);
-  int size = fread(romImage->image, 1, ROM_SIZE, f);
-  fclose(f);
-  if(size != ROM_SIZE){
-    fprintf(stderr, "Invalid rom image %s or could not read file. Expected 0x%04x bytes ROM, but was 0x%04x!\n", rom_path, ROM_SIZE, size);
-    exit(1);
-  }
+  romImage.address = parseNumber(rom_path);
+  romImage.romPath = rom_path;
 
   if (sdcard_path) {
     sdcard_file = fopen(sdcard_path, "r+b");
@@ -1508,7 +1447,7 @@ int main(int argc, char **argv) {
   if (bas_path) {
     FILE *bas_file = fopen(bas_path, "r");
     if (!bas_file) {
-      fprintf(stderr, "Cannot open %s!\n", bas_path);
+      fprintf(stderr, " en %s!\n", bas_path);
       exit(1);
     }
     paste_text = paste_text_data;
@@ -1520,9 +1459,6 @@ int main(int argc, char **argv) {
     }
     fclose(bas_file);
   }
-
-  //register cpu hook
-  hookexternal(instructionCb);
 
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
     return 1;
@@ -1549,7 +1485,7 @@ int main(int argc, char **argv) {
 
   keyboardInit();
 
-//    emulatorInit(properties, mixer);
+  //emulatorInit(properties, mixer);
   actionInit(video, properties, mixer);
 //    langInit();
 
@@ -1577,7 +1513,7 @@ int main(int argc, char **argv) {
 
   videoUpdateAll(video, properties);
 
-  emulatorStart("Start");
+  emulatorStart(NULL);
 
 #ifndef SINGLE_THREADED  //on multi-threaded the main thread will loop here
     SDL_Event event;//While the user hasn't quit
@@ -1599,10 +1535,9 @@ int main(int argc, char **argv) {
   }
 
   videoDestroy(video);
+  propDestroy(properties);
   archSoundDestroy();
   mixerDestroy(mixer);
-  propDestroy(properties);
-  spi_rtc_destroy();
 
   DEBUGFreeUI();
 

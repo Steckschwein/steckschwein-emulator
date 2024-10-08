@@ -2,37 +2,57 @@
 #include "EmulatorDebugger.h"
 #include "cpu/fake6502.h"
 #include "glue.h"
-
 #include "Board.h"
-
-#include <stddef.h>
 
 #define VDP_DELAY 2 // wait states aka clockticks
 
 unsigned char vdp_delay = VDP_DELAY;
-#define delayVdpIO(mos6502, port) {                           \
-  mos6502->systemTime = 6 * ((mos6502->systemTime + 5) / 6);  \
-  if (mos6502->systemTime - mos6502->vdpTime < vdp_delay)     \
-      mos6502->systemTime = mos6502->vdpTime + vdp_delay;     \
-  mos6502->vdpTime = mos6502->systemTime;                     \
+
+#define delayVdpIO(mos6502, port) {                             \
+  if ((port & 0xf20) == 0x220) {                                \
+    mos6502->systemTime = 6 * ((mos6502->systemTime + 5) / 6);  \
+    if (mos6502->systemTime - mos6502->vdpTime < vdp_delay)     \
+        mos6502->systemTime = mos6502->vdpTime + vdp_delay;     \
+    mos6502->vdpTime = mos6502->systemTime;                     \
+  }                                                             \
 }
 
 
-MOS6502* mos6502create(MOS6502TimerCb timerCb) {
-  MOS6502 *mos6502 = malloc(sizeof(MOS6502));
+void write6502(UInt16 address, UInt8 value) {
+  mos6502->writeAddress(mos6502, address, value);
+}
+
+UInt8 read6502Debug(UInt16 address, bool dbg, UInt16 bank){
+  return mos6502->readAddress(mos6502, address, dbg);
+}
+
+UInt8 read6502(UInt16 address){
+  return mos6502->readAddress(mos6502, address, false);
+}
+
+MOS6502* mos6502create(
+    MOS6502ReadCb readAddress,
+    MOS6502WriteCb writeAddress,
+    MOS6502TimerCb timerCb,
+    UInt32 frequency) {
+
+  MOS6502 *mos6502 = calloc(1, sizeof(MOS6502));
   mos6502->systemTime = 0;
   mos6502->terminate = 0;
+  mos6502->readAddress = readAddress;
+  mos6502->writeAddress = writeAddress;
   mos6502->timerCb = timerCb;
   mos6502->intState = INT_HIGH;
   mos6502->nmiState = INT_HIGH;
   mos6502->nmiEdge = 0;
-  mos6502->frequency = 3579545 * 3; // ~10.7 Mhz
+
+  mos6502->frequency = frequency;
 
   return mos6502;
 }
 
-
-UInt8 readPort(MOS6502* mos6502, UInt16 port) {
+/*
+UInt8 readAddress(MOS6502* mos6502, UInt16 port) {
     UInt8 value;
 
 //    delayPreIo(mos6502);
@@ -45,7 +65,7 @@ UInt8 readPort(MOS6502* mos6502, UInt16 port) {
     return value;
 }
 
-void writePort(MOS6502* mos6502, UInt16 port, UInt8 value) {
+void writeAddress(MOS6502* mos6502, UInt16 port, UInt8 value) {
 //    delayPreIo(mos6502);
 
     delayVdpIO(mos6502, port);
@@ -60,6 +80,7 @@ void writePort(MOS6502* mos6502, UInt16 port, UInt8 value) {
 #endif
 
 }
+*/
 
 void mos6502Reset(MOS6502 *mos6502, UInt32 cpuTime) {
   reset6502();

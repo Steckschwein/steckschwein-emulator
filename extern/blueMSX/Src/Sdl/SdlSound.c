@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -43,10 +43,10 @@ typedef struct SdlSound {
 
 SdlSound sdlSound;
 int oldLen = 0;
-void soundCallback(void* userdata, Uint8* stream, int length)
+void soundCallback(void* userdata, UInt8* stream, int length)
 {
     UInt32 avail = (sdlSound.readPtr - sdlSound.writePtr) & sdlSound.bufferMask;
-oldLen = length;
+    oldLen = length;
     if ((UInt32)length > avail) {
 //        sdlSound.readPtr = (sdlSound.readPtr - sdlSound.bufferSize / 2) & sdlSound.bufferMask;
         memset((UInt8*)stream + avail, 0, length - avail);
@@ -100,11 +100,11 @@ static Int32 soundWrite(SdlSound* dummy, Int16 *buffer, UInt32 count)
     return 0;
 }
 
-void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 channels) 
+void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 channels)
 {
-	SDL_AudioSpec desired;
-	SDL_AudioSpec audioSpec;
-	UInt16 samples = channels;
+  SDL_AudioSpec desired;
+  SDL_AudioSpec audioSpec;
+  UInt16 samples = channels;
 
     memset(&sdlSound, 0, sizeof(sdlSound));
 
@@ -112,23 +112,23 @@ void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 c
 
     while (samples < bufferSize) samples *= 2;
 
-	desired.freq     = sampleRate;
-	desired.samples  = samples;
-	desired.channels = (UInt8)channels;
+  desired.freq     = sampleRate;
+  desired.samples  = samples;
+  desired.channels = (UInt8)channels;
 #ifdef LSB_FIRST
-	desired.format   = AUDIO_S16LSB;
+  desired.format   = AUDIO_S16LSB;
 #else
     desired.format   = AUDIO_S16MSB;
 #endif
-	desired.callback = soundCallback;
-	desired.userdata = NULL;
-    
-	if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
+  desired.callback = soundCallback;
+  desired.userdata = NULL;
+
+  if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
         return;
     }
 
-	if (SDL_OpenAudio(&desired, &audioSpec) != 0) {
-		SDL_QuitSubSystem(SDL_INIT_AUDIO);
+  if (SDL_OpenAudio(&desired, &audioSpec) != 0) {
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);
         return;
     }
 
@@ -139,28 +139,28 @@ void archSoundCreate(Mixer* mixer, UInt32 sampleRate, UInt32 bufferSize, Int16 c
     sdlSound.started = 1;
     sdlSound.mixer = mixer;
     sdlSound.bytesPerSample = audioSpec.format == AUDIO_U8 || audioSpec.format == AUDIO_S8 ? 1 : 2;
-    
+
     mixerSetStereo(mixer, channels == 2);
     mixerSetWriteCallback(mixer, soundWrite, NULL, audioSpec.size / sdlSound.bytesPerSample);
-    
-	SDL_PauseAudio(0);
+
+  SDL_PauseAudio(0);
 }
 
 void archSoundDestroy(void)
 {
     if (sdlSound.started) {
         mixerSetWriteCallback(sdlSound.mixer, NULL, NULL, 0);
-		SDL_QuitSubSystem(SDL_INIT_AUDIO);
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);
     }
     sdlSound.started = 0;
 
 }
-void archSoundResume(void) 
+void archSoundResume(void)
 {
-	SDL_PauseAudio(0);
+  SDL_PauseAudio(0);
 }
 
-void archSoundSuspend(void) 
+void archSoundSuspend(void)
 {
-	SDL_PauseAudio(1);
+  SDL_PauseAudio(1);
 }
