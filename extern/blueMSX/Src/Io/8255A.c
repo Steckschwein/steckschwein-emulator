@@ -20,38 +20,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "juniorComputerFloppyGfxCard.h"
 #include "8255A.h"
 
-static PIA8255 *pia8255;
+PIA8255* pia8255Create(){
 
-JuniorComputerFGCard* juniorComputerFGCardCreate(){
-
-  JuniorComputerFGCard *card = calloc(1, sizeof(JuniorComputerFGCard));
-
-  pia8255 = pia8255Create();
-
-  return card;
+  PIA8255 *pia = malloc(sizeof(PIA8255));
+  pia8255Reset(pia);
+  return pia;
 }
 
-
-const UInt8 FGC_MAGIC[] = { 0x99, 0x38, 0x76, 0x5B };  // Magic number of Floppy-/Graphics-Controller
-
-UInt8 jcFgcRead(JuniorComputerFGCard *card, UInt16 address){
-  if((address & 0x3ff) >= 0x3fc){
-    return 0xff;//FGC_MAGIC[address & 0x03];
-  }
-  return ioPortRead(card, address);
+void pia8255Destroy(PIA8255* pia){
+  free(pia);
 }
 
-void jcFgcWrite(JuniorComputerFGCard *card, UInt16 address, UInt8 value){
-  ioPortWrite(card, address, value);
-}
-
-void juniorComputerFGCardDestroy(JuniorComputerFGCard* card){
-
-}
-
-void juniorComputerFGCardReset(JuniorComputerFGCard* card){
-
+void pia8255Reset(PIA8255* pia){
+    pia->portA = 0;
+    pia->portB = 0;
+    pia->portC = 0;
 }

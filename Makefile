@@ -143,6 +143,7 @@ CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Common
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Cpu
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Debugger
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Emulator
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Io
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Memory
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Sdl
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/SoundChips
@@ -159,6 +160,7 @@ vpath % $(EXTERN_BLUEMSX_DIR)/Src/Common
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Cpu
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Debugger
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Emulator
+vpath % $(EXTERN_BLUEMSX_DIR)/Src/Io
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Memory
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Sdl
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/SoundChips
@@ -187,6 +189,13 @@ SOURCE_FILES += ds1306.c
 
 # cpu 65x02
 SOURCE_FILES += fake6502.c
+
+# custom
+SOURCE_FILES += 6551.c
+SOURCE_FILES += 6551_loopback.c
+SOURCE_FILES += 6551_com.c
+#SOURCE_FILES += 6551_modem.c
+SOURCE_FILES += 8255A.c
 
 # blueMSX Src
 SOURCE_FILES += SdlEvent.c
@@ -219,16 +228,11 @@ SOURCE_FILES += juniorComputerIoCard.c
 
 SOURCE_FILES += MOS6502.c
 SOURCE_FILES += MOS6532.c
-SOURCE_FILES += 6551.c
-SOURCE_FILES += 6551_loopback.c
-SOURCE_FILES += 6551_com.c
-#SOURCE_FILES += 6551_modem.c
 SOURCE_FILES += SN76489.c
 SOURCE_FILES += Speaker.c
 SOURCE_FILES += DebugDeviceManager.c
 SOURCE_FILES += Debugger.c
 SOURCE_FILES += MOS6502Debug.c
-
 
 all: $(OUTPUT_DIR) $(TARGET)
 
