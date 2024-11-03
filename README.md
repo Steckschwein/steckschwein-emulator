@@ -1,7 +1,7 @@
-Steckschwein Emulator
+6502 MSX Emulator
 ======================
 
-This is the emulator for the 8bit Steckschwein homebrew computer forked from the X16 naked Emulator and adapted to blueMSX. It only depends on SDL and therefore can be compiled on all modern operating systems.
+This is an 6502 emulator for the 8bit Steckschwein homebrew computer forked from the X16 naked Emulator and adapted to blueMSX. It only depends on SDL2 and therefore can be compiled on all modern operating systems.
 
 
 Binaries & Compiling
@@ -34,7 +34,7 @@ Steps for compiling WebAssembly/HTML5 can be found [here][webassembly].
 Starting
 --------
 
-You can start `steckschwein-emu`/`steckschwein-emu.exe` either by double-clicking it, or from the command line. The latter allows you to specify additional arguments.
+You can start `6502msx-emu`/`6502msx-emu.exe` either by double-clicking it, or from the command line. The latter allows you to specify additional arguments.
 
 * When starting `steckschwein-emu` without arguments, it will pick up the system ROM (`rom.bin`) from the executable's directory.
 * The system ROM filename/path can be overridden with the `-rom` command line argument.
@@ -64,7 +64,34 @@ You can start `steckschwein-emu`/`steckschwein-emu.exe` either by double-clickin
 * When compiled with `WITH_YM2151`, `-sound` can be used to specify the output sound device.
 * When compiled with `#define TRACE`, `-trace` will enable an instruction trace on stdout.
 
-Run `steckschwein-emu -h` to see all command line options.
+Run `6502msx-emu -h` to see all command line options.
+
+Configuration File
+------------------
+One can create a config.ini file with preconfigured emulator setup. E.g.
+<code>
+[paths]
+rom    = ~/dev/steckschwein-code/steckos/bios/bios.bin
+sdcard = ~/dev/steckschwein-code/steckos.img
+
+[display]
+scale=4 # zoom factor
+quality=best  # linear, composite
+
+[config]
+
+[CPU]
+6502 Frequency=10000000 # cpu frequency
+
+[Slots]
+
+[Video]
+version=V9938 # VDP version - V9938, V9958, TMS9918
+vram size=192kB
+
+[Board]
+type=Steckschwein-2.0 # JuniorComputer ][, tbc.
+</code>
 
 
 Keyboard Layout
