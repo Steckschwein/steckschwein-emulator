@@ -126,8 +126,9 @@ void memorySteckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 valu
 #ifdef SSW2_0
 
   UInt8 reg = (address >> BANK_SIZE) & sizeof(ctrl_port)-1;
-  if((ctrl_port[reg] & 0x80) == 0){  // RAM/ROM)
-
+  if((ctrl_port[reg] & 0x80) == 0x80){  // RAM/ROM ?
+    fprintf(stderr, "rom write at %4x %2x, ignore\n", address, value);
+    return;
   }
 
   UInt8 *p = get_address(address, false);
