@@ -51,7 +51,7 @@ void juniorComputerIoCardDestroy(JuniorComputerIoCard *card){
 }
 
 void juniorComputerIoCardReset(JuniorComputerIoCard *card){
-  if (card->sn76489 != NULL) {
+  if (card->sn76489) {
     sn76489Reset(card->sn76489);
   }
 }

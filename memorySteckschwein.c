@@ -6,10 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "glue.h"
-#include "via.h"
-#include "uart.h"
-#include "ym3812.h"
-
+#include "Steckschwein.h"
 #include "memorySteckschwein.h"
 
 UInt8 ctrl_port[] = {0,0,0,0};
@@ -86,23 +83,8 @@ static UInt8 *get_address(UInt16 address, bool debugOn){
 
 static UInt8 real_read6502(UInt16 address, bool debugOn, UInt8 bank) {
 
-  if (address >= 0x0200) {// I/O
-    if (address < 0x210) // UART at $0200
-    {
-      return uart_read(address & 0xf);
-    } else if (address < 0x0220) // VIA at $0210
-    {
-      return via1_read(address & 0xf);
-    } else if (address < 0x0230) // VDP at $0220
-    {
-      return ioPortRead(NULL, address);
-    } else if (address < 0x0240) // latch/cpld regs at $0230
-    {
-      return memory_get_ctrlport(address);
-    } else if (address < 0x0250) // OPL2 at $0240
-    {
-      return ioPortRead(NULL, address);
-    }
+  if (address >= 0x0230 && address < 0x0240){ // latch/cpld regs at $0230
+    return memory_get_ctrlport(address) & 0xcf;
   }
 #ifdef SSW2_0
 
@@ -136,31 +118,17 @@ static UInt8 real_read6502(UInt16 address, bool debugOn, UInt8 bank) {
 
 void memorySteckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 value){
 
-  if (address >= 0x0200) { // I/O
-    if (address < 0x210) // UART at $0200
-    {
-      uart_write(address & 0xf, value);
-      return;
-    } else if (address < 0x0220) // VIA at $0210
-    {
-      via1_write(address & 0xf, value);
-      return;
-    } else if (address < 0x0230) // VDP at $0220
-    {
-      ioPortWrite(NULL, address, value);
-      return;
-    } else if (address < 0x0240) // latch at $0x0230
-    {
-      ctrl_port[address &0x03] = value;
-      DEBUG ("ctrl_port $%2x\n", ctrl_port[address &0x03]);
-      return;
-    } else if (address < 0x0250) // OPL2 at $0240
-    {
-      ioPortWrite(NULL, address, value);
-      return;
-    }
+  if (address >= STECKSCHWEIN_PORT_CPLD && address < STECKSCHWEIN_PORT_CPLD+STECKSCHWEIN_PORT_SIZE){ // latch/cpld regs at $0230
+    ctrl_port[address &0x03] = value;
+    DEBUG ("ctrl_port $%2x\n", ctrl_port[address &0x03]);
+    return;
   }
 #ifdef SSW2_0
+
+  UInt8 reg = (address >> BANK_SIZE) & sizeof(ctrl_port)-1;
+  if((ctrl_port[reg] & 0x80) == 0){  // RAM/ROM)
+
+  }
 
   UInt8 *p = get_address(address, false);
   *p = value;

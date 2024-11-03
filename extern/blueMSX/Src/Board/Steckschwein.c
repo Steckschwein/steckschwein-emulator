@@ -25,13 +25,15 @@
 #include "MOS6502.h"
 #include "MOS6502Debug.h"
 #include "ym3812.h"
+#include "SN76489.h"
 #include "Board.h"
 
 // Hardware
 //static MOS6502* mos6502;
 //extern MOS6502* mos6502;
 
-static YM3812* ym3812;
+static YM3812 *ym3812;
+static SN76489 *sn76489;
 // TODO static DS1306 *ds1306;
 
 UInt8* steckschweinRam;
@@ -42,10 +44,15 @@ static void destroy() {
 
   int i;
 
-  for(i=STECKSCHWEIN_PORT_OPL;i<STECKSCHWEIN_PORT_OPL+0x10;i++){
+  for(i=STECKSCHWEIN_PORT_OPL;i<STECKSCHWEIN_PORT_OPL+STECKSCHWEIN_PORT_SIZE;i++){
     ioPortUnregister(i);
   }
-
+  for(i=STECKSCHWEIN_PORT_SLOT0;i<STECKSCHWEIN_PORT_SLOT0+STECKSCHWEIN_PORT_SIZE;i++){
+    ioPortUnregister(i);
+  }
+  for(i=STECKSCHWEIN_PORT_SLOT1;i<STECKSCHWEIN_PORT_SLOT1+STECKSCHWEIN_PORT_SIZE;i++){
+    ioPortUnregister(i);
+  }
   ym3812Destroy(ym3812);
 
 	// rtcDestroy(ds1306);
@@ -129,7 +136,6 @@ void steckschweinInstructionCb(uint32_t cycles) {
   for (uint8_t i = 0; i < cycles; i++) {
     spi_step();
     joystick_step();
-
   }
 
   trace();
@@ -149,13 +155,51 @@ void steckschweinInstructionCb(uint32_t cycles) {
   }
 }
 
+static bool isPort(UInt16 address, UInt16 port){
+  return (address >= port && address < port+STECKSCHWEIN_PORT_SIZE);
+}
+
+static UInt8 steckschweinReadAddress(MOS6502* mos6502, UInt16 address, bool debugOn){
+
+  if (isPort(address, STECKSCHWEIN_PORT_UART)) {  // UART 0x200
+    return uart_read(address & 0xf);
+  }else if (isPort(address, STECKSCHWEIN_PORT_VIA)){    // VIA 0x210
+    return via1_read(address & 0xf);
+  }else if (isPort(address, STECKSCHWEIN_PORT_VDP)){    // VDP 0x220
+    return ioPortRead(NULL, address);
+  }else if (isPort(address, STECKSCHWEIN_PORT_OPL)){    // OPL2 0x240
+    return ioPortRead(ym3812, address);
+  }else if (isPort(address, STECKSCHWEIN_PORT_SLOT0)){  // slot 0 at 0x250
+    return 0xff;
+  }else{
+    return memorySteckschweinReadAddress(mos6502, address, debugOn);
+  }
+}
+
+static void steckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 value){
+
+  if (isPort(address, STECKSCHWEIN_PORT_UART)) {  // UART 0x200
+    uart_write(address & 0xf, value);
+  }else if (isPort(address, STECKSCHWEIN_PORT_VIA)){    // VIA 0x210
+    via1_write(address & 0xf, value);
+  }else if (isPort(address, STECKSCHWEIN_PORT_VDP)){    // VDP 0x220
+    ioPortWrite(NULL, address, value);
+  }else if (isPort(address, STECKSCHWEIN_PORT_OPL)){    // OPL2 0x240
+    ioPortWrite(ym3812, address, value);
+  }else if (isPort(address, STECKSCHWEIN_PORT_SLOT0)){  // slot 0 at 0x250
+    ioPortWrite(sn76489, address, value);
+  }else{
+    memorySteckschweinWriteAddress(mos6502, address, value);
+  }
+}
+
 int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo){
 
   int success;
 
   int i;
 
-  mos6502 = mos6502create(memorySteckschweinReadAddress, memorySteckschweinWriteAddress, boardTimerCheckTimeout, machine->cpu.freqCPU);
+  mos6502 = mos6502create(steckschweinReadAddress, steckschweinWriteAddress, boardTimerCheckTimeout, machine->cpu.freqCPU);
 
   boardInfo->cpuRef           = mos6502;
 
@@ -197,9 +241,13 @@ int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boa
   mixerReset(boardGetMixer());
 
   ym3812 = ym3812Create(boardGetMixer());
-
-  for(i=STECKSCHWEIN_PORT_OPL;i<STECKSCHWEIN_PORT_OPL+0x10;i++){
+  for(i=STECKSCHWEIN_PORT_OPL;i<STECKSCHWEIN_PORT_OPL+STECKSCHWEIN_PORT_SIZE;i++){
    ioPortRegister(i, ym3812Read, ym3812Write, ym3812);
+  }
+
+  sn76489 = sn76489Create(boardGetMixer());
+  for(i=STECKSCHWEIN_PORT_SLOT0;i<STECKSCHWEIN_PORT_SLOT0+STECKSCHWEIN_PORT_SIZE;i++){
+   ioPortRegister(i, NULL, sn76489WriteData, sn76489);
   }
 
   //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);

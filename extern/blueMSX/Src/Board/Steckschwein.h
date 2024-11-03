@@ -27,8 +27,15 @@
 #include "VDP.h"
 
 // i/o related
-#define STECKSCHWEIN_PORT_VDP 0x220
-#define STECKSCHWEIN_PORT_OPL 0x240
+#define STECKSCHWEIN_PORT_UART  0x200
+#define STECKSCHWEIN_PORT_VIA   0x210
+#define STECKSCHWEIN_PORT_VDP   0x220
+#define STECKSCHWEIN_PORT_CPLD  0x230
+#define STECKSCHWEIN_PORT_OPL   0x240
+#define STECKSCHWEIN_PORT_SLOT0 0x250
+#define STECKSCHWEIN_PORT_SLOT1 0x260
+
+#define STECKSCHWEIN_PORT_SIZE  0x10 // 16 addresses
 
 int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo);
 
