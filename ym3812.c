@@ -1,27 +1,27 @@
 #include "ym3812.h"
-#include "memory.h"
 
 struct YM3812 {
-	Mixer *mixer;
-	Int32 handle;
-	UInt32 rate;
 
-	FM_OPL *opl;
+  Mixer *mixer;
+  Int32 handle;
+  UInt32 rate;
+
+  FM_OPL *opl;
 //    MidiIO* ykIo;
-	BoardTimer *timer1;
-	BoardTimer *timer2;
-	UInt32 timerValue1;
-	UInt32 timerValue2;
-	UInt32 timeout1;
-	UInt32 timeout2;
-	UInt32 timerRunning1;
-	UInt32 timerRunning2;
-	UInt8 address;
-	// Variables used for resampling
-	Int32 off;
-	Int32 s1;
-	Int32 s2;
-	Int32 buffer[AUDIO_MONO_BUFFER_SIZE];
+  BoardTimer *timer1;
+  BoardTimer *timer2;
+  UInt32 timerValue1;
+  UInt32 timerValue2;
+  UInt32 timeout1;
+  UInt32 timeout2;
+  UInt32 timerRunning1;
+  UInt32 timerRunning2;
+  UInt8 address;
+  // Variables used for resampling
+  Int32 off;
+  Int32 s1;
+  Int32 s2;
+  Int32 buffer[AUDIO_MONO_BUFFER_SIZE];
 };
 
 void ym3812TimerStart(void* ptr, int timer, int start)
@@ -127,7 +127,7 @@ void ym3812SetSampleRate(void* ref, UInt32 rate)
 
 struct YM3812* ym3812Create(Mixer* mixer) {
 
-	YM3812* ym3812 = (YM3812*)calloc(1, sizeof(YM3812));
+    YM3812* ym3812 = (YM3812*)calloc(1, sizeof(YM3812));
 
     ym3812->mixer = mixer;
     ym3812->timerRunning1 = 0;
@@ -144,10 +144,7 @@ struct YM3812* ym3812Create(Mixer* mixer) {
     OPLSetOversampling(ym3812->opl, boardGetYM3812Oversampling());
     OPLResetChip(ym3812->opl);
 
-	ym3812->rate = mixerGetSampleRate(mixer);
-
-	ioPortRegister(PORT_ADDR, ym3812Read, ym3812Write, ym3812);
-	ioPortRegister(PORT_DATA, ym3812Read, ym3812Write, ym3812);
+    ym3812->rate = mixerGetSampleRate(mixer);
 
     return ym3812;
 }
@@ -163,7 +160,7 @@ void ym3812Reset(YM3812* ym3812)
 }
 
 UInt8 ym3812Read(YM3812* ym3812, UInt16 ioPort) {
-//	printf("opl2_read %x\n", ioPort);
+//  printf("opl2_read %x\n", ioPort);
     switch (ioPort & 1) {
     case 0:
         return (UInt8)OPLRead(ym3812->opl, 0);
@@ -178,7 +175,7 @@ UInt8 ym3812Read(YM3812* ym3812, UInt16 ioPort) {
 }
 
 void ym3812Write(YM3812* ym3812, UInt16 ioPort, UInt8 value) {
-//	printf("opl2_write %x %x\n", ioPort, value);
+//  printf("opl2_write %x %x\n", ioPort, value);
     switch (ioPort & 1) {
     case 0:
         OPLWrite(ym3812->opl, 0, value);
@@ -194,9 +191,6 @@ void ym3812Destroy(YM3812* ym3812) {
     mixerUnregisterChannel(ym3812->mixer, ym3812->handle);
     boardTimerDestroy(ym3812->timer1);
     boardTimerDestroy(ym3812->timer2);
-
-    ioPortUnregister(PORT_ADDR);
-    ioPortUnregister(PORT_DATA);
 
     OPLDestroy(ym3812->opl);
 

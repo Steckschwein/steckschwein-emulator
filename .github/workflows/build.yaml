@@ -5,18 +5,21 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
 
 permissions:                    # Füge diese Zeile hinzu
-  contents: write                # Stellt sicher, dass die Action Schreibberechtigungen für Inhalte hat
+  contents: write               # Stellt sicher, dass die Action Schreibberechtigungen für Inhalte hat
 
 jobs:
   build:
     strategy:
       matrix:
         os: [ubuntu-24.04, ubuntu-22.04]
-          
+
     runs-on: ${{ matrix.os }}
-        
+
     steps:
     - name: checkout
       uses: actions/checkout@v4
@@ -25,5 +28,5 @@ jobs:
       run: sudo apt install build-essential:native debhelper libsdl2-dev libinih-dev --no-install-recommends
 
     - name: build deb
-      run: make -j 8 clean all 
+      run: make -j 8 clean all
 

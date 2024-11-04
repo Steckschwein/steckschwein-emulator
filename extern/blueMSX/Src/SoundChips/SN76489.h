@@ -1,9 +1,9 @@
 /*****************************************************************************
-** $Source: /cygdrive/d/Private/_SVNROOT/bluemsx/blueMSX/Src/Memory/IoPort.h,v $
+** $Source: /cygdrive/d/Private/_SVNROOT/bluemsx/blueMSX/Src/SoundChips/SN76489.h,v $
 **
-** $Revision: 1.8 $
+** $Revision: 1.5 $
 **
-** $Date: 2008-05-25 14:22:39 $
+** $Date: 2008-03-30 18:38:45 $
 **
 ** More info: http://www.bluemsx.com
 **
@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-**
+** 
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,27 +25,27 @@
 **
 ******************************************************************************
 */
-#ifndef IO_PORT_H
-#define IO_PORT_H
+#ifndef SN76489_H
+#define SN76489_H
 
 #include "MsxTypes.h"
+#include "AudioMixer.h"
 
-typedef UInt8 (*IoPortRead)(void*, UInt16);
-typedef void  (*IoPortWrite)(void*, UInt16, UInt8);
+/* Type definitions */
+typedef struct SN76489 SN76489;
 
-void* ioPortGetRef(int port);
-void ioPortRegister(int port, IoPortRead read, IoPortWrite write, void* ref);
-void ioPortUnregister(int port);
+/* Constructor and destructor */
+SN76489* sn76489Create(Mixer* mixer);
+void sn76489Destroy(SN76489* sn76489);
 
-void ioPortRegisterUnused(int idx, IoPortRead read, IoPortWrite write, void* ref);
-void ioPortUnregisterUnused(int idx);
+/* Reset chip */
+void sn76489Reset(SN76489* sn76489);
 
-void ioPortRegisterSub(int subport, IoPortRead read, IoPortWrite write, void* ref);
-void ioPortUnregisterSub(int subport);
-int ioPortCheckSub(int subport);
+/* Register read/write methods */
+void sn76489WriteData(SN76489* sn76489, UInt16 port, UInt8 data);
 
-void  ioPortReset();
-UInt8 ioPortRead(void* ref, UInt16 port);
-void  ioPortWrite(void* ref, UInt16 port, UInt8 value);
+void sn76489LoadState(SN76489* sn76489);
+void sn76489SaveState(SN76489* sn76489);
 
 #endif
+

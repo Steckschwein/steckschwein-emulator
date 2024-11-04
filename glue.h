@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #define WARN(...) fprintf(stderr, __VA_ARGS__)
 
@@ -16,7 +17,11 @@
 	#define DEBUG(...)
 #endif
 
-extern bool isDebuggerEnabled;
+typedef struct {
+  uint16_t address;
+  char *romPath;
+  //uint8_t *image;
+} RomImage;
 
 void emulatorStart(const char *stateName);
 
@@ -40,11 +45,6 @@ typedef enum {
 	RECORD_GIF_SINGLE,
 	RECORD_GIF_ACTIVE
 } gif_recorder_state_t;
-
-typedef struct {
-  uint16_t address;
-  uint8_t *image;
-} RomImage;
 
 void actionEmuTogglePause();
 void actionEmuStepBack();
