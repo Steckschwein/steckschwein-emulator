@@ -118,16 +118,18 @@ static UInt8 real_read6502(UInt16 address, bool debugOn, UInt8 bank) {
 
 void memorySteckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 value){
 
+
   if (address >= STECKSCHWEIN_PORT_CPLD && address < STECKSCHWEIN_PORT_CPLD+STECKSCHWEIN_PORT_SIZE){ // latch/cpld regs at $0230
-    ctrl_port[address &0x03] = value;
+    ctrl_port[address & 0x3] = value;
     DEBUG ("ctrl_port $%2x\n", ctrl_port[address &0x03]);
     return;
   }
+
 #ifdef SSW2_0
 
-  UInt8 reg = (address >> BANK_SIZE) & sizeof(ctrl_port)-1;
+  UInt8 reg = (address >> BANK_SIZE) & sizeof(ctrl_port)-1;// register upon address
   if((ctrl_port[reg] & 0x80) == 0x80){  // RAM/ROM ?
-    fprintf(stderr, "rom write at %4x %2x, ignore\n", address, value);
+    fprintf(stderr, "rom write at $%4x $%2x - ctrl reg $%04x $%2x, ignore\n", address, value, STECKSCHWEIN_PORT_CPLD + reg, ctrl_port[reg]);
     return;
   }
 
