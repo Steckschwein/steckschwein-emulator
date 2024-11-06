@@ -163,6 +163,13 @@ void write6502(uint16_t address, uint8_t value) {
       return;
     }
   }
+
+  UInt8 reg = (address >> BANK_SIZE) & sizeof(ctrl_port)-1;// register upon address
+  if((ctrl_port[reg] & 0x80) == 0x80){  // RAM/ROM ?
+    fprintf(stderr, "rom write at $%4x $%2x - ctrl reg $%04x $%2x, ignore\n", address, value, 0x230 + reg, ctrl_port[reg]);
+    return;
+  }
+
 #ifdef SSW2_0
 
   uint8_t *p = get_address(address, false);
