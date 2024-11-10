@@ -81,6 +81,9 @@ uint8_t *get_address(uint16_t address, bool debugOn){
   return &p[extaddr & (mem_size-1)];
 }
 
+UInt8 rom_cmd_byte;
+UInt8 rom_cmd;
+
 uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
 
   if (address >= 0x0200) {// I/O
@@ -97,6 +100,7 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
     } else if (address < 0x0240) // latch/cpld regs at $0230
     {
       return memory_get_ctrlport(address);
+
     } else if (address < 0x0250) // OPL2 at $0240
     {
       //return ioPortRead(NULL, address);
@@ -107,15 +111,37 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
   }
 #ifdef SSW2_0
 
-  uint8_t *p = get_address(address, debugOn);
+  UInt8 *p;
+  UInt32 mem_size;
 
-  uint8_t value = *p;
-
-  if(!debugOn){//called from render
-      DEBUG (" read v: %2x\n", value);
+  UInt8 reg = (address >> BANK_SIZE) & sizeof(ctrl_port)-1;
+  if((ctrl_port[reg] & 0x80) == 0){  // RAM/ROM ?
+    p = ram;
+    mem_size = RAM_SIZE;
+  }else{
+    p = rom;
+    mem_size = ROM_SIZE;
   }
 
-  return value;
+  UInt32 extaddr = ((ctrl_port[reg] & ((mem_size >> BANK_SIZE)-1)) << BANK_SIZE) | (address & ((1<<BANK_SIZE)-1));
+
+  if(!debugOn){//skip if called from debugger
+      DEBUG ("address: a: $%4x r: $%2x/$%2x sz: $%x ext: $%x", address, reg, ctrl_port[reg], mem_size, extaddr);
+  }
+
+  if(p == rom && rom_cmd){
+    switch(rom_cmd){
+      case 0x90:
+        UInt32 romAddress = address & 0x3fff | (ctrl_port[reg] & 0x1f) << BANK_SIZE;
+        return romAddress & 0x01 ? 0x86 : 0x37;
+      case 0xf0:
+      default:
+        rom_cmd = 0;
+        rom_cmd_byte = 0;
+    }
+  }
+
+  return p[extaddr & (mem_size-1)];
 
 #else
   DEBUG("read6502 %x %x\n", address, bank);
@@ -167,6 +193,19 @@ void write6502(uint16_t address, uint8_t value) {
   UInt8 reg = (address >> BANK_SIZE) & sizeof(ctrl_port)-1;// register upon address
   if((ctrl_port[reg] & 0x80) == 0x80){  // RAM/ROM ?
     fprintf(stderr, "rom write at $%4x $%2x - ctrl reg $%04x $%2x, ignore\n", address, value, 0x230 + reg, ctrl_port[reg]);
+
+    UInt32 romAddress = address & 0x3fff | (ctrl_port[reg] & 0x1f) << BANK_SIZE;
+    if(romAddress == 0x5555){
+      rom_cmd_byte++;
+      if(rom_cmd_byte == 3){
+        rom_cmd = value;
+      }
+    }else if(romAddress == 0x2aaa){
+      rom_cmd_byte++;
+    }else{
+      rom_cmd_byte = 0;
+      rom_cmd = 0;
+    }
     return;
   }
 
