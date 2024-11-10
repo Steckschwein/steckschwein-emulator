@@ -135,9 +135,9 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
         UInt32 romAddress = address & 0x3fff | (ctrl_port[reg] & 0x1f) << BANK_SIZE;
         return romAddress & 0x01 ? 0x86 : 0x37;
       case 0xf0:
-      default:
         rom_cmd = 0;
-        rom_cmd_byte = 0;
+      default:
+
     }
   }
 
@@ -192,21 +192,23 @@ void write6502(uint16_t address, uint8_t value) {
 
   UInt8 reg = (address >> BANK_SIZE) & sizeof(ctrl_port)-1;// register upon address
   if((ctrl_port[reg] & 0x80) == 0x80){  // RAM/ROM ?
-    fprintf(stderr, "rom write at $%4x $%2x - ctrl reg $%04x $%2x, ignore\n", address, value, 0x230 + reg, ctrl_port[reg]);
 
     UInt32 romAddress = address & 0x3fff | (ctrl_port[reg] & 0x1f) << BANK_SIZE;
-    if(romAddress == 0x5555){
-      rom_cmd_byte++;
-      if(rom_cmd_byte == 3){
-        rom_cmd = value;
+
+    fprintf(stdout, "rom write at $%04x $%02x (rom address: $%06x) - ctrl reg $%04x $%2x, ignore\n", address, value, romAddress, 0x230 + reg, ctrl_port[reg]);
+
+    if(rom_cmd != 0xa0){// not write command, check for cmd sequence
+      if(romAddress == 0x5555){
+        rom_cmd_byte++;
+        if(rom_cmd_byte == 3){
+          rom_cmd = value;
+          rom_cmd_byte = 0; // reset cmd sequence
+        }
+      }else if(romAddress == 0x2aaa){
+        rom_cmd_byte++;
       }
-    }else if(romAddress == 0x2aaa){
-      rom_cmd_byte++;
-    }else{
-      rom_cmd_byte = 0;
-      rom_cmd = 0;
+      return;
     }
-    return;
   }
 
 #ifdef SSW2_0
