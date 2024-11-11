@@ -60,9 +60,6 @@ char *paste_text = NULL;
 char paste_text_data[65536];
 bool pasting_bas = false;
 
-#define RAM_SIZE (64*1024)
-#define ROM_SIZE (32*1024)
-
 uint32_t ram_size = RAM_SIZE; // 64 KB default
 
 extern int errno;
@@ -1485,12 +1482,10 @@ int main(int argc, char **argv) {
   romImage = malloc(sizeof(RomImage));
   romImage->address = rom_override_start;
   romImage->image = malloc(ROM_SIZE);
-  int size = fread(romImage->image, 1, ROM_SIZE, f);
+  memset(romImage->image, 0xff, ROM_SIZE);
+  romImage->size = fread(romImage->image, 1, ROM_SIZE, f);
   fclose(f);
-  if(size != ROM_SIZE){
-    fprintf(stderr, "Invalid rom image %s or could not read file. Expected 0x%04x bytes ROM, but was 0x%04x!\n", rom_path, ROM_SIZE, size);
-    exit(1);
-  }
+  fprintf(stdout, "INFO: Init ROM with size 0x%06x and image %s of size 0x%04x.\n", ROM_SIZE, rom_path, romImage->size);
 
   if (sdcard_path) {
     sdcard_file = fopen(sdcard_path, "r+b");

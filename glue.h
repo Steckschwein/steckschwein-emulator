@@ -43,6 +43,7 @@ typedef enum {
 
 typedef struct {
   uint16_t address;
+  uint16_t size;
   uint8_t *image;
 } RomImage;
 

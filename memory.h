@@ -13,7 +13,7 @@
 #include <MOS6502.h>
 
 #define BANK_SIZE 14 // 14 bit $4000
-#define ROM_SIZE (32*1024)
+#define ROM_SIZE (512*1024)
 #ifdef SSW2_0
 #define RAM_SIZE (512*1024)
 #else
