@@ -1022,42 +1022,46 @@ void emulatorRestartSound() {
   emulatorResume();
 }
 
+void traceInstruction(){
+    printf ("\t\t\t\t[%6d] ", mos6502instructions());
+
+    /* char *label = label_for_address(pc);
+    int label_len = label ? strlen(label) : 0;
+    if (label) {
+      printf ("%s", label);
+    }
+    for (int i = 0; i < 10 - label_len; i++) {
+      printf (" ");
+    }*/
+    printf (" .,%04x ", pc);
+    char disasm_line[15];
+    int len = disasm(pc, disasm_line, sizeof(disasm_line), false, 0);
+    for (int i = 0; i < len; i++) {
+      printf ("%02x ", read6502(pc + i));
+    }
+    for (int i = 0; i < 9 - 3 * len; i++) {
+      printf (" ");
+    }
+    printf ("%s", disasm_line);
+    for (int i = 0; i < 15 - strlen(disasm_line); i++) {
+      printf (" ");
+    }
+
+    printf ("a=$%02x x=$%02x y=$%02x s=$%02x p=", a, x, y, sp);
+    for (int i = 7; i >= 0; i--) {
+      printf ("%c", (status & (1 << i)) ? "czidb.vn"[i] : '-');
+    }
+//      printf (" --- %04x", RAM[0xae]  | RAM[0xaf]  << 8);
+    printf ("\n");
+}
+
 void trace() {
 #ifdef TRACE
   if (pc == trace_address && trace_address != 0) {
     trace_mode = true;
   }
   if (trace_mode) {
-    DEBUG ("\t\t\t\t[%6d] ", mos6502instructions());
-
-    char *label = label_for_address(pc);
-    int label_len = label ? strlen(label) : 0;
-    if (label) {
-      DEBUG ("%s", label);
-    }
-    for (int i = 0; i < 10 - label_len; i++) {
-      DEBUG (" ");
-    }
-    DEBUG (" .,%04x ", pc);
-    char disasm_line[15];
-    int len = disasm(pc, RAM, disasm_line, sizeof(disasm_line), false, 0);
-    for (int i = 0; i < len; i++) {
-      DEBUG ("%02x ", read6502(pc + i));
-    }
-    for (int i = 0; i < 9 - 3 * len; i++) {
-      DEBUG (" ");
-    }
-    DEBUG ("%s", disasm_line);
-    for (int i = 0; i < 15 - strlen(disasm_line); i++) {
-      DEBUG (" ");
-    }
-
-    DEBUG ("a=$%02x x=$%02x y=$%02x s=$%02x p=", a, x, y, sp);
-    for (int i = 7; i >= 0; i--) {
-      DEBUG ("%c", (status & (1 << i)) ? "czidb.vn"[i] : '-');
-    }
-//      DEBUG (" --- %04x", RAM[0xae]  | RAM[0xaf]  << 8);
-    DEBUG ("\n");
+    traceInstruction()
   }
 #endif
 }

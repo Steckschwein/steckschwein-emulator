@@ -142,6 +142,7 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
           toggle_bit_cnt--;
           toggle_bit^=1<<6;
         }else{
+          toggle_bit=1<<5;  // I/O5 indicate end
           rom_cmd = 0;
         }
         return (p[extaddr & (mem_size-1)] & ~1<<6) | toggle_bit;
@@ -221,6 +222,8 @@ void write6502(uint16_t address, uint8_t value) {
       rom[romAddress] = value;
       toggle_bit_cnt = 0x1e; // toggle n times
       return;
+    }else{
+      traceInstruction();
     }
     return;
   }
