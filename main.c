@@ -56,6 +56,8 @@ void emscripten_main_loop(void);
 char *keymaps[] = { "en-us", "en-gb", "de", "nordic", "it", "pl", "hu", "es", "fr", "de-ch", "fr-be", "pt-br", };
 
 bool isDebuggerEnabled = false;
+
+
 char *paste_text = NULL;
 char paste_text_data[65536];
 bool pasting_bas = false;
@@ -67,6 +69,16 @@ extern int errno;
 bool log_video = false;
 bool log_speed = false;
 bool log_keyboard = false;
+
+bool log_ctrl_port_writes = false;
+bool log_uart_writes = false;
+bool log_via_writes = false;
+bool log_vdp_writes = false;
+bool log_opl_writes = false;
+bool log_rom_writes = false;
+
+
+
 bool dump_cpu = false;
 bool dump_ram = true;
 bool dump_bank = true;
@@ -1416,6 +1428,36 @@ int main(int argc, char **argv) {
         argc--;
         argv++;
       }
+    } else if (nextArg(&argc, &argv, "-log_writes")) {
+      if (nextArg(&argc, &argv, "ctrl")) 
+      {
+        log_ctrl_port_writes = true;
+      } 
+      else if (nextArg(&argc, &argv, "uart")) 
+      {
+        log_uart_writes = true;
+      }
+      else if (nextArg(&argc, &argv, "via")) 
+      {
+      log_via_writes = true;
+      }
+      else if (nextArg(&argc, &argv, "vdp")) 
+      {
+      log_vdp_writes = true;
+      }
+      else if (nextArg(&argc, &argv, "opl")) 
+      {
+        log_opl_writes = true;
+      }
+      else if (nextArg(&argc, &argv, "rom")) 
+      {
+        log_rom_writes = true;
+      }
+      else
+      {
+        usage();
+      }
+
     } else if (nextArg(&argc, &argv, "-joy1")) {
       if (nextArg(&argc, &argv, "NES")) {
         joy1_mode = NES;
