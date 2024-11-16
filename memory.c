@@ -193,7 +193,7 @@ void write6502(uint16_t address, uint8_t value) {
     {
       if (log_via_writes)
       {
-        fprintf(stdout, "write $%02x to %s at $%04x \n", value, "VIA", address);
+        log_write(address, value, "VIA");
       }
 
       via1_write(address & 0xf, value);
@@ -204,7 +204,7 @@ void write6502(uint16_t address, uint8_t value) {
     {
       if (log_vdp_writes)
       {
-        fprintf(stdout, "write $%02x to %s at $%04x \n", value, "VDP", address);
+        log_write(address, value, "VDP");
       }
       //ioPortWrite(NULL, address, value);
       writePort(cpu, address, value);
@@ -215,7 +215,7 @@ void write6502(uint16_t address, uint8_t value) {
     {
       if (log_ctrl_port_writes)
       {
-        fprintf(stdout, "write $%02x to %s at $%04x \n", value, "Control port", address);
+        log_write(address, value, "CTRL");
       }
       ctrl_port[address &0x03] = value;
       DEBUG ("ctrl_port $%2x\n", ctrl_port[address &0x03]);
@@ -227,7 +227,7 @@ void write6502(uint16_t address, uint8_t value) {
     {
       if (log_opl_writes)
       {
-        fprintf(stdout, "write $%02x to %s at $%04x \n", value, "OPL2", address);
+        log_write(address, value, "OPL2");
       }
       //ioPortWrite(NULL, address, value);
       writePort(cpu, address, value);
@@ -241,7 +241,7 @@ void write6502(uint16_t address, uint8_t value) {
     UInt32 romAddress = ((ctrl_port[reg] & ((ROM_SIZE >> BANK_SIZE)-1)) << BANK_SIZE) | (address & ((1<<BANK_SIZE)-1));
     if (log_rom_writes)
     {
-      fprintf(stdout, "rom write at $%04x $%02x (rom address: $%06x) - ctrl reg $%04x $%2x, ignore\n", address, value, romAddress, 0x230 + reg, ctrl_port[reg]);
+      fprintf(stdout, "ROM write at $%04x $%02x (rom address: $%06x) - ctrl reg $%04x $%2x, ignore\n", address, value, romAddress, 0x230 + reg, ctrl_port[reg]);
     }
 
     if(romAddress == 0x5555){
@@ -286,6 +286,11 @@ void write6502(uint16_t address, uint8_t value) {
   // Writes go to ram, regardless if ROM active or not
   ram[address] = value;
 #endif
+}
+
+void log_write(uint16_t address, uint8_t value, char * what)
+{
+  fprintf(stdout, "%s write at $%04x $%02x \n", what, address, value);
 }
 
 //
