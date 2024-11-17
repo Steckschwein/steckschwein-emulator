@@ -17,6 +17,13 @@
 #endif
 
 extern bool isDebuggerEnabled;
+extern bool log_ctrl_port_writes;
+extern bool log_uart_writes;
+extern bool log_via_writes;
+extern bool log_vdp_writes;
+extern bool log_opl_writes;
+extern bool log_rom_writes;
+
 
 void emulatorStart(const char *stateName);
 
