@@ -174,27 +174,61 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
 
 void write6502(uint16_t address, uint8_t value) {
 
-  if (address >= 0x0200) { // I/O
+  if (address >= 0x0200 && address < 0x0280) 
+  { // I/O
+
     if (address < 0x210) // UART at $0200
     {
+
+      if (log_uart_writes)
+      {
+        fprintf(stdout, "write $%02x to %s at $%04x \n", value, "UART", address);
+      }
+
       uart_write(address & 0xf, value);
       return;
-    } else if (address < 0x0220) // VIA at $0210
+    }
+    
+    if (address < 0x0220) // VIA at $0210
     {
+      if (log_via_writes)
+      {
+        log_write(address, value, "VIA");
+      }
+
       via1_write(address & 0xf, value);
       return;
-    } else if (address < 0x0230) // VDP at $0220
+    }
+    
+    if (address < 0x0230) // VDP at $0220
     {
+      if (log_vdp_writes)
+      {
+        log_write(address, value, "VDP");
+      }
       //ioPortWrite(NULL, address, value);
       writePort(cpu, address, value);
       return;
-    } else if (address < 0x0240) // latch at $0x0230
+    } 
+    
+    if (address < 0x0240) // latch at $0x0230
     {
+      if (log_ctrl_port_writes)
+      {
+        log_write(address, value, "CTRL");
+      }
       ctrl_port[address &0x03] = value;
       DEBUG ("ctrl_port $%2x\n", ctrl_port[address &0x03]);
+
       return;
-    } else if (address < 0x0250) // OPL2 at $0240
+    } 
+    
+    if (address < 0x0250) // OPL2 at $0240
     {
+      if (log_opl_writes)
+      {
+        log_write(address, value, "OPL2");
+      }
       //ioPortWrite(NULL, address, value);
       writePort(cpu, address, value);
       return;
@@ -205,8 +239,10 @@ void write6502(uint16_t address, uint8_t value) {
   if((ctrl_port[reg] & 0x80) == 0x80){  // RAM/ROM ?
 
     UInt32 romAddress = ((ctrl_port[reg] & ((ROM_SIZE >> BANK_SIZE)-1)) << BANK_SIZE) | (address & ((1<<BANK_SIZE)-1));
-
-    fprintf(stdout, "rom write at $%04x $%02x (rom address: $%06x) - ctrl reg $%04x $%2x, ignore\n", address, value, romAddress, 0x230 + reg, ctrl_port[reg]);
+    if (log_rom_writes)
+    {
+      fprintf(stdout, "ROM write at $%04x $%02x (rom address: $%06x) - ctrl reg $%04x $%2x, ignore\n", address, value, romAddress, 0x230 + reg, ctrl_port[reg]);
+    }
 
     if(romAddress == 0x5555){
       rom_cmd_byte++;
@@ -250,6 +286,11 @@ void write6502(uint16_t address, uint8_t value) {
   // Writes go to ram, regardless if ROM active or not
   ram[address] = value;
 #endif
+}
+
+void log_write(uint16_t address, uint8_t value, char * what)
+{
+  fprintf(stdout, "%s write at $%04x $%02x \n", what, address, value);
 }
 
 //
