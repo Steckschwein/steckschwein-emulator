@@ -110,6 +110,8 @@ static void bit() {
     result = (uint16_t)a & value;
 
     zerocalc(result);
+    // TODO FIXME - distinct status register and addressing modes => http://www.6502.org/tutorials/65c02opcodes.html
+    // opcode == 0x89
     status = (status & 0x3F) | (uint8_t)(value & 0xC0);
 }
 
