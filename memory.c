@@ -143,11 +143,11 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
           toggle_bit_cnt--;
           toggle_bit^=1<<6;
         }else{
-//          toggle_bit|=1<<5;  // I/O5 indicate timeout
+          toggle_bit|=1<<5;  // I/O5 indicate timeout
           rom_cmd = 0;
           rom_cmd_byte = 0;
         }
-        return (p[extaddr & (mem_size-1)] & ~1<<6) | toggle_bit;
+        return (p[extaddr & (mem_size-1)] & ~(1<<5|1<<6)) | toggle_bit;
       case 0xf0:
       default:
         rom_cmd = 0;
@@ -264,6 +264,7 @@ void write6502(uint16_t address, uint8_t value) {
     }
     if(rom_cmd == 0xa0){// write command?
       rom[romAddress] = value;
+      toggle_bit = 0;
       toggle_bit_cnt = 0x1e; // set toggle counter to n times
       // TODO implement different rom write behaviour
       rom_cmd = 0x0;
@@ -271,7 +272,8 @@ void write6502(uint16_t address, uint8_t value) {
     }else if(rom_cmd == 0x80 && value == 0x30 && rom_cmd_byte == 0x02){ // sector erase?
       fprintf(stdout, "sector erase rom address: $%06x\n", romAddress & 0x70000);
       memset(rom + (romAddress & 0x70000), 0xff, 0x10000);
-      toggle_bit_cnt = 0x3e; // set toggle counter to n times
+      toggle_bit = 0;
+      toggle_bit_cnt = 0x5e; // set toggle counter to n times
       return;
     }
 
