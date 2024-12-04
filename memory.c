@@ -85,7 +85,7 @@ uint8_t *get_address(uint16_t address, bool debugOn){
 UInt8 rom_cmd_byte;
 UInt8 rom_cmd;
 UInt8 toggle_bit;
-UInt8 toggle_bit_cnt; // TODO use timeout
+UInt8 toggle_bit_cnt;
 
 uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
 
@@ -137,18 +137,21 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
       case 0x90:
         UInt32 romAddress = address & 0x3fff | (ctrl_port[reg] & 0x1f) << BANK_SIZE;
         return romAddress & 0x01 ? 0x86 : 0x37;
+      case 0x80:
       case 0xa0:
         if(toggle_bit_cnt){
           toggle_bit_cnt--;
           toggle_bit^=1<<6;
         }else{
-          toggle_bit=1<<5;  // I/O5 indicate end
+          toggle_bit|=1<<5;  // I/O5 indicate timeout
           rom_cmd = 0;
+          rom_cmd_byte = 0;
         }
-        return (p[extaddr & (mem_size-1)] & ~1<<6) | toggle_bit;
+        return (p[extaddr & (mem_size-1)] & ~(1<<5|1<<6)) | toggle_bit;
       case 0xf0:
-        rom_cmd = 0;
       default:
+        rom_cmd = 0;
+        rom_cmd_byte = 0;
     }
   }
 
@@ -174,7 +177,7 @@ uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
 
 void write6502(uint16_t address, uint8_t value) {
 
-  if (address >= 0x0200 && address < 0x0280) 
+  if (address >= 0x0200 && address < 0x0280)
   { // I/O
 
     if (address < 0x210) // UART at $0200
@@ -188,7 +191,7 @@ void write6502(uint16_t address, uint8_t value) {
       uart_write(address & 0xf, value);
       return;
     }
-    
+
     if (address < 0x0220) // VIA at $0210
     {
       if (log_via_writes)
@@ -199,7 +202,7 @@ void write6502(uint16_t address, uint8_t value) {
       via1_write(address & 0xf, value);
       return;
     }
-    
+
     if (address < 0x0230) // VDP at $0220
     {
       if (log_vdp_writes)
@@ -209,8 +212,8 @@ void write6502(uint16_t address, uint8_t value) {
       //ioPortWrite(NULL, address, value);
       writePort(cpu, address, value);
       return;
-    } 
-    
+    }
+
     if (address < 0x0240) // latch at $0x0230
     {
       if (log_ctrl_port_writes)
@@ -221,8 +224,8 @@ void write6502(uint16_t address, uint8_t value) {
       DEBUG ("ctrl_port $%2x\n", ctrl_port[address &0x03]);
 
       return;
-    } 
-    
+    }
+
     if (address < 0x0250) // OPL2 at $0240
     {
       if (log_opl_writes)
@@ -247,6 +250,11 @@ void write6502(uint16_t address, uint8_t value) {
     if(romAddress == 0x5555){
       rom_cmd_byte++;
       if(rom_cmd_byte == 3){
+        if(rom_cmd == 0x80 && value == 0x10){ // chip erase command
+          fprintf(stdout, "chip erase!\n");
+          memset(rom, 0xff, ROM_SIZE);
+          return;
+        }
         rom_cmd = value;
         rom_cmd_byte = 0; // reset cmd sequence
         return;
@@ -256,11 +264,19 @@ void write6502(uint16_t address, uint8_t value) {
     }
     if(rom_cmd == 0xa0){// write command?
       rom[romAddress] = value;
-      toggle_bit_cnt = 0x1e; // toggle n times
+      toggle_bit = 0;
+      toggle_bit_cnt = 0x1e; // set toggle counter to n times
+      // TODO implement different rom write behaviour
+      rom_cmd = 0x0;
       return;
-    }else{
-      traceInstruction();
+    }else if(rom_cmd == 0x80 && value == 0x30 && rom_cmd_byte == 0x02){ // sector erase?
+      fprintf(stdout, "sector erase rom address: $%06x\n", romAddress & 0x70000);
+      memset(rom + (romAddress & 0x70000), 0xff, 0x10000);
+      toggle_bit = 0;
+      toggle_bit_cnt = 0x5e; // set toggle counter to n times
+      return;
     }
+
     return;
   }
 

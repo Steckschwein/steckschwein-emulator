@@ -84,7 +84,7 @@ bool dump_ram = true;
 bool dump_bank = true;
 bool dump_vram = false;
 echo_mode_t echo_mode;
-bool save_on_exit = true;
+bool save_on_exit = false;
 gif_recorder_state_t record_gif = RECORD_GIF_DISABLED;
 char *gif_path = NULL;
 uint8_t keymap = 0; // KERNAL's default
@@ -1429,27 +1429,27 @@ int main(int argc, char **argv) {
         argv++;
       }
     } else if (nextArg(&argc, &argv, "-log_writes")) {
-      if (nextArg(&argc, &argv, "ctrl")) 
+      if (nextArg(&argc, &argv, "ctrl"))
       {
         log_ctrl_port_writes = true;
-      } 
-      else if (nextArg(&argc, &argv, "uart")) 
+      }
+      else if (nextArg(&argc, &argv, "uart"))
       {
         log_uart_writes = true;
       }
-      else if (nextArg(&argc, &argv, "via")) 
+      else if (nextArg(&argc, &argv, "via"))
       {
       log_via_writes = true;
       }
-      else if (nextArg(&argc, &argv, "vdp")) 
+      else if (nextArg(&argc, &argv, "vdp"))
       {
       log_vdp_writes = true;
       }
-      else if (nextArg(&argc, &argv, "opl")) 
+      else if (nextArg(&argc, &argv, "opl"))
       {
         log_opl_writes = true;
       }
-      else if (nextArg(&argc, &argv, "rom")) 
+      else if (nextArg(&argc, &argv, "rom"))
       {
         log_rom_writes = true;
       }
