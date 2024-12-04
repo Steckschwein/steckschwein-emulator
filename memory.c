@@ -85,7 +85,7 @@ uint8_t *get_address(uint16_t address, bool debugOn){
 UInt8 rom_cmd_byte;
 UInt8 rom_cmd;
 UInt8 toggle_bit;
-UInt8 toggle_bit_cnt; // TODO use timeout
+UInt8 toggle_bit_cnt;
 
 uint8_t real_read6502(uint16_t address, bool debugOn, uint8_t bank) {
 
