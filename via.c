@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include "via.h"
-#include "memory.h"
 #include "glue.h"
 #include "joystick.h"
 

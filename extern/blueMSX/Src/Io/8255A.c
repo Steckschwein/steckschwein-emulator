@@ -20,23 +20,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef STECKSCHWEIN_H
-#define STECKSCHWEIN_H
+#include "8255A.h"
 
-#include "Board.h"
-#include "VDP.h"
+PIA8255* pia8255Create(){
 
-// i/o related
-#define STECKSCHWEIN_PORT_UART  0x200
-#define STECKSCHWEIN_PORT_VIA   0x210
-#define STECKSCHWEIN_PORT_VDP   0x220
-#define STECKSCHWEIN_PORT_CPLD  0x230
-#define STECKSCHWEIN_PORT_OPL   0x240
-#define STECKSCHWEIN_PORT_SLOT0 0x250
-#define STECKSCHWEIN_PORT_SLOT1 0x260
+  PIA8255 *pia = malloc(sizeof(PIA8255));
+  pia8255Reset(pia);
+  return pia;
+}
 
-#define STECKSCHWEIN_PORT_SIZE  0x10 // 16 addresses
+void pia8255Destroy(PIA8255* pia){
+  free(pia);
+}
 
-int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo);
-
-#endif
+void pia8255Reset(PIA8255* pia){
+    pia->portA = 0;
+    pia->portB = 0;
+    pia->portC = 0;
+}

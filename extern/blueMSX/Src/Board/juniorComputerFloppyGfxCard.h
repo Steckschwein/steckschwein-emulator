@@ -20,23 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef STECKSCHWEIN_H
-#define STECKSCHWEIN_H
+#include "MsxTypes.h"
 
-#include "Board.h"
-#include "VDP.h"
+typedef struct {
 
-// i/o related
-#define STECKSCHWEIN_PORT_UART  0x200
-#define STECKSCHWEIN_PORT_VIA   0x210
-#define STECKSCHWEIN_PORT_VDP   0x220
-#define STECKSCHWEIN_PORT_CPLD  0x230
-#define STECKSCHWEIN_PORT_OPL   0x240
-#define STECKSCHWEIN_PORT_SLOT0 0x250
-#define STECKSCHWEIN_PORT_SLOT1 0x260
+} JuniorComputerFGCard;
 
-#define STECKSCHWEIN_PORT_SIZE  0x10 // 16 addresses
+JuniorComputerFGCard* juniorComputerFGCardCreate();
+void juniorComputerFGCardDestroy(JuniorComputerFGCard* card);
+void juniorComputerFGCardReset(JuniorComputerFGCard* card);
 
-int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo);
-
-#endif
+UInt8 jcFgcRead(JuniorComputerFGCard *card, UInt16 address);
+void jcFgcWrite(JuniorComputerFGCard *card, UInt16 address, UInt8 value);
