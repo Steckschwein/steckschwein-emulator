@@ -13,7 +13,6 @@
 #include <MOS6502.h>
 
 void memorySteckschweinCreate(void* cpu, RomImage* romImage);
-
 UInt8 memorySteckschweinReadAddress(MOS6502* mos6502, UInt16 address, bool debugOn);
 void memorySteckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 value);
 

@@ -52,11 +52,11 @@ uint16_t bytes_available;
 unsigned char *prg_path;
 int prg_override_start;
 
-struct serial_state {
+typedef struct {
 	uint16_t bytes;
 	uint8_t (*read)(uint8_t r);
 	uint8_t (*write)(uint8_t r, uint8_t v);
-};
+} serial_state;
 
 uint8_t xmodem_blocknr;
 uint8_t xmodem_crc16_l = 0;
@@ -72,7 +72,7 @@ void uart_xmodem_write_ack(uint8_t reg, uint8_t val);
 
 uint8_t uart_read_data_bytes(uint8_t r, uint8_t **p_data, uint16_t *c);
 
-static struct serial_state xmodem_protocol[] = { //
+static serial_state xmodem_protocol[] = { //
         { .read = uart_xmodem_ready_to_send, .write = uart_xmodem_write_crc },
     		{ .read = uart_xmodem_read_block_start }, //
     		{ .read = uart_xmodem_read_block_data }, //
@@ -82,11 +82,8 @@ static struct serial_state xmodem_protocol[] = { //
 				{}, //end state
 		};
 
-struct serial_state *protocol =
-  &xmodem_protocol;
-  //&upload_protocol;
-
-unsigned char protocol_ix = 0;
+unsigned char protocol_ix;
+serial_state *protocol = &xmodem_protocol;
 
 #define XMODEM_SOH  0x01		// start block
 #define XMODEM_EOT  0x04		// end of text marker
@@ -228,7 +225,7 @@ void readProgram(int prg_override_start, FILE *prg_file) {
 		uint8_t offs = (prg_override_start == -1 ? 2 : 0);
 		prg_size = filesize - offs; //-offs byte, if start address is given as argument
 		p_prg_size = &prg_size;
-		p_prg_img = p_prg_img_ix = malloc(2 + prg_size); //align memory for prg image, we always allocate 2 byte start address + prg. image size
+		p_prg_img = p_prg_img_ix = calloc(1, 2 + prg_size); //align memory for prg image, we always allocate 2 byte start address + prg. image size
 		if (p_prg_img == NULL) {
 			fprintf(stderr, "out of memory\n");
 			return;
@@ -252,6 +249,11 @@ void readProgram(int prg_override_start, FILE *prg_file) {
 	}
 }
 
+void uart_upload_eot(){
+  reset_upload();
+  protocol_ix = sizeof(xmodem_protocol) / sizeof(serial_state) -2; // send eot
+}
+
 void loadFile(){
 
     if(prg_path == NULL)
@@ -266,7 +268,7 @@ void loadFile(){
 #endif
 		if (rc) {
 			fprintf(stderr, "could not stat file %s, error was: %s\n", prg_path, strerror(errno));
-      reset_upload();
+      uart_upload_eot();
 			return;
 		}
 		if (uart_checkUploadLmf && uart_file_lmf == attrib.st_mtime) {
@@ -276,9 +278,8 @@ void loadFile(){
 		uart_file_lmf = attrib.st_mtime;
 		FILE *prg_file = fopen(prg_path, "rb");
 		if (!prg_file) {
-			fprintf(stderr, "uart upload read start address - cannot open file %s, error %s\n", prg_path,
-					strerror(errno));
-			reset_upload();
+			fprintf(stderr, "uart upload read start address - cannot open file %s, error %s\n", prg_path, strerror(errno));
+      uart_upload_eot();
 			return;
 		}
 		readProgram(prg_override_start, prg_file);

@@ -16,10 +16,15 @@ UInt8 *rom;
 
 void *cpu;
 
-#define BANK_SIZE 14 // 14 bit $4000
+#define BANK_SIZE 14 // 14 bit 16k
 
-#define RAM_SIZE 512*1024
-#define ROM_SIZE 32*1024
+#ifdef SSW2_0
+  #define RAM_SIZE (512*1024)
+  #define ROM_SIZE (512*1024)
+#else
+  #define RAM_SIZE (64*1024)
+  #define ROM_SIZE (32*1024)
+#endif
 
 void memorySteckschweinCreate(void *cpuRef, RomImage* romImage) {
 
@@ -27,7 +32,7 @@ void memorySteckschweinCreate(void *cpuRef, RomImage* romImage) {
 
   ram = malloc(RAM_SIZE);
   rom = malloc(ROM_SIZE);
-
+  memset(rom, 0xff, ROM_SIZE);
   if(romImage && romImage->romPath){
     FILE *f = fopen(romImage->romPath, "rb");
     if (!f) {
@@ -81,19 +86,64 @@ static UInt8 *get_address(UInt16 address, bool debugOn){
   return &p[extaddr & (mem_size-1)];
 }
 
+UInt8 rom_cmd_byte;
+UInt8 rom_cmd;
+UInt8 toggle_bit;
+UInt8 toggle_bit_cnt;
+
 static UInt8 real_read6502(UInt16 address, bool debugOn, UInt8 bank) {
 
-  if (address >= 0x0230 && address < 0x0240){ // latch/cpld regs at $0230
+  if (address >= STECKSCHWEIN_PORT_CPLD && address < STECKSCHWEIN_PORT_CPLD+STECKSCHWEIN_PORT_SIZE){ // latch/cpld regs at $0230
     return memory_get_ctrlport(address) & 0xcf;
   }
+
 #ifdef SSW2_0
 
-  UInt8 *p = get_address(address, debugOn);
+  UInt8 *p;
+  UInt32 mem_size;
 
-  UInt8 value = *p;
+  UInt8 reg = (address >> BANK_SIZE) & sizeof(ctrl_port)-1;
+  if((ctrl_port[reg] & 0x80) == 0){  // RAM/ROM ?
+    p = ram;
+    mem_size = RAM_SIZE;
+  }else{
+    p = rom;
+    mem_size = ROM_SIZE;
+  }
+
+  UInt32 extaddr = ((ctrl_port[reg] & ((mem_size >> BANK_SIZE)-1)) << BANK_SIZE) | (address & ((1<<BANK_SIZE)-1));
+
+  if(!debugOn){//skip if called from debugger
+      DEBUG ("address: a: $%4x r: $%2x/$%2x sz: $%x ext: $%x", address, reg, ctrl_port[reg], mem_size, extaddr);
+  }
+
+  if(p == rom && rom_cmd){
+    switch(rom_cmd){
+      case 0x90:
+        UInt32 romAddress = address & 0x3fff | (ctrl_port[reg] & 0x1f) << BANK_SIZE;
+        return romAddress & 0x01 ? 0x86 : 0x37;
+      case 0x80:
+      case 0xa0:
+        if(toggle_bit_cnt){
+          toggle_bit_cnt--;
+          toggle_bit^=1<<6;
+        }else{
+          toggle_bit|=1<<5;  // I/O5 indicate timeout
+          rom_cmd = 0;
+          rom_cmd_byte = 0;
+        }
+        return (p[extaddr & (mem_size-1)] & ~(1<<5|1<<6)) | toggle_bit;
+      case 0xf0:
+      default:
+        rom_cmd = 0;
+        rom_cmd_byte = 0;
+    }
+  }
+
+  UInt8 value = p[extaddr & (mem_size-1)];
 
   if(!debugOn){//called from render
-      DEBUG (" read v: %2x\n", value);
+    DEBUG (" read v: %2x\n", value);
   }
 
   return value;
@@ -118,7 +168,6 @@ static UInt8 real_read6502(UInt16 address, bool debugOn, UInt8 bank) {
 
 void memorySteckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 value){
 
-
   if (address >= STECKSCHWEIN_PORT_CPLD && address < STECKSCHWEIN_PORT_CPLD+STECKSCHWEIN_PORT_SIZE){ // latch/cpld regs at $0230
     ctrl_port[address & 0x3] = value;
     DEBUG ("ctrl_port $%2x\n", ctrl_port[address &0x03]);
@@ -129,9 +178,46 @@ void memorySteckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 valu
 
   UInt8 reg = (address >> BANK_SIZE) & sizeof(ctrl_port)-1;// register upon address
   if((ctrl_port[reg] & 0x80) == 0x80){  // RAM/ROM ?
-    fprintf(stderr, "rom write at $%4x $%2x - ctrl reg $%04x $%2x, ignore\n", address, value, STECKSCHWEIN_PORT_CPLD + reg, ctrl_port[reg]);
+
+    UInt32 romAddress = ((ctrl_port[reg] & ((ROM_SIZE >> BANK_SIZE)-1)) << BANK_SIZE) | (address & ((1<<BANK_SIZE)-1));
+    if (log_rom_writes)
+    {
+      fprintf(stdout, "ROM write at $%04x $%02x (rom address: $%06x) - ctrl reg $%04x $%2x, ignore\n", address, value, romAddress, STECKSCHWEIN_PORT_CPLD + reg, ctrl_port[reg]);
+    }
+
+    if(romAddress == 0x5555){
+      rom_cmd_byte++;
+      if(rom_cmd_byte == 3){
+        if(rom_cmd == 0x80 && value == 0x10){ // chip erase command
+          fprintf(stdout, "chip erase!\n");
+          memset(rom, 0xff, ROM_SIZE);
+          return;
+        }
+        rom_cmd = value;
+        rom_cmd_byte = 0; // reset cmd sequence
+        return;
+      }
+    }else if(romAddress == 0x2aaa){
+      rom_cmd_byte++;
+    }
+    if(rom_cmd == 0xa0){// write command?
+      rom[romAddress] = value;
+      toggle_bit = 0;
+      toggle_bit_cnt = 0x1e; // set toggle counter to n times
+      // TODO implement different rom write behaviour
+      rom_cmd = 0x0;
+      return;
+    }else if(rom_cmd == 0x80 && value == 0x30 && rom_cmd_byte == 0x02){ // sector erase?
+      fprintf(stdout, "sector erase rom address: $%06x\n", romAddress & 0x70000);
+      memset(rom + (romAddress & 0x70000), 0xff, 0x10000);
+      toggle_bit = 0;
+      toggle_bit_cnt = 0x5e; // set toggle counter to n times
+      return;
+    }
+
     return;
   }
+
 
   UInt8 *p = get_address(address, false);
   *p = value;
@@ -143,6 +229,11 @@ void memorySteckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 valu
   // Writes go to ram, regardless if ROM active or not
   ram[address] = value;
 #endif
+}
+
+void log_write(uint16_t address, uint8_t value, char * what)
+{
+  fprintf(stdout, "%s write at $%04x $%02x \n", what, address, value);
 }
 
 //

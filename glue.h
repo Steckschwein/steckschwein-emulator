@@ -17,13 +17,19 @@
 	#define DEBUG(...)
 #endif
 
+extern bool isDebuggerEnabled;
+extern bool log_ctrl_port_writes;
+extern bool log_uart_writes;
+extern bool log_via_writes;
+extern bool log_vdp_writes;
+extern bool log_opl_writes;
+extern bool log_rom_writes;
+
 typedef struct {
   uint16_t address;
   char *romPath;
   //uint8_t *image;
 } RomImage;
-
-void emulatorStart(const char *stateName);
 
 typedef enum {
 	ECHO_MODE_NONE,
@@ -46,6 +52,7 @@ typedef enum {
 	RECORD_GIF_ACTIVE
 } gif_recorder_state_t;
 
+void emulatorStart(const char *stateName);
 void actionEmuTogglePause();
 void actionEmuStepBack();
 
