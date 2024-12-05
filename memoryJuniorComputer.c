@@ -12,6 +12,8 @@
 
 #define JC_ROM_BANK_MASK (JC_ROM_BANK_SIZE-1) | JC_ROM_BANK_SEL<<14
 
+static UInt8 *ram;
+static UInt8 *rom;
 
 static long getFilesize(FILE *file){
 	long filesize = -1L;

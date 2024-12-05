@@ -1669,6 +1669,11 @@ emulator_loop(void *param) {
   return 0;
 }
 
+void log_write(uint16_t address, uint8_t value, char * what)
+{
+  fprintf(stdout, "%s write at $%04x $%02x \n", what, address, value);
+}
+
 //#ifdef __EMSCRIPTEN__
 //  emscripten_set_main_loop(emscripten_main_loop, 0, 1);
 //#else

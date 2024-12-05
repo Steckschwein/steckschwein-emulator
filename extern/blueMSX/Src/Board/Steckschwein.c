@@ -179,12 +179,28 @@ static UInt8 steckschweinReadAddress(MOS6502* mos6502, UInt16 address, bool debu
 static void steckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 value){
 
   if (isPort(address, STECKSCHWEIN_PORT_UART)) {  // UART 0x200
+    if (log_uart_writes)
+    {
+      fprintf(stdout, "write $%02x to %s at $%04x \n", value, "UART", address);
+    }
     uart_write(address & 0xf, value);
   }else if (isPort(address, STECKSCHWEIN_PORT_VIA)){    // VIA 0x210
+    if (log_via_writes)
+    {
+      log_write(address, value, "VIA");
+    }
     via1_write(address & 0xf, value);
   }else if (isPort(address, STECKSCHWEIN_PORT_VDP)){    // VDP 0x220
+    if (log_vdp_writes)
+    {
+      log_write(address, value, "VDP");
+    }
     ioPortWrite(NULL, address, value);
   }else if (isPort(address, STECKSCHWEIN_PORT_OPL)){    // OPL2 0x240
+    if (log_opl_writes)
+    {
+      log_write(address, value, "OPL2");
+    }
     ioPortWrite(ym3812, address, value);
   }else if (isPort(address, STECKSCHWEIN_PORT_SLOT0)){  // slot 0 at 0x250
     ioPortWrite(sn76489, address, value);
