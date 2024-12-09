@@ -20,23 +20,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef STECKSCHWEIN_H
-#define STECKSCHWEIN_H
+#include "juniorComputerFloppyGfxCard.h"
+#include "8255A.h"
 
-#include "Board.h"
-#include "VDP.h"
+static PIA8255 *pia8255;
 
-// i/o related
-#define STECKSCHWEIN_PORT_UART  0x200
-#define STECKSCHWEIN_PORT_VIA   0x210
-#define STECKSCHWEIN_PORT_VDP   0x220
-#define STECKSCHWEIN_PORT_CPLD  0x230
-#define STECKSCHWEIN_PORT_OPL   0x240
-#define STECKSCHWEIN_PORT_SLOT0 0x250
-#define STECKSCHWEIN_PORT_SLOT1 0x260
+JuniorComputerFGCard* juniorComputerFGCardCreate(){
 
-#define STECKSCHWEIN_PORT_SIZE  0x10 // 16 addresses
+  JuniorComputerFGCard *card = calloc(1, sizeof(JuniorComputerFGCard));
 
-int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boardInfo);
+  pia8255 = pia8255Create();
 
-#endif
+  return card;
+}
+
+
+const UInt8 FGC_MAGIC[] = { 0x99, 0x38, 0x76, 0x5B };  // Magic number of Floppy-/Graphics-Controller
+
+UInt8 jcFgcRead(JuniorComputerFGCard *card, UInt16 address){
+  if((address & 0x3ff) >= 0x3fc){
+    return 0xff;//FGC_MAGIC[address & 0x03];
+  }
+  return ioPortRead(card, address);
+}
+
+void jcFgcWrite(JuniorComputerFGCard *card, UInt16 address, UInt8 value){
+  ioPortWrite(card, address, value);
+}
+
+void juniorComputerFGCardDestroy(JuniorComputerFGCard* card){
+
+}
+
+void juniorComputerFGCardReset(JuniorComputerFGCard* card){
+
+}
