@@ -247,6 +247,19 @@ void write6502(uint16_t address, uint8_t value) {
       fprintf(stdout, "ROM write at $%04x $%02x (rom address: $%06x) - ctrl reg $%04x $%2x, ignore\n", address, value, romAddress, 0x230 + reg, ctrl_port[reg]);
     }
 
+    if(rom_cmd == 0xa0){// write command?
+      rom[romAddress] = value;
+      toggle_bit = 0;
+      toggle_bit_cnt = 0x1e; // set toggle counter to n times
+      // TODO implement different rom write behaviour
+      return;
+    }else if(rom_cmd == 0x80 && value == 0x30 && rom_cmd_byte == 0x02){ // sector erase?
+      fprintf(stdout, "sector erase rom address: $%06x\n", romAddress & 0x70000);
+      memset(rom + (romAddress & 0x70000), 0xff, 0x10000);
+      toggle_bit = 0;
+      toggle_bit_cnt = 0x5e; // set toggle counter to n times
+      return;
+    }
     if(romAddress == 0x5555){
       rom_cmd_byte++;
       if(rom_cmd_byte == 3){
@@ -261,20 +274,6 @@ void write6502(uint16_t address, uint8_t value) {
       }
     }else if(romAddress == 0x2aaa){
       rom_cmd_byte++;
-    }
-    if(rom_cmd == 0xa0){// write command?
-      rom[romAddress] = value;
-      toggle_bit = 0;
-      toggle_bit_cnt = 0x1e; // set toggle counter to n times
-      // TODO implement different rom write behaviour
-      rom_cmd = 0x0;
-      return;
-    }else if(rom_cmd == 0x80 && value == 0x30 && rom_cmd_byte == 0x02){ // sector erase?
-      fprintf(stdout, "sector erase rom address: $%06x\n", romAddress & 0x70000);
-      memset(rom + (romAddress & 0x70000), 0xff, 0x10000);
-      toggle_bit = 0;
-      toggle_bit_cnt = 0x5e; // set toggle counter to n times
-      return;
     }
 
     return;
