@@ -184,6 +184,20 @@ void memorySteckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 valu
       fprintf(stdout, "ROM write at $%04x $%02x (rom address: $%05x) - ctrl reg $%04x $%2x, ignore\n", address, value, romAddress, STECKSCHWEIN_PORT_CPLD + reg, ctrl_port[reg]);
     }
 
+    if(rom_cmd == 0xa0){// write command active?
+      rom[romAddress] = value;
+      toggle_bit = 0;
+      toggle_bit_cnt = 0x1e; // set toggle counter to n times
+      // TODO implement different rom write behaviour
+    }else if(rom_cmd == 0x80 && value == 0x30 && rom_cmd_byte == 0x02){ // last cmd was 0x80 (program) and now (0x20) sector erase?
+      if (log_rom_writes)
+      {
+        fprintf(stdout, "ROM sector erase address: $%06x\n", romAddress & 0x70000);
+      }
+      memset(rom + (romAddress & 0x70000), 0xff, 0x10000);//clear sector upon address
+      toggle_bit = 0;
+      toggle_bit_cnt = 0xfe; // set toggle counter
+    }
     if(romAddress == 0x5555){// TODO FIXME avoids writing to 0x5555/0x2aaa
       rom_cmd_byte++;
       if(rom_cmd_byte == 3){
@@ -203,22 +217,6 @@ void memorySteckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 valu
       }
     }else if(romAddress == 0x2aaa){
       rom_cmd_byte++;
-    }
-
-    if(rom_cmd == 0xa0){// write command active?
-      rom[romAddress] = value;
-      toggle_bit = 0;
-      toggle_bit_cnt = 0x1e; // set toggle counter to n times
-      // TODO implement different rom write behaviour
-      rom_cmd = 0x0;
-    }else if(rom_cmd == 0x80 && value == 0x30 && rom_cmd_byte == 0x02){ // last cmd was 0x80 (program) and now (0x20) sector erase?
-      if (log_rom_writes)
-      {
-        fprintf(stdout, "ROM sector erase address: $%06x\n", romAddress & 0x70000);
-      }
-      memset(rom + (romAddress & 0x70000), 0xff, 0x10000);//clear sector upon address
-      toggle_bit = 0;
-      toggle_bit_cnt = 0x5e; // set toggle counter
     }
     return;// valid rom access, exit
   }
