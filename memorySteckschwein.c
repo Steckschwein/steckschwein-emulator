@@ -17,7 +17,7 @@ static UInt8 *rom;
 static UInt8 rom_cmd_byte;
 static UInt8 rom_cmd;
 static UInt8 toggle_bit;
-static UInt8 toggle_bit_cnt;
+static UInt32 toggle_bit_cnt;
 
 #define BANK_SIZE 14 // 14 bit 16k
 
@@ -196,7 +196,7 @@ void memorySteckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 valu
       }
       memset(rom + (romAddress & 0x70000), 0xff, 0x10000);//clear sector upon address
       toggle_bit = 0;
-      toggle_bit_cnt = 0xfe; // set toggle counter
+      toggle_bit_cnt = 0x80000; // set toggle counter
     }
     if(romAddress == 0x5555){// TODO FIXME avoids writing to 0x5555/0x2aaa
       rom_cmd_byte++;
@@ -208,7 +208,7 @@ void memorySteckschweinWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 valu
           }
           memset(rom, 0xff, ROM_SIZE);
           toggle_bit = 0;
-          toggle_bit_cnt = 0xff; // set toggle counter
+          toggle_bit_cnt = 0x100000; // set toggle counter
           return;
         }
         rom_cmd = value;
