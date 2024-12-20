@@ -84,7 +84,7 @@ ifeq ($(CROSS_COMPILE_WINDOWS),1)
 	LDFLAGS+=-static-libgcc -static-libstdc++ -mconsole -Wl,--subsystem,console
 endif
 
-LIBS     = -linih
+LIBS     =
 TARGET   = steckschwein-emu
 
 SRCS        = $(SOURCE_FILES)
@@ -177,6 +177,9 @@ SOURCE_FILES += spi.c
 SOURCE_FILES += uart.c
 SOURCE_FILES += via.c
 SOURCE_FILES += joystick.c
+
+# inih lib
+SOURCE_FILES += ini.c
 
 # rtc sound
 SOURCE_FILES += ds1306.c
