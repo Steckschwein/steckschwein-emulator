@@ -47,10 +47,10 @@ static int readMachine(Machine* machine, const char* machineName, const char* fi
     else { iniFileClose(configIni); return 0; }
 
  // Read CPU info
-    iniFileGetString(configIni, "CPU", "6502 Frequency", "none", buffer, 10000);
+    iniFileGetString(configIni, "CPU", "type", "6502", buffer, 10000);
+    iniFileGetString(configIni, "CPU", "freq", "", buffer, 10000);
     if (0 == sscanf(buffer, "%dHz", &value)) {
         value = 3579545;
-        //mos6502->frequency = 3579545 * 3; // ~10.7 Mhz
     }
     machine->cpu.freqCPU = value;
 

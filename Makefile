@@ -223,8 +223,8 @@ SOURCE_FILES += IoPort.c
 SOURCE_FILES += IniFileParser.c
 SOURCE_FILES += Steckschwein.c
 SOURCE_FILES += JuniorComputer.c
-SOURCE_FILES += juniorComputerFloppyGfxCard.c
-SOURCE_FILES += juniorComputerIoCard.c
+SOURCE_FILES += jcFloppyGfxCard.c
+SOURCE_FILES += jcIoCard.c
 
 SOURCE_FILES += MOS6502.c
 SOURCE_FILES += MOS6532.c
@@ -257,6 +257,9 @@ install: all
 
 deb:
 	dpkg-buildpackage
+
+version:
+	echo -n "#define VERSION \"`git log -1 --format="%t (%cd)" --date=format-local:%Y/%m/%d\ %H:%M:%S`\"" > version.h
 
 $(OUTPUT_DIR):
 	$(ECHO) Creating directory $@...

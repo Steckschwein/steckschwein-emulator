@@ -29,8 +29,8 @@
 #include "VDP.h"
 
 #include "memoryJuniorComputer.h"
-#include "juniorComputerFloppyGfxCard.h"
-#include "juniorComputerIoCard.h"
+#include "jcFloppyGfxCard.h"
+#include "jcIoCard.h"
 
 UInt8* jcRam;
 static UInt32          jcRamSize;
@@ -140,9 +140,9 @@ static UInt8 juniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool de
   if (address >= JC_PORT_K2 && address < (JC_PORT_K2 + JC_PORT_SIZE)){
     return jcIoCardRead(address);
   }else if (address >= JC_PORT_K3 && address < (JC_PORT_K3 + JC_PORT_SIZE)){
-    return jcFgcRead(jcFgcCard, address);
-  }else if (address >= JC_PORT_K4 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
     return ioPortRead(NULL, address);
+  }else if (address >= JC_PORT_K4 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
+    return jcFgcRead(jcFgcCard, address);
   }else if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
   {
     bool ramSel = (address & 0x80) == 0;
@@ -158,9 +158,9 @@ static void juniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 v
   if (address >= JC_PORT_K2 && address < (JC_PORT_K2 + JC_PORT_SIZE)){
     jcIoCardWrite(address, value);
   }else if (address >= JC_PORT_K3 && address < (JC_PORT_K3 + JC_PORT_SIZE)){
-    jcFgcWrite(jcFgcCard, address, value);
-  }else if (address >= JC_PORT_K4 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
     ioPortWrite(NULL, address, value);
+  }else if (address >= JC_PORT_K4 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
+    jcFgcWrite(jcFgcCard, address, value);
   }else  if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
   {
     bool ramSel = (address & 0x80) == 0;
@@ -228,7 +228,7 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
   speaker = speakerCreate(boardGetMixer());
   //actionVolumeSetIo(0);
 
-  vdpCreate(VDP_JC, machine->video.vdpVersion, vdpSyncMode, machine->video.vramSize / 0x4000, JC_PORT_K3+0x08);
+  vdpCreate(VDP_JC, machine->video.vdpVersion, vdpSyncMode, machine->video.vramSize / 0x4000, JC_PORT_K4+0x08);
 
   //register cpu hook
   hookexternal(jcInstructionCb);
@@ -245,7 +245,7 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
   juniorComputerIoCardReset(jcIoCard);
 
   if (!success) {
-      destroy();
+    destroy();
   }
 
   return success;
