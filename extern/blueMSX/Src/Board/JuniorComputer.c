@@ -141,7 +141,7 @@ static UInt8 juniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool de
   }else if (address >= JC_PORT_K3 && address < (JC_PORT_K3 + JC_PORT_SIZE)){
     return ioPortRead(NULL, address);
   }else if (address >= JC_PORT_K4 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
-    return jcFgcRead(jcFgcCard, address);
+    return jcFloppyGfxCardRead(jcFgcCard, address);
   }else if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
   {
     bool ramSel = (address & 0x80) == 0;
@@ -159,7 +159,7 @@ static void juniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 v
   }else if (address >= JC_PORT_K3 && address < (JC_PORT_K3 + JC_PORT_SIZE)){
     ioPortWrite(NULL, address, value);
   }else if (address >= JC_PORT_K4 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
-    jcFgcWrite(jcFgcCard, address, value);
+    jcFloppyGfxCardWrite(jcFgcCard, address, value);
   }else  if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
   {
     bool ramSel = (address & 0x80) == 0;
