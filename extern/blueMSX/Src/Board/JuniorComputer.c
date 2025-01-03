@@ -141,7 +141,7 @@ static UInt8 juniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool de
   }else if (address >= JC_PORT_K3 && address < (JC_PORT_K3 + JC_PORT_SIZE)){
     return ioPortRead(NULL, address);
   }else if (address >= JC_PORT_K4 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
-    return jcFloppyGfxCardRead(jcFgcCard, address);
+    return jcFgcRead(jcFgcCard, address);
   }else if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
   {
     bool ramSel = (address & 0x80) == 0;
@@ -159,7 +159,7 @@ static void juniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 v
   }else if (address >= JC_PORT_K3 && address < (JC_PORT_K3 + JC_PORT_SIZE)){
     ioPortWrite(NULL, address, value);
   }else if (address >= JC_PORT_K4 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
-    jcFloppyGfxCardWrite(jcFgcCard, address, value);
+    jcFgcWrite(jcFgcCard, address, value);
   }else  if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
   {
     bool ramSel = (address & 0x80) == 0;
@@ -231,6 +231,8 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
 
   speaker = speakerCreate(boardGetMixer());
   //actionVolumeSetIo(0);
+
+  vdpCreate(VDP_JC, machine->video.vdpVersion, vdpSyncMode, machine->video.vramSize / 0x4000, JC_PORT_K4+0x08);
 
   //register cpu hook
   hookexternal(jcInstructionCb);
