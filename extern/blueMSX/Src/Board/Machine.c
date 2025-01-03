@@ -1,10 +1,42 @@
 #include "Machine.h"
 #include "Properties.h"
+#include "TokenExtract.h"
 #include "IniFileParser.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 
 static char machinesDir[PROP_MAXPATH]  = "";
+
+int toint(char* buffer)
+{
+    int i;
+
+    if (buffer == NULL) {
+        return -1;
+    }
+
+    for (i = 0; buffer[i]; i++) {
+        if (!isdigit(buffer[i])) return -1;
+    }
+
+    return atoi(buffer);
+}
+
+
+int tohex(char* buffer)
+{
+    int i;
+
+    if (buffer == NULL) {
+        return -1;
+    }
+
+    if (sscanf(buffer, "%x", &i) != 1) return -1;
+
+    return i;
+}
 
 static int readMachine(Machine* machine, const char* machineName, const char* file)
 {
@@ -47,13 +79,94 @@ static int readMachine(Machine* machine, const char* machineName, const char* fi
     else { iniFileClose(configIni); return 0; }
 
  // Read CPU info
-    iniFileGetString(configIni, "CPU", "6502 Frequency", "none", buffer, 10000);
+    iniFileGetString(configIni, "CPU", "type", "6502", buffer, 10000);
+    iniFileGetString(configIni, "CPU", "freq", "", buffer, 10000);
     if (0 == sscanf(buffer, "%dHz", &value)) {
-        value = 3579545;
-        //mos6502->frequency = 3579545 * 3; // ~10.7 Mhz
+      value = 3579545;
     }
     machine->cpu.freqCPU = value;
 
+   // Read slots
+    iniFileGetSection(configIni, "Slots", buffer, 10000);
+
+    slotBuf = buffer;
+
+    for (i = 0; i < sizeof(machine->slotInfo) / sizeof(SlotInfo) && *slotBuf; i++) {
+        char* arg;
+        char slotInfoName[512];
+    		char *slotFilename;
+
+        machine->slotInfo[i].slot = toint(extractToken(slotBuf, 0));
+        machine->slotInfo[i].address = tohex(extractToken(slotBuf, 1));
+        machine->slotInfo[i].size = tohex(extractToken(slotBuf, 2));
+
+        arg = extractToken(slotBuf, 3);
+        strcpy(machine->slotInfo[i].name, arg ? arg : "");
+
+        arg = extractToken(slotBuf, 4);
+        if(arg){
+          machine->slotInfo[i].romPath = arg;
+        }
+
+        arg = extractToken(slotBuf, 5);
+        strcpy(machine->slotInfo[i].inZipName, arg ? arg : "");
+
+        if (machine->slotInfo[i].slot < 0 || machine->slotInfo[i].slot >= 4) { iniFileClose(configIni); return 0; }
+        if (machine->slotInfo[i].address < 0) { iniFileClose(configIni); return 0; }
+        if (machine->slotInfo[i].size < 0) { iniFileClose(configIni); return 0; }
+
+        slotBuf += strlen(slotBuf) + 1;
+
+        strcpy(slotInfoName, machine->slotInfo[i].name);
+
+        slotFilename = strrchr(slotInfoName, '/');
+        if (slotFilename == NULL)
+            slotFilename = strrchr(slotInfoName, '\\');
+        if (slotFilename == NULL)
+            slotFilename = slotInfoName;
+        else
+            slotFilename++;
+
+        if (!machine->isZipped)
+        {
+            // Convert the relative path into absolute
+
+            if (strcasestr(machine->slotInfo[i].name, "Machines/") == machine->slotInfo[i].name ||
+                strcasestr(machine->slotInfo[i].name, "Machines\\") == machine->slotInfo[i].name)
+            {
+                char expandedPath[1024];
+                sprintf(expandedPath, "%s/%s", machinesDir, machine->slotInfo[i].name + 9);
+                strcpy(machine->slotInfo[i].name, expandedPath);
+            }
+        }
+        else if (*machine->slotInfo[i].name)
+        {
+            char iniFilePath[512];
+			      char *parentDir;
+
+            strcpy(iniFilePath, iniFileGetFilePath(configIni));
+
+            parentDir = strrchr(iniFilePath, '/');
+            if (parentDir == NULL)
+                parentDir = strrchr(iniFilePath, '\\');
+            if (parentDir == NULL)
+                parentDir = iniFilePath;
+            else
+                *(parentDir + 1) = '\0';
+
+            strcpy(machine->slotInfo[i].name, machine->zipFile);
+            sprintf(machine->slotInfo[i].inZipName, "%s%s",
+                    iniFilePath, slotFilename);
+        }
+
+#ifdef __APPLE__
+        // On OS X, replace all backslashes with slashes
+        for (char *ch = machine->slotInfo[i].name; *ch; ch++)
+            if (*ch == '\\') *ch = '/';
+#endif
+    }
+
+    machine->slotInfoCount = i;
 
     iniFileClose(configIni);
 //    machine->slotInfoCount = i;

@@ -26,11 +26,10 @@
 #include "MOS6532.h"
 #include "6551.h"
 #include "Speaker.h"
-#include "VDP.h"
 
 #include "memoryJuniorComputer.h"
-#include "juniorComputerFloppyGfxCard.h"
-#include "juniorComputerIoCard.h"
+#include "jcFloppyGfxCard.h"
+#include "jcIoCard.h"
 
 UInt8* jcRam;
 static UInt32          jcRamSize;
@@ -41,7 +40,7 @@ static Speaker *speaker;
 static MOS6532 *mos6532;
 static MOS6551 *mos6551;
 
-static JuniorComputerFGCard *jcFgcCard;
+static JcFloppyGfxCard *jcFgcCard;
 static JuniorComputerIoCard *jcIoCard;
 
 static void destroy() {
@@ -56,7 +55,7 @@ static void destroy() {
   speakerDestroy(speaker);
   mos6532Destroy(mos6532);
   mos6502Destroy(mos6502);
-  juniorComputerFGCardDestroy(jcFgcCard);
+  jcFloppyGfxCardDestroy(jcFgcCard);
   juniorComputerIoCardDestroy(jcIoCard);
 
   memoryJuniorComputerDestroy();
@@ -79,7 +78,7 @@ static void reset()
       speakerReset(speaker);
     }
     if(jcFgcCard){
-      juniorComputerFGCardReset(jcFgcCard);
+      jcFloppyGfxCardReset(jcFgcCard);
     }
     if(jcIoCard){
       juniorComputerIoCardReset(jcIoCard);
@@ -140,9 +139,9 @@ static UInt8 juniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool de
   if (address >= JC_PORT_K2 && address < (JC_PORT_K2 + JC_PORT_SIZE)){
     return jcIoCardRead(address);
   }else if (address >= JC_PORT_K3 && address < (JC_PORT_K3 + JC_PORT_SIZE)){
-    return jcFgcRead(jcFgcCard, address);
-  }else if (address >= JC_PORT_K4 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
     return ioPortRead(NULL, address);
+  }else if (address >= JC_PORT_K4 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
+    return jcFloppyGfxCardRead(jcFgcCard, address);
   }else if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
   {
     bool ramSel = (address & 0x80) == 0;
@@ -158,9 +157,9 @@ static void juniorComputerWriteAddress(MOS6502* mos6502, UInt16 address, UInt8 v
   if (address >= JC_PORT_K2 && address < (JC_PORT_K2 + JC_PORT_SIZE)){
     jcIoCardWrite(address, value);
   }else if (address >= JC_PORT_K3 && address < (JC_PORT_K3 + JC_PORT_SIZE)){
-    jcFgcWrite(jcFgcCard, address, value);
-  }else if (address >= JC_PORT_K4 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
     ioPortWrite(NULL, address, value);
+  }else if (address >= JC_PORT_K4 && address < (JC_PORT_K4 + JC_PORT_SIZE)){
+    jcFloppyGfxCardWrite(jcFgcCard, address, value);
   }else  if (address >= JC_PORT_6532 && address < (JC_PORT_6532+JC_PORT_6532_SIZE)) // 6532 RIOT
   {
     bool ramSel = (address & 0x80) == 0;
@@ -222,13 +221,16 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
   mos6551 = mos6551Create(mos6502, ACIA_TYPE_COM);
   mos6532 = mos6532Create();
 
-  jcFgcCard = juniorComputerFGCardCreate();
-  jcIoCard = juniorComputerIoCardCreate();
+  for(int i=0;i<machine->slotInfoCount;i++){
+    if (0 == strcmp(machine->slotInfo[i].name, "jcFloppyGfxCard")){
+      jcFgcCard = jcFloppyGfxCardCreate(machine, &machine->slotInfo[i]);
+    }else if (0 == strcmp(machine->slotInfo[i].name, "jcIoCard")){
+      jcIoCard = juniorComputerIoCardCreate(machine->slotInfo[i]);
+    }
+  }
 
   speaker = speakerCreate(boardGetMixer());
   //actionVolumeSetIo(0);
-
-  vdpCreate(VDP_JC, machine->video.vdpVersion, vdpSyncMode, machine->video.vramSize / 0x4000, JC_PORT_K3+0x08);
 
   //register cpu hook
   hookexternal(jcInstructionCb);
@@ -241,11 +243,11 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
   mos6532Reset(mos6532, 0);
   mos6502Reset(mos6502, 0);
   mos6551Reset(mos6551, 0);
-  juniorComputerFGCardReset(jcFgcCard);
+  jcFloppyGfxCardReset(jcFgcCard);
   juniorComputerIoCardReset(jcIoCard);
 
   if (!success) {
-      destroy();
+    destroy();
   }
 
   return success;

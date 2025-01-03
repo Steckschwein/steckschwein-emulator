@@ -26,9 +26,8 @@ extern bool log_opl_writes;
 extern bool log_rom_writes;
 
 typedef struct {
-  uint16_t address;
+  uint16_t address; // target address
   char *romPath;
-  //uint8_t *image;
 } RomImage;
 
 typedef enum {

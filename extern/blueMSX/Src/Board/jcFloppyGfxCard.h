@@ -21,14 +21,15 @@
 // SOFTWARE.
 
 #include "MsxTypes.h"
+#include "Machine.h"
 
 typedef struct {
 
-} JuniorComputerFGCard;
+} JcFloppyGfxCard;
 
-JuniorComputerFGCard* juniorComputerFGCardCreate();
-void juniorComputerFGCardDestroy(JuniorComputerFGCard* card);
-void juniorComputerFGCardReset(JuniorComputerFGCard* card);
+JcFloppyGfxCard* jcFloppyGfxCardCreate(Machine *machine, SlotInfo *slotInfo);
+void jcFloppyGfxCardDestroy(JcFloppyGfxCard *card);
+void jcFloppyGfxCardReset(JcFloppyGfxCard *card);
 
-UInt8 jcFgcRead(JuniorComputerFGCard *card, UInt16 address);
-void jcFgcWrite(JuniorComputerFGCard *card, UInt16 address, UInt8 value);
+UInt8 jcFloppyGfxCardRead(JcFloppyGfxCard *card, UInt16 address);
+void jcFloppyGfxCardWrite(JcFloppyGfxCard *card, UInt16 address, UInt8 value);

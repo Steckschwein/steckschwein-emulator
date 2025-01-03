@@ -20,38 +20,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "juniorComputerFloppyGfxCard.h"
-#include "8255A.h"
+#include "jcIoCard.h"
 
-static PIA8255 *pia8255;
+JuniorComputerIoCard* juniorComputerIoCardCreate(){
 
-JuniorComputerFGCard* juniorComputerFGCardCreate(){
+  JuniorComputerIoCard *card = calloc(1, sizeof(JuniorComputerIoCard));
 
-  JuniorComputerFGCard *card = calloc(1, sizeof(JuniorComputerFGCard));
-
-  pia8255 = pia8255Create();
+  card->sn76489 = sn76489Create(boardGetMixer());
 
   return card;
 }
 
+const UInt8 IO_CARD_MAGIC[] = { 0x65, 0x22, 0x65, 0x22 };   // Magic number of IO-Card
 
-const UInt8 FGC_MAGIC[] = { 0x99, 0x38, 0x76, 0x5B };  // Magic number of Floppy-/Graphics-Controller
-
-UInt8 jcFgcRead(JuniorComputerFGCard *card, UInt16 address){
+UInt8 jcIoCardRead(UInt16 address){
   if((address & 0x3ff) >= 0x3fc){
-    return 0xff;//FGC_MAGIC[address & 0x03];
+    return IO_CARD_MAGIC[address & 0x03];
   }
-  return ioPortRead(card, address);
+  return 0xff;
 }
 
-void jcFgcWrite(JuniorComputerFGCard *card, UInt16 address, UInt8 value){
-  ioPortWrite(card, address, value);
-}
-
-void juniorComputerFGCardDestroy(JuniorComputerFGCard* card){
+void jcIoCardWrite(UInt16 address, UInt8 value){
 
 }
 
-void juniorComputerFGCardReset(JuniorComputerFGCard* card){
+void juniorComputerIoCardDestroy(JuniorComputerIoCard *card){
+  if(card->sn76489)
+    sn76489Destroy(card->sn76489);
+  free(card);
+}
 
+void juniorComputerIoCardReset(JuniorComputerIoCard *card){
+  if (card->sn76489) {
+    sn76489Reset(card->sn76489);
+  }
 }
