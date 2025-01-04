@@ -35,6 +35,7 @@
 */
 #include "Steckschwein.h"
 #include "JuniorComputer.h"
+#include "EmulatorDebugger.h"
 #include "AudioMixer.h"
 #include "MOS6502.h"
 /*
@@ -755,6 +756,8 @@ int boardRun(Machine* machine,
      default:
         success = 0;
     }
+
+    boardSetBreakpoint(breakPoint);//set the break point from program args if any
 
     boardCaptureInit();
 

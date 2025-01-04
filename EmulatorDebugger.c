@@ -103,7 +103,7 @@ int currentPC = -1;											// Current PC value.
 int currentData = 0;							// Current data display address.
 int currentPCBank = -1;
 int currentBank = -1;
-int breakPoint = -1; 											// User Break
+UInt16 breakPoint = -1; 											// User Break
 int stepBreakPoint = -1;								// Single step break.
 
 char cmdLine[64] = "";									// command line buffer
@@ -114,7 +114,7 @@ int currentLineLen = 0;							// command line buffer length
 //		This flag controls
 //
 
-SDL_Surface *dbgSurface; 								// Renderer passed in.
+static SDL_Surface *dbgSurface; 								// Renderer passed in.
 
 // *******************************************************************************************
 //

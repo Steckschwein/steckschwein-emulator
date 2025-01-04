@@ -23,9 +23,11 @@
 #include "jcFloppyGfxCard.h"
 #include "8255A.h"
 #include "VDP.h"
+#include <error.h>
 
 static PIA8255 *pia8255;
 static uint8_t *rom;
+static UInt16 fgcBaseAddress;
 
 #define ROM_SIZE 32*1024
 
@@ -41,8 +43,11 @@ JcFloppyGfxCard* jcFloppyGfxCardCreate(Machine *machine, SlotInfo *slotInfo){
     exit(1);
   }
   rom = malloc(ROM_SIZE);
-  memset(rom, 0xff, ROM_SIZE);
+  memset(rom, 0xff, ROM_SIZE);// init with 0xff
   int size = fread(rom, 1, ROM_SIZE, f);
+  if(size != ROM_SIZE){
+    fprintf(stdout, "ERROR: Load FGC rom image %s\n", strerror(error));
+  }
   fprintf(stdout, "INFO: Load FGC rom image %s\n", slotInfo->romPath);
   fclose(f);
 
@@ -50,31 +55,52 @@ JcFloppyGfxCard* jcFloppyGfxCardCreate(Machine *machine, SlotInfo *slotInfo){
 
   pia8255 = pia8255Create();
 
-  vdpCreate(VDP_JC, machine->video.vdpVersion, VDP_SYNC_AUTO, machine->video.vramSize / 0x4000, slotInfo->address+0x08);
+  fgcBaseAddress = slotInfo->address;
+
+  vdpCreate(VDP_JC, machine->video.vdpVersion, VDP_SYNC_AUTO, machine->video.vramSize / 0x4000, fgcBaseAddress+0x08); // VDP base address
 
   return card;
 }
 
-
-const UInt8 FGC_MAGIC[] = { 0x99, 0x38, 0x76, 0x5B };  // Magic number of Floppy-/Graphics-Controller
-
 UInt8 jcFloppyGfxCardRead(JcFloppyGfxCard *card, UInt16 address){
-  if((address & 0x3ff) >= 0x3fc){
-    return rom[address & 0x3ff];
+
+  if(address >= fgcBaseAddress+0x08 && address < fgcBaseAddress+0x0c){
+    return ioPortRead(card, address);
+  }else if(address == fgcBaseAddress+0x0c){
+    return pia8255->portA;
+  }else if(address == fgcBaseAddress+0x0d){
+    return pia8255->portB;
+  } if(address == fgcBaseAddress+0x0e){
+    return pia8255->portC;
+  } if(address == fgcBaseAddress+0x0f){
+    return pia8255->ctrl;
   }
-  return ioPortRead(card, address);
+
+  return rom[((pia8255->portC & 0x0f) << 10 | (address & 0x3ff))];
 }
 
 void jcFloppyGfxCardWrite(JcFloppyGfxCard *card, UInt16 address, UInt8 value){
-  ioPortWrite(card, address, value);
-}
 
-void jcFloppyGfxCardDestroy(JcFloppyGfxCard* card){
-  if(rom){
-    free(rom);
+  if(address >= fgcBaseAddress+0x08 && address < fgcBaseAddress+0x0c){
+    ioPortWrite(card, address, value);
+  }else if(address == fgcBaseAddress+0x0c){
+    pia8255->portA = value;
+  }else if(address == fgcBaseAddress+0x0d){
+    pia8255->portB = value;
+  } if(address == fgcBaseAddress+0x0e){
+    pia8255->portC = value;
+  } if(address == fgcBaseAddress+0x0f){
+    pia8255->ctrl = value;
   }
 }
 
-void jcFloppyGfxCardReset(JcFloppyGfxCard* card){
+void jcFloppyGfxCardDestroy(JcFloppyGfxCard* card){
+  free(rom);
+  free(pia8255);
+}
 
+void jcFloppyGfxCardReset(JcFloppyGfxCard* card){
+  pia8255Reset(pia8255);
+  pia8255->portB = 0x3f; //PB0-5 pull up
+  pia8255->portC = 0x0f; //PC0-3 pull up
 }

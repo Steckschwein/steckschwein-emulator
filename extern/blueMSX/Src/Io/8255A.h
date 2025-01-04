@@ -28,6 +28,8 @@ typedef struct{
     UInt8 portB;
     UInt8 portC;
 
+    UInt8 ctrl;
+
 } PIA8255;
 
 PIA8255* pia8255Create();

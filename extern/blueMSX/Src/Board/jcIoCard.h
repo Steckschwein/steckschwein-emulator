@@ -30,7 +30,7 @@ typedef struct {
 
 } JuniorComputerIoCard;
 
-JuniorComputerIoCard* juniorComputerIoCardCreate();
+JuniorComputerIoCard* juniorComputerIoCardCreate(Machine *machine, SlotInfo *slotInfo);
 void juniorComputerIoCardDestroy(JuniorComputerIoCard *card);
 void juniorComputerIoCardReset(JuniorComputerIoCard *card);
 

@@ -51,37 +51,6 @@ MOS6502* mos6502create(
   return mos6502;
 }
 
-/*
-UInt8 readAddress(MOS6502* mos6502, UInt16 port) {
-    UInt8 value;
-
-//    delayPreIo(mos6502);
-
-    delayVdpIO(mos6502, port);
-
-    value = ioPortRead(mos6502, port);
-    // delayPostIo(mos6502);
-
-    return value;
-}
-
-void writeAddress(MOS6502* mos6502, UInt16 port, UInt8 value) {
-//    delayPreIo(mos6502);
-
-    delayVdpIO(mos6502, port);
-    //mos6502->writeIoPort(mos6502->ref, port, value);
-    ioPortWrite(mos6502, port, value);
-//    delayPostIo(mos6502);
-
-#ifdef ENABLE_WATCHPOINTS
-    if (mos6502->watchpointIoCb != NULL) {
-        mos6502->watchpointIoCb(mos6502->ref, port, value);
-    }
-#endif
-
-}
-*/
-
 void mos6502Reset(MOS6502 *mos6502, UInt32 cpuTime) {
   reset6502();
 }

@@ -309,6 +309,9 @@ void usage_keymap() {
   exit(1);
 }
 
+
+void archEmulationStartNotification(){}
+
 void archUpdateWindow() {
   SDL_Event event;
 
@@ -887,7 +890,7 @@ void emulatorStart(const char *stateName) {
 
   dbgEnable();
 
-//  archEmulationStartNotification();
+  archEmulationStartNotification();
 
   emulatorResume();
 

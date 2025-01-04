@@ -225,7 +225,7 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
     if (0 == strcmp(machine->slotInfo[i].name, "jcFloppyGfxCard")){
       jcFgcCard = jcFloppyGfxCardCreate(machine, &machine->slotInfo[i]);
     }else if (0 == strcmp(machine->slotInfo[i].name, "jcIoCard")){
-      jcIoCard = juniorComputerIoCardCreate(machine->slotInfo[i]);
+      jcIoCard = juniorComputerIoCardCreate(machine, &machine->slotInfo[i]);
     }
   }
 

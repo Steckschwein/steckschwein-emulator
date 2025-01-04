@@ -22,7 +22,7 @@
 
 #include "jcIoCard.h"
 
-JuniorComputerIoCard* juniorComputerIoCardCreate(){
+JuniorComputerIoCard* juniorComputerIoCardCreate(Machine *machine, SlotInfo *slotInfo){
 
   JuniorComputerIoCard *card = calloc(1, sizeof(JuniorComputerIoCard));
 
