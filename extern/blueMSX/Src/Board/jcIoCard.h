@@ -30,11 +30,11 @@ typedef struct {
   SN76489 *sn76489;
   DS130x *ds1307;
 
-} JuniorComputerIoCard;
+} JcIoCard;
 
-JuniorComputerIoCard* juniorComputerIoCardCreate(Machine *machine, SlotInfo *slotInfo);
-void juniorComputerIoCardDestroy(JuniorComputerIoCard *card);
-void juniorComputerIoCardReset(JuniorComputerIoCard *card);
+JcIoCard* jcIoCardCreate(Machine *machine, SlotInfo *slotInfo);
+void jcIoCardDestroy(JcIoCard *card);
+void jcIoCardReset(JcIoCard *card);
 
-UInt8 jcIoCardRead(UInt16 address);
-void jcIoCardWrite(UInt16 address, UInt8 value);
+UInt8 jcIoCardRead(JcIoCard *card, UInt16 address);
+void jcIoCardWrite(JcIoCard *card, UInt16 address, UInt8 value);

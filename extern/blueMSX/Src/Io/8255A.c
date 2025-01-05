@@ -37,4 +37,5 @@ void pia8255Reset(PIA8255* pia){
     pia->portA = 0;
     pia->portB = 0;
     pia->portC = 0;
+    pia->ctrl = 0xff;//all input
 }

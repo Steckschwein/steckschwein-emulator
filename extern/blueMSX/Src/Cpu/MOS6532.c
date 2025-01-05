@@ -25,8 +25,7 @@ UInt8 mos6532Read(MOS6532* mos6532, bool ramSel, UInt16 address, bool debugOn) {
 
   UInt8 addr = address & 0x7f;
 
-  if (ramSel) {  // BIT
-    // Writing to RAM
+  if (ramSel) { // RS Pin high
     return mos6532->ram[addr & (MOS6532_RAM_SIZE-1)];
   } else if ((addr & 0x04) == 0) { // register access
     UInt8 reg = addr & 0x3;
@@ -61,9 +60,8 @@ void mos6532Write(MOS6532* mos6532, bool ramSel, UInt16 address, UInt8 value) {
 
     UInt8 addr = address & 0x7f;
 
-    if (ramSel) {  // BIT
-        // Writing to RAM
-        mos6532->ram[addr & (MOS6532_RAM_SIZE-1)] = value;
+    if (ramSel) {  // RS Pin high
+      mos6532->ram[addr & (MOS6532_RAM_SIZE-1)] = value;
     } else if ((addr & 0x14) == 0x14) { // timer access
       mos6532->timerDiv = TIMER_CNT[addr & 0x03];
       mos6532->cnt = mos6532->timerDiv;

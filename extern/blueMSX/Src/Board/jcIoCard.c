@@ -22,36 +22,40 @@
 
 #include "jcIoCard.h"
 
-JuniorComputerIoCard* juniorComputerIoCardCreate(Machine *machine, SlotInfo *slotInfo){
+static UInt16 ioMask;
 
-  JuniorComputerIoCard *card = calloc(1, sizeof(JuniorComputerIoCard));
+JcIoCard* jcIoCardCreate(Machine *machine, SlotInfo *slotInfo){
+
+  JcIoCard *card = calloc(1, sizeof(JcIoCard));
 
   card->sn76489 = sn76489Create(boardGetMixer());
   card->ds1307 = ds130xCreate();
+
+  ioMask = slotInfo->size-1;
 
   return card;
 }
 
 const UInt8 IO_CARD_MAGIC[] = { 0x65, 0x22, 0x65, 0x22 };   // Magic number of IO-Card
 
-UInt8 jcIoCardRead(UInt16 address){
-  if((address & 0x3ff) >= 0x3fc){
+UInt8 jcIoCardRead(JcIoCard *card, UInt16 address){
+  if((address & ioMask) >= 0x3fc){
     return IO_CARD_MAGIC[address & 0x03];
   }
   return 0xff;
 }
 
-void jcIoCardWrite(UInt16 address, UInt8 value){
+void jcIoCardWrite(JcIoCard *card, UInt16 address, UInt8 value){
 
 }
 
-void juniorComputerIoCardDestroy(JuniorComputerIoCard *card){
+void jcIoCardDestroy(JcIoCard *card){
   if(card->sn76489)
     sn76489Destroy(card->sn76489);
   free(card);
 }
 
-void juniorComputerIoCardReset(JuniorComputerIoCard *card){
+void jcIoCardReset(JcIoCard *card){
   if (card->sn76489) {
     sn76489Reset(card->sn76489);
   }
