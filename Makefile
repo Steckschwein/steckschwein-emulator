@@ -185,8 +185,10 @@ SOURCE_FILES += uart.c
 SOURCE_FILES += via.c
 SOURCE_FILES += joystick.c
 
-# rtc sound
+# rtc
+SOURCE_FILES += ds130x.c
 SOURCE_FILES += ds1306.c
+SOURCE_FILES += ds1307.c
 
 # cpu 65x02
 SOURCE_FILES += fake6502.c

@@ -27,6 +27,7 @@ JuniorComputerIoCard* juniorComputerIoCardCreate(Machine *machine, SlotInfo *slo
   JuniorComputerIoCard *card = calloc(1, sizeof(JuniorComputerIoCard));
 
   card->sn76489 = sn76489Create(boardGetMixer());
+  card->ds1307 = ds130xCreate();
 
   return card;
 }

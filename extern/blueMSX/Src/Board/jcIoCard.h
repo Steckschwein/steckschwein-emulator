@@ -23,10 +23,12 @@
 #include "MsxTypes.h"
 #include "SN76489.h"
 #include "Board.h"
+#include "ds1307.h"
 
 typedef struct {
 
   SN76489 *sn76489;
+  DS130x *ds1307;
 
 } JuniorComputerIoCard;
 

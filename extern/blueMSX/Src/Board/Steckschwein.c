@@ -25,6 +25,7 @@
 #include "MOS6502.h"
 #include "MOS6502Debug.h"
 #include "ym3812.h"
+#include "ds1306.h"
 #include "SN76489.h"
 #include "Board.h"
 
@@ -34,7 +35,7 @@
 
 static YM3812 *ym3812;
 static SN76489 *sn76489;
-// TODO static DS1306 *ds1306;
+static DS130x *ds1306;
 
 UInt8* steckschweinRam;
 static UInt32          steckschweinRamSize;
@@ -55,14 +56,14 @@ static void destroy() {
   }
   ym3812Destroy(ym3812);
 
-	// rtcDestroy(ds1306);
+	//rtcDestroy(ds1306);
+  ds1306Destroy(ds1306);
 
    mos6502DebugDestroy();
   /*
     ioPortUnregister(0x2e);
     deviceManagerDestroy();
     */
-  ds1306Destroy();
 
   mos6502Destroy(mos6502);
 }
@@ -72,7 +73,7 @@ static void reset()
     UInt32 systemTime = boardSystemTime();
 
 //    slotManagerReset();
-  ds1306Reset();
+  ds1306Reset(ds1306);
 
   if (mos6502 != NULL) {
     mos6502Reset(mos6502, systemTime);
@@ -129,6 +130,15 @@ void hookKernelPrgLoad(FILE *prg_file, int prg_override_start) {
     }
   }
 }
+
+
+void spi_step() {
+
+	uint8_t port = via1_pb_get_out();	//PB
+
+	dispatch_device(ds1306, port);
+}
+
 
 //called after each 6502 instruction
 void steckschweinInstructionCb(uint32_t cycles) {
@@ -265,6 +275,8 @@ int steckSchweinCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* boa
   for(i=STECKSCHWEIN_PORT_SLOT0;i<STECKSCHWEIN_PORT_SLOT0+STECKSCHWEIN_PORT_SIZE;i++){
    ioPortRegister(i, NULL, sn76489WriteData, sn76489);
   }
+
+  ds1306 = ds130xCreate();
 
   //msxPPICreate(machine->board.type == BOARD_MSX_FORTE_II);
   //slotManagerCreate();

@@ -21,15 +21,26 @@
 // SOFTWARE.
 
 #include "jcFloppyGfxCard.h"
+#include "Machine.h"
 #include "8255A.h"
 #include "VDP.h"
 #include <error.h>
 
 static PIA8255 *pia8255;
-static uint8_t *rom;
+static UInt8 *rom;
 static UInt16 fgcBaseAddress;
+static UInt16 ioMask;
 
 #define ROM_SIZE 32*1024
+
+#define DRIVE_TYPE_FLOPPY 0
+#define KBD_LANG_DE 1<<4
+
+#define DIP_SWITCH_A DRIVE_TYPE_FLOPPY | KBD_LANG_DE
+#define DIP_SWITCH_B 0
+
+#define CONTROL_IO_PORTA 1<<4
+#define CONTROL_IO_PORTB 1<<1
 
 JcFloppyGfxCard* jcFloppyGfxCardCreate(Machine *machine, SlotInfo *slotInfo){
 
@@ -56,6 +67,7 @@ JcFloppyGfxCard* jcFloppyGfxCardCreate(Machine *machine, SlotInfo *slotInfo){
   pia8255 = pia8255Create();
 
   fgcBaseAddress = slotInfo->address;
+  ioMask = slotInfo->size-1;
 
   vdpCreate(VDP_JC, machine->video.vdpVersion, VDP_SYNC_AUTO, machine->video.vramSize / 0x4000, fgcBaseAddress+0x08); // VDP base address
 
@@ -67,16 +79,16 @@ UInt8 jcFloppyGfxCardRead(JcFloppyGfxCard *card, UInt16 address){
   if(address >= fgcBaseAddress+0x08 && address < fgcBaseAddress+0x0c){
     return ioPortRead(card, address);
   }else if(address == fgcBaseAddress+0x0c){
-    return pia8255->portA;
+    return (pia8255->ctrl & CONTROL_IO_PORTA) ? DIP_SWITCH_A : pia8255->portA;
   }else if(address == fgcBaseAddress+0x0d){
-    return pia8255->portB;
+    return (pia8255->ctrl & CONTROL_IO_PORTB) ? DIP_SWITCH_B : pia8255->portB;
   } if(address == fgcBaseAddress+0x0e){
     return pia8255->portC;
   } if(address == fgcBaseAddress+0x0f){
     return pia8255->ctrl;
   }
 
-  return rom[((pia8255->portC & 0x0f) << 10 | (address & 0x3ff))];
+  return rom[((pia8255->portC & 0x0f) << 10 | (address & ioMask))];
 }
 
 void jcFloppyGfxCardWrite(JcFloppyGfxCard *card, UInt16 address, UInt8 value){
@@ -101,6 +113,7 @@ void jcFloppyGfxCardDestroy(JcFloppyGfxCard* card){
 
 void jcFloppyGfxCardReset(JcFloppyGfxCard* card){
   pia8255Reset(pia8255);
+  pia8255->portA = 0x7f; //PA0-6 dip switches
   pia8255->portB = 0x3f; //PB0-5 pull up
   pia8255->portC = 0x0f; //PC0-3 pull up
 }

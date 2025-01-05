@@ -1,13 +1,18 @@
-#include "ds1306.h"
+#include <inttypes.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <errno.h>
+#include "ds1307.h"
 
-static bool chip_select = false;
-
-
-void ds1306Reset(DS130x *device) {
+void ds1307Reset(DS130x *device) {
   ds130xReset(device);
 }
 
-void ds1306Destroy(DS130x *device) {
+void ds1307Destroy(DS130x *device) {
   ds130xDestroy(device);
 }
 
@@ -15,32 +20,18 @@ static UInt8 toBCD(UInt8 v) {
 	return (v / 10) << 4 | (v % 10);
 }
 
+void ds1307Write(DS130x *device, UInt8 address, UInt8 value) {
 
-void spi_rtc_deselect() { // chip select /CE high
-	chip_select = false;
-#ifdef TRACE_RTC
-	printf("rtc deselect()\n");
-#endif
 }
 
-void spi_rtc_select(DS130x *device) {
-	time_t ts = time(NULL);
-	device->timestamp = localtime(&ts); //update timestamp with systime
-#ifdef TRACE_RTC
-	printf("rtc select() %s\n", asctime(timestamp));
-#endif
-	chip_select = false;
-}
-
-UInt8 spi_rtc_handle(DS130x *device, UInt8 inbyte) {
+UInt8 ds1307Read(DS130x *device, UInt8 inbyte) {
 
 	UInt8 outbyte = 0xff;
 
 	static UInt8 addr = 0;
 
-	if (!chip_select) {
+	if (!1) {
 		addr = inbyte;
-		chip_select = true;
 	} else {
 #ifdef TRACE_RTC
     printf("RTC access %x %x\n", (addr & 0x7f) - 0x20, inbyte);
