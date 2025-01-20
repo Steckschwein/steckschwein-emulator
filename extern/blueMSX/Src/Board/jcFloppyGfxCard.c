@@ -45,21 +45,21 @@ static UInt16 ioMask;
 JcFloppyGfxCard* jcFloppyGfxCardCreate(Machine *machine, SlotInfo *slotInfo){
 
   if(!slotInfo->romPath){
-    fprintf(stderr, "ERROR: Missing FGC rom image!\n");
+    fprintf(stderr, "ERROR: Missing FGC ROM image!\n");
     return NULL;
   }
   FILE* f = fopen(slotInfo->romPath, "rb");
   if (!f) {
-    fprintf(stderr, "ERROR: Cannot open program image %s!\n", slotInfo->romPath);
+    fprintf(stderr, "ERROR: Cannot open FGC ROM image %s!\n", slotInfo->romPath);
     exit(1);
   }
   rom = malloc(ROM_SIZE);
   memset(rom, 0xff, ROM_SIZE);// init with 0xff
   int size = fread(rom, 1, ROM_SIZE, f);
   if(size != ROM_SIZE){
-    fprintf(stdout, "ERROR: Load FGC rom image %s\n", strerror(error));
+    fprintf(stdout, "ERROR: Load FGC ROM image %s\n", strerror(error));
   }
-  fprintf(stdout, "INFO: Load FGC rom image %s\n", slotInfo->romPath);
+  fprintf(stdout, "INFO: Load FGC ROM image %s\n", slotInfo->romPath);
   fclose(f);
 
   JcFloppyGfxCard *card = calloc(1, sizeof(JcFloppyGfxCard));

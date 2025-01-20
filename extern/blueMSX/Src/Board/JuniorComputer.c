@@ -116,7 +116,6 @@ static UInt32 getTimeTrace(int offset) {
 void jcInstructionCb(uint32_t cycles) {
 
   for (uint8_t i = 0; i < cycles; i++) {
-    spi_step();
 //    joystick_step();
     mos6532Execute(mos6532);
     mos6551Execute(mos6551, 1);
@@ -147,7 +146,7 @@ static UInt8 juniorComputerReadAddress(MOS6502* mos6502, UInt16 address, bool de
     bool ramSel = (address & 0x80) == 0;
     return mos6532Read(mos6532, ramSel, address, debugOn);
   }else if(address >= JC_PORT_6551 && address < (JC_PORT_6551+JC_PORT_6551_SIZE)){ // 6551 ACIA){
-    return mos6551Read(mos6551, address);
+    return mos6551Read(mos6551, address, debugOn);
   }
   return memoryJuniorComputerReadAddress(mos6502, address, debugOn);
 }
@@ -219,7 +218,7 @@ int juniorComputerCreate(Machine* machine, VdpSyncMode vdpSyncMode, BoardInfo* b
   // $> socat -d -d pty,link=/tmp/ttyJC0,raw,echo=0 pty,link=/tmp/ttyJC1,raw,echo=0
   // $> screen /tmp/ttyJC0 19200
   mos6551 = mos6551Create(mos6502, ACIA_TYPE_COM);
-  mos6532 = mos6532Create();
+  mos6532 = mos6532Create(0x00, 0x01);
 
   for(int i=0;i<machine->slotInfoCount;i++){
     if (0 == strcmp(machine->slotInfo[i].name, "jcFloppyGfxCard")){

@@ -250,7 +250,7 @@ void mos6551Write( MOS6551 *acia, UInt16 addr, UInt8 data )
   }
 }
 
-UInt8 mos6551Read( MOS6551 *acia, UInt16 addr )
+UInt8 mos6551Read(MOS6551 *acia, UInt16 addr, bool dbg)
 {
   UInt8 data = acia->regs[addr&3];
 
@@ -260,7 +260,9 @@ UInt8 mos6551Read( MOS6551 *acia, UInt16 addr )
 #if DEBUG_ACIA
       dbg_printf( "ACIA read: (%04X) from %s (=%02X)", acia->cpu->regs.PC-1, readreg_names[addr&3], data );
 #endif
-      acia->get_byte( &data );
+      if(acia->get_byte){
+        acia->get_byte( &data );
+      }
       data &= acia->bitmask;
       acia->regs[ACIA_RXDATA] = data;
       acia->regs[ACIA_STATUS] &= ~(ASTF_PARITYERR|ASTF_FRAMEERR|ASTF_OVRUNERR);

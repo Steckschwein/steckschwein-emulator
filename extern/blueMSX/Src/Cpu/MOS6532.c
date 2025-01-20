@@ -13,12 +13,15 @@
 static uint16_t TIMER_CNT[] = {1, 8, 64, 1024};
 
 // Initialize the MOS 6532
-MOS6532* mos6532Create() {
+MOS6532* mos6532Create(UInt8 ipr_a_input, UInt8 ipr_b_input){
 
   MOS6532* mos6532 = (MOS6532*)calloc(1, sizeof(MOS6532));
+  mos6532->ipr_a_input = ipr_a_input;
+  mos6532->ipr_b_input = ipr_b_input;
 
   return mos6532;
 }
+
 
 // Emulate a read operation
 UInt8 mos6532Read(MOS6532* mos6532, bool ramSel, UInt16 address, bool debugOn) {
@@ -30,11 +33,11 @@ UInt8 mos6532Read(MOS6532* mos6532, bool ramSel, UInt16 address, bool debugOn) {
   } else if ((addr & 0x04) == 0) { // register access
     UInt8 reg = addr & 0x3;
     if (reg == 0){ // A
-      return mos6532->ipr_a;
+      return (mos6532->ipr_a & mos6532->ddr_a) | (mos6532->ipr_a_input & (mos6532->ddr_a ^ 0xff));
     } else if (reg == 1){ // A DDR
       return mos6532->ddr_a;
     } else if (reg == 2){ // B
-      return mos6532->ipr_b;
+      return (mos6532->ipr_b & mos6532->ddr_b) | (mos6532->ipr_b_input & (mos6532->ddr_b ^ 0xff));
     } else if (reg == 3){ // B DDR
      return mos6532->ddr_b;
     }
@@ -52,7 +55,7 @@ UInt8 mos6532Read(MOS6532* mos6532, bool ramSel, UInt16 address, bool debugOn) {
     return v;
   }
   // Invalid read port
-  return 0xFF;
+  return 0xff;
 }
 
 // Emulate a write operation

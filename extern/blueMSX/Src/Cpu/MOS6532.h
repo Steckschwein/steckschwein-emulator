@@ -9,12 +9,13 @@
 // Define structure for MOS 6532 RIOT chip
 typedef struct {
     UInt8 ram[MOS6532_RAM_SIZE];  // 128 bytes of internal RAM
-    UInt8 ipr_a;         // internal peripheral register A I/O
-    UInt8 ddr_a;         // data direction ipr A I/O
+    UInt8 ipr_a;          // internal peripheral register A I/O
+    UInt8 ddr_a;          // data direction ipr A I/O
+    UInt8 ipr_a_input;    // port a level per pin if set as input
 
-    UInt8 ipr_b;         // internal peripheral register B I/O
-    UInt8 ddr_b;         // data direction ipr B I/O
-
+    UInt8 ipr_b;          // internal peripheral register B I/O
+    UInt8 ddr_b;          // data direction ipr B I/O
+    UInt8 ipr_b_input;
     UInt8 icr;          // interrupt control register - bit 7 (timer), bit 6 (PA7)
     UInt8 ifr;          // interrupt flag register
     UInt8 edc;          // edge detect register
@@ -29,7 +30,7 @@ typedef struct {
 } MOS6532;
 
 
-MOS6532* mos6532Create();
+MOS6532* mos6532Create(UInt8 ipr_a_input, UInt8 ipr_b_input);
 
 UInt8 mos6532Read(MOS6532* mos6532, bool ramSel, UInt16 address, bool debugOn);
 

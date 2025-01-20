@@ -151,7 +151,7 @@ void mos6551Reset(MOS6551 *mos6551, UInt32 systemTime);
 void acia_init( MOS6551 *acia, UInt8 backendType );
 void mos6551Execute( MOS6551 *acia, unsigned int cycles );
 void mos6551Write( MOS6551 *acia, UInt16 addr, UInt8 data );
-UInt8 mos6551Read( MOS6551 *acia, UInt16 addr );
+UInt8 mos6551Read( MOS6551 *acia, UInt16 addr, bool dbg);
 
 // Back-end init functions
 bool acia_init_none( MOS6551 *acia );
