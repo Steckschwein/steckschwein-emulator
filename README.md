@@ -1,13 +1,11 @@
 6502 MSX Emulator
 ======================
 
-This is an 6502 emulator for the 8bit Steckschwein homebrew computer forked from the X16 naked Emulator and adapted to blueMSX. It only depends on SDL2 and therefore can be compiled on all modern operating systems.
+This is an 6502 emulator mainly implementated for the 8bit Steckschwein homebrew computer forked from the X16 naked Emulator and adapted to blueMSX. It only depends on SDL2 and therefore can be compiled on all modern operating systems.
 
 
 Binaries & Compiling
 --------------------
-
-<!--a href="https://travis-ci.org/commanderx16/x16-emulator"><img alt="Travis (.org)" src="https://img.shields.io/travis/commanderx16/x16-emulator.svg?label=CI&logo=travis&logoColor=white&style=for-the-badge"></a-->
 
 Binary releases for MacOS, Windows and x86_64 Linux are available on the [releases page][releases].
 
@@ -16,27 +14,28 @@ loaded from the directory containing the emulator binary, or you can use the `-r
 
 > __WARNING:__ Older versions of the ROM might not work in newer versions of the emulator, and vice versa.
 
-You can build a Steckschwein ROM image yourself using the [build instructions][x16rom-build] in the [Steckschwein Repository][steckschwein-repo]. The `rom.bin` included in the [_latest_ release][releases] of the emulator may also work with the HEAD of this repo, but this is not guaranteed.
+You can build a Steckschwein ROM image yourself using the [build instructions][rom-build] in the [Steckschwein Repository][steckschwein-repo]. The `rom.bin` included in the [_latest_ release][releases] of the emulator may also work with the HEAD of this repo, but this is not guaranteed.
 
 ### Linux Build
 
 The SDL Version 2 development package is available as a distribution package with most major versions of Linux:
-- Red Hat: `yum install SDL-devel`
+- Red Hat: `yum install SDL2-devel`
 - Debian: `apt-get install libsdl2-dev`
 
-Type `make` to build the source. The output will be `steckschwein-emu` in the current directory. Remember you will also need a `rom.bin` as described above.
+Type `make` to build the source. The output will be `6502msx-emu` in the current directory. Remember you will also need a `rom.bin` as described above.
 
-### WebAssembly Build
+### **TODO** not supported yet - Windows Build
+
+### **TODO** not supported yet - WebAssembly Build
 
 Steps for compiling WebAssembly/HTML5 can be found [here][webassembly].
-
 
 Starting
 --------
 
 You can start `6502msx-emu`/`6502msx-emu.exe` either by double-clicking it, or from the command line. The latter allows you to specify additional arguments.
 
-* When starting `steckschwein-emu` without arguments, it will pick up the system ROM (`rom.bin`) from the executable's directory.
+* When starting `6502msx-emu` without arguments, it will pick up the system ROM (`rom.bin`) from the executable's directory.
 * The system ROM filename/path can be overridden with the `-rom` command line argument.
 * `-keymap` tells the KERNAL to switch to a specific keyboard layout. Use it without an argument to view the supported layouts.
 * `-sdcard` lets you specify an SD card image (partition table + FAT32).
@@ -68,8 +67,9 @@ Run `6502msx-emu -h` to see all command line options.
 
 Configuration File
 ------------------
-One can create a config.ini file with preconfigured emulator setup. E.g.
-<code>
+One can create a config.ini file with preconfigured emulator setup. e.g.
+
+```ini
 [paths]
 rom    = ~/dev/steckschwein-code/steckos/bios/bios.bin
 sdcard = ~/dev/steckschwein-code/steckos.img
@@ -81,18 +81,22 @@ quality=best  # linear, composite
 [config]
 
 [CPU]
-6502 Frequency=10000000 # cpu frequency
+type=6502 # TODO not supported yet
+freq=10000000Hz
 
 [Slots]
+# <address>, <size>, <type>, <params>
+# e.g.
+# 0x0800 0x400 jcIoCard
+# 0x1000 0x400 jcFloppyGfxCard "/path/to/roms/jc/FGC BIOS 0.3 ROM.BIN"
 
 [Video]
 version=V9938 # VDP version - V9938, V9958, TMS9918
 vram size=192kB
 
 [Board]
-type=Steckschwein-2.0 # JuniorComputer ][, tbc.
-</code>
-
+type=Steckschwein-2.0 # JuniorComputer ][, tbd.
+```
 
 Keyboard Layout
 ---------------
@@ -146,7 +150,7 @@ Functions while running
 On the Mac, use the Cmd key instead.
 
 
-GIF Recording
+**TODO** not supported yet - GIF Recording
 -------------
 
 With the argument `-gif`, followed by a filename, a screen recording will be saved into the given GIF file. Please exit the emulator before reading the GIF file.
@@ -154,18 +158,7 @@ With the argument `-gif`, followed by a filename, a screen recording will be sav
 If the option `,wait` is specified after the filename, it will start recording on `POKE $9FB5,2`. It will capture a single frame on `POKE $9FB5,1` and pause recording on `POKE $9FB5,0`. `PEEK($9FB5)` returns a 128 if recording is enabled but not active.
 
 
-BASIC and the Screen Editor
----------------------------
-
-On startup, the X16 presents direct mode of BASIC V2. You can enter BASIC statements, or line numbers with BASIC statements and `RUN` the program, just like on Commodore computers.
-
-* To stop execution of a BASIC program, hit the RUN/STOP key (Esc in the emulator), or Ctrl + C.
-* To insert a character, press Shift + Backspace.
-* To clear the screen, press Shift + Home.
-* The X16 does not have a STOP+RESTORE function.
-
-
-Host Filesystem Interface
+**TODO** not supported yet - Host Filesystem Interface
 -------------------------
 
 If the system ROM contains any version of the KERNAL, the LOAD (`$FFD5`) and SAVE (`$FFD8`) KERNAL calls are intercepted by the emulator if the device is 1 (which is the default). So the BASIC statements
@@ -182,19 +175,14 @@ The emulator will interpret filesnames relative to the directory it was started 
 To avoid incompatibility problems between the PETSCII and ASCII encodings, use lower case filenames on the host side, and unshifted filenames on the X16 side.
 
 
-Dealing with BASIC Programs
+**TODO** not supported yet - Dealing with BASIC Programs
 ---------------------------
 
 BASIC programs are encoded in a tokenized form, they are not simply ASCII files. If you want to edit BASIC programs on the host's text editor, you need to convert it between tokenized BASIC form and ASCII.
 
 * To convert ASCII to BASIC, reboot the machine and paste the ASCII text using Ctrl + V (Mac: Cmd + V). You can now run the program, or use the `SAVE` BASIC command to write the tokenized version to disk.
-* To convert BASIC to ASCII, start steckschwein-emu with the -echo argument, `LOAD` the BASIC file, and type `LIST`. Now copy the ASCII version from the terminal.
+* To convert BASIC to ASCII, start `6502msx-emu` with the -echo argument, `LOAD` the BASIC file, and type `LIST`. Now copy the ASCII version from the terminal.
 
-
-Using the KERNAL/BASIC environment
-----------------------------------
-
-Please see the KERNAL/BASIC documentation.
 
 
 Debugger
@@ -225,13 +213,13 @@ Effectively keyboard routines only work when the debugger is running normally. S
 Wiki
 ----
 
-https://github.com/commanderx16/x16-emulator/wiki
+**TODO** not supported yet -
 
 
 Features
 --------
 
-* CPU: Full 65C02 instruction set (improved "fake6502")
+* CPU: Full 6502/65C02 instruction set (improved "fake6502")
 * MSX Video (TMS9929, VDP9938, VDP9958)
 	* Mostly cycle exact emulation
 	* Supports almost all features: composer, two layers, sprites, progressive/interlaced
@@ -239,7 +227,11 @@ Features
 	* ROM/RAM banking
 	* PS/2 keyboard
 	* SD card (SPI)
-* Sound (YM3812)
+	* Game controllers e.g. XBox Controller
+* Sound
+  * YM3812
+  * SN76489
+  * Speaker
 
 
 Missing Features
@@ -247,7 +239,6 @@ Missing Features
 
 * VIA
 	* Does not support counters/timers/IRQs
-	* Does not support game controllers
 
 License
 -------
@@ -258,17 +249,15 @@ All rights reserved. License: 2-clause BSD
 
 Known Issues
 ------------
-
-* Emulator: LOAD"$ (and LOAD"$",1) will show host uppercase filenames as garbage. Use Ctrl+N to switch to the X16 upper/lower character set for a workaround.
-
+- n.a.
 
 Release Notes
 -------------
-- 0.1 ?
+- n.a.
 
 <!-------------------------------------------------------------------->
-[releases]: https://github.com/commanderx16/x16-emulator/releases
+[releases]: https://github.com/Steckschwein/steckschwein-emulator/releases
 [webassembly]: webassembly/WebAssembly.md
-[x16rom-build]: https://github.com/commanderx16/x16-rom#releases-and-building
+[rom-build]: https://github.com/Steckschwein/code/
 [steckschwein-repo]: https://bitbucket.org/steckschwein/steckschwein-code/src/default/steckos/bios/
 
