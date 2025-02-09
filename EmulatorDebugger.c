@@ -19,7 +19,7 @@
 #include <string.h>
 #include <SDL_events.h>
 #include <SDL_keyboard.h>
-#include <SDL_keysym.h>
+#include <SDL_keycode.h>
 #include <SDL_video.h>
 
 #include "disasm.h"
@@ -28,7 +28,7 @@
 #include "rendertext.h"
 #include "cpu/fake6502.h"
 
-static void DEBUGHandleKeyEvent(SDLKey key, int isShift);
+static void DEBUGHandleKeyEvent(SDL_Keysym key, int isShift);
 
 static void DEBUGNumber(int x, int y, int n, int w, SDL_Color colour);
 static void DEBUGAddress(int x, int y, int bank, int addr, SDL_Color colour);
@@ -38,7 +38,7 @@ static int DEBUGRenderRegisters(void);
 static void DEBUGRenderCode(int lines, int initialPC);
 static void DEBUGRenderStack(int bytesCount);
 static void DEBUGRenderCmdLine();
-static bool DEBUGBuildCmdLine(SDLKey key);
+static bool DEBUGBuildCmdLine(SDL_Keysym key);
 static void DEBUGExecCmd();
 
 // *******************************************************************************************
@@ -83,12 +83,12 @@ static void DEBUGExecCmd();
 #define DBGKEY_PAGE_NEXT	SDLK_KP_PLUS
 #define DBGKEY_PAGE_PREV	SDLK_KP_MINUS
 
-#define DBGSCANKEY_BRK 	SDLK_F12 						// F12 is break into running code.
-#define DBGSCANKEY_SHOW	SDLK_TAB 						// Show screen key.
+#define DBGSCANKEY_BRK 	SDL_SCANCODE_F12 						// F12 is break into running code.
+#define DBGSCANKEY_SHOW	SDL_SCANCODE_TAB 						// Show screen key.
 // *** MUST BE SCAN CODES ***
 
 enum DBG_CMD {
-	CMD_SET_BPK = 's', CMD_DUMP_MEM = 'm', CMD_DISASM = 'd', CMD_SET_BANK = 'b', CMD_SET_REGISTER = 'r'
+	CMD_CLR_BPK = 'c', CMD_SET_BPK = 's', CMD_DUMP_MEM = 'm', CMD_DISASM = 'd', CMD_SET_BANK = 'b', CMD_SET_REGISTER = 'r'
 };
 
 // RGB colours
@@ -142,7 +142,7 @@ int DEBUGHandleEvent(SDL_Event *pEvent) {
 		dbgPause();									// So now stop, as we've done it.
 	}
 
-	if (SDL_GetKeyState(NULL)[DBGSCANKEY_BRK]) {	// Stop on break pressed.
+	if (SDL_GetKeyboardState(NULL)[DBGSCANKEY_BRK]) {	// Stop on break pressed.
 //		DEBUGBreakToDebugger();
 		currentPC = pc; 							// Set the PC to what it is.
 		dbgPause();
@@ -154,9 +154,10 @@ int DEBUGHandleEvent(SDL_Event *pEvent) {
 
 	if (emulatorGetState() != EMU_RUNNING){			// Not running, we own the keyboard.
 		showFullDisplay = 								// Check showing screen.
-				SDL_GetKeyState(NULL)[DBGSCANKEY_SHOW];
-		if (pEvent->type == SDL_KEYDOWN) {
-			DEBUGHandleKeyEvent(pEvent->key.keysym.sym, SDL_GetModState() & (KMOD_LSHIFT | KMOD_RSHIFT));
+				SDL_GetKeyboardState(NULL)[DBGSCANKEY_SHOW];
+		if (pEvent->type == SDL_KEYDOWN && ((SDL_KeyboardEvent *)pEvent)->repeat == 0) {
+      SDL_KeyboardEvent *e = (SDL_KeyboardEvent *)pEvent;
+			DEBUGHandleKeyEvent(((SDL_KeyboardEvent *)pEvent)->keysym, SDL_GetModState() & (KMOD_LSHIFT | KMOD_RSHIFT));
 			handleEvent = 1;
 		}
 	}
@@ -199,6 +200,11 @@ void DEBUGSetBreakPoint(int newBreakPoint) {
 	dbgSetBreakpoint(newBreakPoint);
 }
 
+void DEBUGClearBreakPoint(int breakPoint) {
+	breakPoint = -1;
+	dbgClearBreakpoint(breakPoint);
+}
+
 // *******************************************************************************************
 //
 //								Break into debugger from code.
@@ -218,11 +224,11 @@ void DEBUGBreakToDebugger(void) {	// So now stop, as we've done it.
 //DEBUGHandleKeyEvent
 // *******************************************************************************************
 
-static void DEBUGHandleKeyEvent(SDLKey key, int isShift) {
+static void DEBUGHandleKeyEvent(SDL_Keysym key, int isShift) {
 
 	int opcode;
 
-	switch (key) {
+	switch (key.sym) {
 
 	case DBGKEY_STEP:							// Single step (F11 by default)
 		dbgStep();								// Runs once, then switches back.
@@ -285,10 +291,11 @@ static void DEBUGHandleKeyEvent(SDLKey key, int isShift) {
 
 char kNUM_KEYPAD_CHARS[10] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-static bool DEBUGBuildCmdLine(SDLKey key) {
+static bool DEBUGBuildCmdLine(SDL_Keysym keysym) {
 	// right now, let's have a rudimentary input: only backspace to delete last char
 	// later, I want a real input line with delete, backspace, left and right cursor
 	// devs like their comfort ;)
+  Uint32 key = keysym.sym;
 	if (currentLineLen <= sizeof(cmdLine)) {
 		if ((key >= SDLK_SPACE && key <= SDLK_AT) || (key >= SDLK_LEFTBRACKET && key <= SDLK_z)
 				|| (key >= SDLK_0 && key <= SDLK_0)) {
@@ -324,6 +331,11 @@ static void DEBUGExecCmd() {
 	// printf("cmd:%c line: '%s'\n", cmd, line);
 
 	switch (cmd) {
+	case CMD_CLR_BPK:
+		sscanf(line, "%x", &number);
+		addr = number & 0xFFFF;
+		DEBUGClearBreakPoint(addr);
+		break;
 	case CMD_SET_BPK:
 		sscanf(line, "%x", &number);
 		addr = number & 0xFFFF;
@@ -462,7 +474,7 @@ static void DEBUGRenderCode(int lines, int initialPC) {
 
 		DEBUGAddress(DBG_ASMX, y, currentPCBank, initialPC, col_label);
 
-		int size = disasm(initialPC, ram, buffer, sizeof(buffer), true, currentPCBank);	// Disassemble code
+		int size = disasm(initialPC, buffer, sizeof(buffer), true, currentPCBank);	// Disassemble code
 		// Output assembly highlighting PC
 		DEBUGString(dbgSurface, DBG_ASMX + 8, y, buffer, initialPC == pc ? col_highlight : col_data);
 		initialPC += size;									// Forward to next
@@ -474,9 +486,11 @@ static void DEBUGRenderCode(int lines, int initialPC) {
 //									Render Register Display
 //
 // *******************************************************************************************
-
-static char *labels[] = { "NV-BDIZC", "", "", "A", "X", "Y", "", "CTL", "PC", "SP", "", "BRK", "", "VDS", "VRL",
-		"VRH", "VRP", NULL };
+static char *labels[] = { "NV-BDIZC", "", "", "A", "X", "Y", "", "", "PC", "SP", "", "BRK", "",
+	"BR0", "BR1", "BR2", "BR3","",
+  "IRQ", // pending irq
+  "NMI", // pending nmi
+  NULL };
 
 static int DEBUGRenderRegisters(void) {
 	int n = 0, yc = 0;
@@ -497,9 +511,8 @@ static int DEBUGRenderRegisters(void) {
 	DEBUGNumber(DBG_DATX, yc++, a, 2, col_data);
 	DEBUGNumber(DBG_DATX, yc++, x, 2, col_data);
 	DEBUGNumber(DBG_DATX, yc++, y, 2, col_data);
-	yc++;
+	yc += 2;
 
-	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(), 4, col_data);
 	DEBUGNumber(DBG_DATX, yc++, pc, 4, col_data);
 	DEBUGNumber(DBG_DATX, yc++, sp | 0x100, 4, col_data);
 	yc++;
@@ -507,13 +520,18 @@ static int DEBUGRenderRegisters(void) {
 	DEBUGNumber(DBG_DATX, yc++, breakPoint & 0xFFFF, 4, col_data);
 	yc++;
 
-//	getDebugInfo();
-//	DEBUGNumber(DBG_DATX, yc++, video_read(0, true) | (video_read(1, true)<<8) | (video_read(2, true)<<16), 2, col_data);
-//	DEBUGNumber(DBG_DATX, yc++, video_read(3, true), 2, col_data);
-//	DEBUGNumber(DBG_DATX, yc++, video_read(4, true), 2, col_data);
-//	DEBUGNumber(DBG_DATX, yc++, video_read(5, true), 2, col_data);
+  // CPLD Bank registers
+	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(0), 2, col_data);
+	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(1), 2, col_data);
+	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(2), 2, col_data);
+	DEBUGNumber(DBG_DATX, yc++, memory_get_ctrlport(3), 2, col_data);
+	yc++;
 
-	return n; 									// Number of code display lines
+  DEBUGNumber(DBG_DATX, yc++, boardGetInt(0xff), 2, col_data);
+
+  DEBUGNumber(DBG_DATX, yc++, boardGetNmi(0xff), 2, col_data);
+
+	return n;// Number of code display lines
 }
 
 // *******************************************************************************************
@@ -527,7 +545,7 @@ static void DEBUGRenderStack(int bytesCount) {
 	int y = 0;
 	while (y < bytesCount) {
 		DEBUGNumber(DBG_STCK, y, data & 0xFFFF, 4, col_label);
-		int byte = real_read6502((data++) & 0xFFFF, false, 0);
+		int byte = real_read6502((data++) & 0xFFFF, true, 0);
 		DEBUGNumber(DBG_STCK + 5, y, byte, 2, col_data);
 		DEBUGWrite(dbgSurface, DBG_STCK + 9, y, byte, col_data);
 		y++;

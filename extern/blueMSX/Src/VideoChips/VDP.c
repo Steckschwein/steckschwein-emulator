@@ -2089,7 +2089,7 @@ static void reset(VDP* vdp)
     vdp->screenOn        = 0;
     vdp->VAdjust         = 0;
     vdp->HAdjust         = 0;
-    vdp->displayArea        = 0;
+    vdp->displayArea     = 0;
 
     vdp->leftBorder      = 200;
     vdp->screenMode      = 1;

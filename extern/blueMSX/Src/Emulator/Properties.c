@@ -169,8 +169,9 @@ int stringToEnum(ValueNamePair* pair, const char* name)
 void propInitDefaults(Properties* properties, int langType, int syncMode, const char* themeName)
 {
     int i;
-/*
+
     properties->language                      = langType;
+/*
     strcpy(properties->settings.language, langToName(properties->language, 0));
 
     properties->settings.showStatePreview     = 1;
@@ -186,7 +187,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->emulation.shortcutProfile[0] = 0;
     strcpy(properties->emulation.machineName, "Steckschwein");
     properties->emulation.speed             = 50;//fps
-    properties->emulation.syncMethod        = syncMode;
+    properties->emulation.syncMethod        = syncMode ? syncMode : P_EMU_SYNCAUTO;
     properties->emulation.syncMethodGdi     = P_EMU_SYNCAUTO;
     properties->emulation.syncMethodD3D     = properties->emulation.syncMethod;
     properties->emulation.syncMethodDirectX = properties->emulation.syncMethod;
@@ -204,8 +205,8 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->emulation.reverseMaxTime    = 15;
 
     properties->video.monitorColor          = P_VIDEO_COLOR;
-    properties->video.monitorType           = P_VIDEO_PALMON;//P_VIDEO_PALSCALE2X;
-    properties->video.windowSize            = P_VIDEO_SIZEX2;//default 2x
+    properties->video.monitorType           = P_VIDEO_PALHQ2X;
+    properties->video.windowSize            = P_VIDEO_SIZEX2;
     properties->video.windowSizeInitial     = properties->video.windowSize;
     properties->video.windowSizeChanged     = 0;
     properties->video.windowX               = -1;
@@ -218,7 +219,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->video.maximizeIsFullscreen  = 1;
     properties->video.deInterlace           = 1;
     properties->video.blendFrames           = 0;
-    properties->video.horizontalStretch     = 1;
+    properties->video.horizontalStretch     = 0;
     properties->video.verticalStretch       = 0;
     properties->video.contrast              = 100;
     properties->video.brightness            = 100;
@@ -231,7 +232,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->video.detectActiveMonitor   = 1;
     properties->video.captureFps            = 60;
     properties->video.captureSize           = 1;
-    properties->video.rotate				= 0;//0 - none, 1 - 90 degree clockwise
+    properties->video.rotate				        = 0;//0 - none, 1 - 90 degree clockwise
 
     properties->video.d3d.aspectRatioType   = P_D3D_AR_NTSC;
     properties->video.d3d.cropType          = P_D3D_CROP_SIZE_MSX2_PLUS_8;
@@ -248,7 +249,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->videoIn.inputIndex          = 0;
     properties->videoIn.inputName[0]        = 0;
 
-//    properties->sound.driver                = P_SOUND_DRVDIRECTX;
+    // properties->sound.driver                = P_SOUND_DRVDIRECTX;
     properties->sound.bufSize               = 100;
     properties->sound.stabilizeDSoundTiming = 1;
 

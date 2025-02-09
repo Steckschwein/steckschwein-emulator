@@ -4,7 +4,7 @@
 SILENT = @
 
 #
-# windows 10 build
+# windows build
 #   CROSS_COMPILE_WINDOWS=1 WIN_SDL=<sdl home> CC=<gcc home>/mingw32-gcc make clean all
 #
 ifndef (MINGW32)
@@ -12,25 +12,33 @@ ifndef (MINGW32)
 	MINGW32=/usr/local/Cellar/mingw-w64/6.0.0_2/toolchain-i686/i686-w64-mingw32
 endif
 
+#CC=clang
 
 # Flags
 #
 # production flags (performance)
-CFLAGS   = -g -w -O3 -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror -fomit-frame-pointer
+CFLAGS   = -w -O3 -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror -fomit-frame-pointer
 
 # development flags (debugger support)
-CFLAGS   = -g -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -w -Wall -Werror
+CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror
 # CFLAGS   +=-DDEBUG_ENABLED
 # Videorenderer.c segfault inline asm, we disable it entirely
 CFLAGS   +=-DNO_ASM
 
 #CFLAGS   += -DSINGLE_THREADED
 #CFLAGS   += -DNO_TIMERS
-#CFLAGS   += -DNO_HIRES_TIMERS
+CFLAGS   += -DNO_HIRES_TIMERS
 #CFLAGS   += -DTRACE
+#CFLAGS   += -DEMU_AVR_KEYBOARD_IRQ
+#CFLAGS   += -DTRACE_RTC
 
 # ym3812 opl sound
 CFLAGS +=-DBUILD_YM3812
+
+# switch compile ssw 2.0 architecture
+CFLAGS +=-DSSW2_0
+
+CFLAGS +=-mcmodel=large
 
 LDFLAGS=
 #
@@ -48,9 +56,9 @@ else
 endif
 
 ifeq ($(CROSS_COMPILE_WINDOWS),1)
-	SDLCONFIG=$(WIN_SDL)/bin/sdl-config
+	SDLCONFIG=$(WIN_SDL)/bin/sdl2-config
 else
-	SDLCONFIG=sdl-config
+	SDLCONFIG=sdl2-config
 endif
 
 CFLAGS+=$(shell $(SDLCONFIG) $(SDL_PREFIX) --cflags)
@@ -76,7 +84,7 @@ ifeq ($(CROSS_COMPILE_WINDOWS),1)
 	LDFLAGS+=-static-libgcc -static-libstdc++ -mconsole -Wl,--subsystem,console
 endif
 
-LIBS     = #-lz
+LIBS     = -linih
 TARGET   = steckschwein-emu
 
 SRCS        = $(SOURCE_FILES)
@@ -95,7 +103,7 @@ ifdef EMSCRIPTEN
 #	LDFLAGS+=-s EXIT_RUNTIME=1
  	LDFLAGS+=-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1
 	# To the Javascript runtime exported functions
-	LDFLAGS+=-s EXPORTED_FUNCTIONS='["_SDL_SetTimer", "_SDL_WaitEvent", "_SDL_KillThread", "_SDL_CreateSemaphore", "_SDL_DestroySemaphore", "_SDL_SemPost", "_SDL_SemWait", "_j2c_reset", "_j2c_paste", "_j2c_start_audio", _main]'
+	LDFLAGS+=-s EXPORTED_FUNCTIONS='["_SDL_SetTimer", "_SDL_WaitEvent", "_SDL_CreateSemaphore", "_SDL_DestroySemaphore", "_SDL_SemPost", "_SDL_SemWait", "_j2c_reset", "_j2c_paste", "_j2c_start_audio", _main]'
 	LDFLAGS+=-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'
 #	LDFLAGS+=-s LLD_REPORT_UNDEFINED
 #	LDFLAGS+=-s ERROR_ON_UNDEFINED_SYMBOLS=0
@@ -201,6 +209,7 @@ SOURCE_FILES += AudioMixer.c
 SOURCE_FILES += Actions.c
 SOURCE_FILES += Properties.c
 SOURCE_FILES += Board.c
+SOURCE_FILES += Machine.c
 SOURCE_FILES += IoPort.c
 SOURCE_FILES += Steckschwein.c
 SOURCE_FILES += MOS6502.c
@@ -225,6 +234,12 @@ clean_$(TARGET):
 cpu/tables.h cpu/mnemonics.h: cpu/buildtables.py cpu/6502.opcodes cpu/65c02.opcodes
 	cd cpu && python buildtables.py
 
+install: all
+	install -s -m 0755 -D $(TARGET) $(DESTDIR)/usr/bin/steckschwein-emu
+
+deb:
+	dpkg-buildpackage
+
 $(OUTPUT_DIR):
 	$(ECHO) Creating directory $@...
 	$(MKDIR) $(OUTPUT_DIR)
@@ -233,24 +248,12 @@ $(OUTPUT_DIR)/%.o: %.c
 	$(ECHO) Compiling $<...
 	$(SILENT)$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
 
-#$(OUTPUT_DIR)/%.o: %.cc
-#	$(ECHO) Compiling $<...
-#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
-#$(OUTPUT_DIR)/%.o: %.cpp
-#	$(ECHO) Compiling $<...
-#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
-#$(OUTPUT_DIR)/%.o: %.cxx
-#	$(ECHO) Compiling $<...
-#	$(CXX) $(CPPFLAGS) $(INCLUDE) -o $@ -c $<
-
 $(OUTPUT_DIR)/%.res: %.rc
 	$(ECHO) Compiling $<...
 	$(SILENT)$(RC) $(CPPFLAGS) $(INCLUDE) -o $@ -i $<
 
 # WebASssembly/emscripten target
 #
-# See webassembly/WebAssembly.md
+# See webassembly/WebAstembly.md
 wasm:
 	emmake make

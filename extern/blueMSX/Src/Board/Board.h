@@ -30,10 +30,13 @@
 
 #include "MsxTypes.h"
 //#include "MediaDb.h"
+#include "Machine.h"
 #include "VDP.h"
 #include "AudioMixer.h"
 #include "glue.h"
 #include <stdio.h>
+
+#define NMI 0x1
 
 typedef struct {
    /*
@@ -60,6 +63,10 @@ typedef struct {
 
     void   (*setInt)(void*);
     void   (*clearInt)(void*);
+
+    void   (*setNmi)(void*);
+    void   (*clearNmi)(void*);
+
     void   (*setCpuTimeout)(void*, UInt32);
 
     void   (*setBreakpoint)(void*, UInt16);
@@ -75,12 +82,14 @@ static BoardInfo boardInfo;
 
 void boardInit(UInt32* systemTime);
 
-int boardRun(Mixer* mixer,
+int boardRun(Machine* machine,
+             Mixer* mixer,
              int frequency,
              int reversePeriod,
              int reverseBufferCnt,
              int (*syncCallback)(int, int));
 
+void boardSetMachine(Machine* machine);
 void boardReset();
 
 UInt64 boardSystemTime64();
@@ -92,6 +101,10 @@ void boardSetFdcTimingEnable(int enable);
 
 void boardSetBreakpoint(UInt16 address);
 void boardClearBreakpoint(UInt16 address);
+
+void   boardSetNmi(UInt32 nmi);
+void   boardClearNmi(UInt32 nmi);
+UInt32 boardGetNmi(UInt32 nmi);
 
 void   boardSetInt(UInt32 irq);
 void   boardClearInt(UInt32 irq);
@@ -111,13 +124,14 @@ int boardGetNoSpriteLimits();
 
 typedef enum { HD_NONE, HD_SUNRISEIDE, HD_BEERIDE, HD_GIDE, HD_RSIDE,
                HD_MEGASCSI, HD_WAVESCSI, HD_GOUDASCSI, HD_NOWIND } HdType;
+
 HdType boardGetHdType(int hdIndex);
 
 const char* boardGetBaseDirectory();
 
 Mixer* boardGetMixer();
 
-#define boardFrequency() (6 * 3579545)	//
+#define boardFrequency() (6 * 3579545)	//21.477 must be set to vdp clock speed, due to coupling of systime with vdp timing
 
 static UInt32 boardSystemTime() {
     extern UInt32* boardSysTime;

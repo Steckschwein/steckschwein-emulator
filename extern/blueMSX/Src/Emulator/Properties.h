@@ -13,7 +13,7 @@
 ** it under the terms of the GNU General Public License as published by
 ** the Free Software Foundation; either version 2 of the License, or
 ** (at your option) any later version.
-** 
+**
 ** This program is distributed in the hope that it will be useful,
 ** but WITHOUT ANY WARRANTY; without even the implied warranty of
 ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -88,113 +88,113 @@
 #define CARTNAME_ESESCC256   "256kB Ese-SCC"
 #define CARTNAME_ESESCC512   "512kB Ese-SCC"
 
-typedef enum { 
-    PROP_EMULATION = 0, 
-    PROP_VIDEO, 
-    PROP_SOUND, 
-    PROP_PERFORMANCE, 
-    PROP_SETTINGS, 
+typedef enum {
+    PROP_EMULATION = 0,
+    PROP_VIDEO,
+    PROP_SOUND,
+    PROP_PERFORMANCE,
+    PROP_SETTINGS,
     PROP_DISK,
-    PROP_APEARANCE, 
+    PROP_APEARANCE,
     PROP_PORTS,
 	PROP_D3D
 } PropPage;
 
-typedef enum { 
-    P_KBD_EUROPEAN = 0, 
-    P_KBD_RUSSIAN, 
-    P_KBD_JAPANESE, 
-    P_KBD_KOREAN 
+typedef enum {
+    P_KBD_EUROPEAN = 0,
+    P_KBD_RUSSIAN,
+    P_KBD_JAPANESE,
+    P_KBD_KOREAN
 } PropKeyboardLanguage;
 
-enum { 
-    P_LPT_NONE = 0, 
-    P_LPT_SIMPL, 
-    P_LPT_FILE, 
-    P_LPT_HOST 
+enum {
+    P_LPT_NONE = 0,
+    P_LPT_SIMPL,
+    P_LPT_FILE,
+    P_LPT_HOST
 };
 
-enum { 
-    P_COM_NONE = 0, 
-    P_COM_FILE, 
-    P_COM_HOST 
+enum {
+    P_COM_NONE = 0,
+    P_COM_FILE,
+    P_COM_HOST
 };
 
-enum { 
-    P_MIDI_NONE = 0, 
-    P_MIDI_FILE, 
-    P_MIDI_HOST 
+enum {
+    P_MIDI_NONE = 0,
+    P_MIDI_FILE,
+    P_MIDI_HOST
 };
 
-enum { 
-    P_LPT_RAW, 
-    P_LPT_MSXPRN, 
-    P_LPT_SVIPRN, 
-    P_LPT_EPSONFX80 
+enum {
+    P_LPT_RAW,
+    P_LPT_MSXPRN,
+    P_LPT_SVIPRN,
+    P_LPT_EPSONFX80
 };
 */
-enum { 
-    P_EMU_SYNCIGNORE = -1, 
-    P_EMU_SYNCNONE = 0, 
-    P_EMU_SYNCAUTO, 
-    P_EMU_SYNCFRAMES, 
-    P_EMU_SYNCTOVBLANK, 
+enum {
+    P_EMU_SYNCIGNORE = -1,
+    P_EMU_SYNCNONE = 0,
+    P_EMU_SYNCAUTO,
+    P_EMU_SYNCFRAMES,
+    P_EMU_SYNCTOVBLANK,
     P_EMU_SYNCTOVBLANKASYNC,
 };
 
-enum { 
-    P_VDP_SYNCAUTO = 0, 
-    P_VDP_SYNC50HZ, 
-    P_VDP_SYNC60HZ 
+enum {
+    P_VDP_SYNCAUTO = 0,
+    P_VDP_SYNC50HZ,
+    P_VDP_SYNC60HZ
 };
 
-enum { 
-    P_VIDEO_COLOR = 0, 
-    P_VIDEO_BW, 
-    P_VIDEO_GREEN, 
-    P_VIDEO_AMBER, 
-    P_VIDEO_MONCOUNT 
+enum {
+    P_VIDEO_COLOR = 0,
+    P_VIDEO_BW,
+    P_VIDEO_GREEN,
+    P_VIDEO_AMBER,
+    P_VIDEO_MONCOUNT
 };
 
-enum { 
-    P_VIDEO_PALNONE = 0, 
-    P_VIDEO_PALMON, 
-    P_VIDEO_PALYC, 
-    P_VIDEO_PALNYC, 
-    P_VIDEO_PALCOMP, 
-    P_VIDEO_PALNCOMP, 
-    P_VIDEO_PALSCALE2X, 
-    P_VIDEO_PALHQ2X, 
-    P_VIDEO_PALCOUNT 
+enum {
+    P_VIDEO_PALNONE = 0,
+    P_VIDEO_PALMON,
+    P_VIDEO_PALYC,
+    P_VIDEO_PALNYC,
+    P_VIDEO_PALCOMP,
+    P_VIDEO_PALNCOMP,
+    P_VIDEO_PALSCALE2X,
+    P_VIDEO_PALHQ2X,
+    P_VIDEO_PALCOUNT
 };
 
-enum { 
+enum {
 	P_VIDEO_SIZEX1 = 0,
 	P_VIDEO_SIZEX2,
-	P_VIDEO_SIZEFULLSCREEN 
+	P_VIDEO_SIZEFULLSCREEN
 };
 
-enum { 
-    P_VIDEO_FREQ_AUTO, 
-    P_VIDEO_FREQ_50HZ, 
-    P_VIDEO_FREQ_60HZ 
+enum {
+    P_VIDEO_FREQ_AUTO,
+    P_VIDEO_FREQ_50HZ,
+    P_VIDEO_FREQ_60HZ
 };
 /*
-enum { 
-    P_SOUND_DRVNONE = 0, 
-    P_SOUND_DRVWMM, 
-    P_SOUND_DRVDIRECTX 
+enum {
+    P_SOUND_DRVNONE = 0,
+    P_SOUND_DRVWMM,
+    P_SOUND_DRVDIRECTX
 };
 */
-enum { 
-    P_VIDEO_DRVDIRECTX_VIDEO = 0, 
-    P_VIDEO_DRVDIRECTX, 
+enum {
+    P_VIDEO_DRVDIRECTX_VIDEO = 0,
+    P_VIDEO_DRVDIRECTX,
     P_VIDEO_DRVGDI,
     P_VIDEO_DRVDIRECTX_D3D
 };
 
-enum { 
-    P_VIDEO_DRVSDLGL = 0, 
+enum {
+    P_VIDEO_DRVSDLGL = 0,
     P_VIDEO_DRVSDLGL_NODIRT,
     P_VIDEO_DRVSDL
 };
@@ -455,6 +455,7 @@ typedef struct {
         char macAddress[64];
     } Eth;
 } PortProperties;
+*/
 
 #define DLG_MAX_ID 32
 
@@ -466,14 +467,14 @@ typedef struct {
     int showStatePreview;
     int usePngScreenshots;
     char themeName[128];
-    struct {  
-        long left; 
-        long top; 
-        long width; 
-        long height; 
+    struct {
+        long left;
+        long top;
+        long width;
+        long height;
     } windowPos[DLG_MAX_ID];
 } Settings;
-*/
+
 typedef struct Properties {
     EmulationProperties emulation;
     VideoProperties     video;
@@ -491,16 +492,16 @@ typedef struct Properties {
     CassetteProperties  cassette;
     FileHistory         filehistory;
     PortProperties      ports;
-    int                 language;
-    Settings            settings;
     NoWindProperties    nowind;
 	 */
+    int                 language;
+    Settings            settings;
 } Properties;
 
-Properties* propCreate(int useDefault, 
-                       int langType, 
-                       //PropKeyboardLanguage kbdLang, 
-                       int syncMode, 
+Properties* propCreate(int useDefault,
+                       int langType,
+                       //PropKeyboardLanguage kbdLang,
+                       int syncMode,
                        const char* themeName);
 void propDestroy(Properties* pProperties);
 

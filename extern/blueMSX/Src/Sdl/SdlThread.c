@@ -40,7 +40,7 @@ static int threadEntry(void* data)
 
 
 void* archThreadCreate(void (*entryPoint)(), int priority) {
-    SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, entryPoint);
+    SDL_Thread* sdlThread = SDL_CreateThread(threadEntry, NULL, entryPoint);
     return sdlThread;
 }
 
@@ -55,7 +55,7 @@ void  archThreadDestroy(void* thread)
 {
     SDL_Thread* sdlThread = (SDL_Thread*)thread;
 
-    SDL_KillThread(sdlThread);
+    //SDL_KillThread(sdlThread);
 }
 
 void archThreadSleep(int milliseconds)

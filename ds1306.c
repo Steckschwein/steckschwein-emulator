@@ -15,13 +15,20 @@ static struct tm *timestamp;
 static bool chip_select = false;
 static uint8_t nvram[96] = { 0x42, 'L', 'O', 'A', 'D', 'E', 'R', ' ', ' ', 'B', 'I', 'N', 1, 3, 0x37 };
 
-char* swHomeDir() {
-	char swDir[FILENAME_MAX];
-    #if __MINGW32_NO__
-        snprintf(swDir, FILENAME_MAX, "%s%s/%s", getenv("HOMEDRIVE"), getenv("HOME"), SW_DIR);
+static uint8_t regs[0x20];
+
+int _1HzTimeHanler(void* timer) {
+  sprintf(stderr, ".");
+
+  return 20;//continue
+}
+
+char* swHomeDir(char *swDir) {
+  #if __MINGW32_NO__
+		snprintf(swDir, FILENAME_MAX, "%s%s/%s", getenv("HOMEDRIVE"), getenv("HOME"), SW_DIR);
 	#else
-        snprintf(swDir, FILENAME_MAX, "%s/%s", getenv("HOME"), SW_DIR);
-    #endif
+	  snprintf(swDir, FILENAME_MAX, "%s/%s", getenv("HOME"), SW_DIR);
+  #endif
 
 	DIR *dir = opendir(swDir);
 	if (dir == NULL || errno == ENOENT) {
@@ -33,44 +40,51 @@ char* swHomeDir() {
 	}
 	if (closedir(dir)) {
 		fprintf(stderr, "error close dir %s\n", strerror(errno));
+    return NULL;
 	}
-
-	return strdup(swDir);
+  return swDir;
 }
 
-char* nvramFile() {
-	char nvramFile[FILENAME_MAX];
-	char *homeDirStr = swHomeDir();
+char* nvramFilePath(char *nvramFile) {
+	char swDir[FILENAME_MAX];
+	char *homeDirStr = swHomeDir(&swDir);
+  if(homeDirStr == NULL)
+    return NULL;
 	snprintf(nvramFile, FILENAME_MAX, "%s/%s", homeDirStr, SW_NVRAM);
-	free(homeDirStr);
-	return strdup(nvramFile);
+	return nvramFile;
 }
 
-void spi_rtc_init() {
+void spi_rtc_reset() {
 
-	char *nvramFileStr = nvramFile();
-	FILE *f = fopen(nvramFileStr, "rb");
-	if (f != NULL) {
-		size_t r = fread(nvram, 1, sizeof(nvram), f);
-		if (ferror(f) || r != sizeof(nvram)) {
-      fprintf(stderr, "error read nvram state: %s\n", strerror(errno));
-		}
-		fclose(f);
-	}
-	free(nvramFileStr);
+	char nvramFile[FILENAME_MAX];
+	char *nvramFileStr = nvramFilePath(&nvramFile);
+  if(nvramFileStr != NULL){
+  	FILE *f = fopen(nvramFileStr, "rb");
+    if (f != NULL) {
+      size_t r = fread(nvram, 1, sizeof(nvram), f);
+      if (ferror(f) || r != sizeof(nvram)) {
+        fprintf(stderr, "error read nvram state %s\n", strerror(errno));
+      }
+      fclose(f);
+    }
+  }
+  regs[RTC_CONTROL] = 1<<6; //set WP (write protect enabled after reset)
 }
 
 void spi_rtc_destroy() {
-	char *nvramFileStr = nvramFile();
-	FILE *f = fopen(nvramFileStr, "wb");
-	if (f != NULL) {
-		size_t r = fwrite(nvram, 1, sizeof(nvram), f);
-		if (ferror(f)) {
-			fprintf(stderr, "error fwrite %s\n", strerror(errno));
-		}
-		fclose(f);
-	}
-	free(nvramFileStr);
+
+	char nvramFile[FILENAME_MAX];
+	char *nvramFileStr = nvramFilePath(&nvramFile);
+  if(nvramFileStr != NULL){
+    FILE *f = fopen(nvramFileStr, "wb");
+    if (f != NULL) {
+      size_t r = fwrite(nvram, 1, sizeof(nvram), f);
+      if (ferror(f)) {
+        fprintf(stderr, "error fwrite %s\n", strerror(errno));
+      }
+      fclose(f);
+    }
+  }
 }
 
 void spi_rtc_deselect() { // chip select /CE high
@@ -103,13 +117,15 @@ uint8_t spi_rtc_handle(uint8_t inbyte) {
 		addr = inbyte;
 		chip_select = true;
 	} else {
-		if (addr & 0x80) { //write
+#ifdef TRACE_RTC
+    printf("RTC access %x %x\n", (addr & 0x7f) - 0x20, inbyte);
+#endif
+		if (addr & 0x80 && ((addr & 0x1f) == RTC_CONTROL || (regs[RTC_CONTROL] & 0x40) == 0)) { //write, if WP = 0
 			if ((addr & 0x7f) >= 0x20) { //nvram access?
 				nvram[(addr & 0x7f) - 0x20] = inbyte;
-#ifdef TRACE_RTC
-				printf("nvram write %x %x\n", (addr & 0x7f) - 0x20, inbyte);
-#endif
-			}
+			}else{
+        regs[addr & 0x1f] = inbyte;
+      }
 		} else { //read
 			if (addr >= 0x20) { //nvram access
 				outbyte = nvram[addr - 0x20];
@@ -136,12 +152,15 @@ uint8_t spi_rtc_handle(uint8_t inbyte) {
 				case RTC_YEAR:
 					outbyte = toBCD(timestamp->tm_year - 100);
 					break;
+        default:
+          outbyte = regs[addr & 0x1f] ;
+          break;
 				}
 		}
+    addr++;
 #ifdef TRACE_RTC
 		printf("rtc %x %x %x %x\n", inbyte, outbyte, addr, chip_select);
 #endif
-		addr++;
 	}
 
 	return outbyte;

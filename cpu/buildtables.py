@@ -127,7 +127,7 @@ def convertMnemonic(opInfo):
         "imm": "#$%02x",
         "zp": "$%02x",
         "rel": "$%02x",
-        "zprel": "$%02x,$%02x",
+        "zprel": "$%02x",
         "zpx": "$%02x,x",
         "zpy": "$%02x,y",
         "abso": "$%04x",

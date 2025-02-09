@@ -8,7 +8,9 @@
 #include <stdint.h>
 #include <SDL.h>
 
-void spi_init();
+// TODO FIXME dedicated keyboard code, rm from spi
+void keyboardInit();
+
 void spi_step();
 
 // TODO FIXME design

@@ -20,10 +20,14 @@
 	#define DEBUG(...)
 #endif
 
-#define EMU_FREQUENCY 3579545
-// #define EMU_FREQUENCY 8000000
-
 extern bool isDebuggerEnabled;
+extern bool log_ctrl_port_writes;
+extern bool log_uart_writes;
+extern bool log_via_writes;
+extern bool log_vdp_writes;
+extern bool log_opl_writes;
+extern bool log_rom_writes;
+
 
 void emulatorStart(const char *stateName);
 
@@ -48,6 +52,11 @@ typedef enum {
 	RECORD_GIF_ACTIVE
 } gif_recorder_state_t;
 
+typedef struct {
+  uint16_t address;
+  uint16_t size;
+  uint8_t *image;
+} RomImage;
 
 void actionEmuTogglePause();
 void actionEmuStepBack();

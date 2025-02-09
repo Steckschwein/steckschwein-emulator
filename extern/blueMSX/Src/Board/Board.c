@@ -33,6 +33,7 @@
 #include "Coleco.h"
 #include "Adam.h"
 */
+#include "Steckschwein.h"
 #include "AudioMixer.h"
 /*
 #include "YM2413.h"
@@ -59,6 +60,8 @@
 
 static int skipSync;
 static int pendingInt;
+static int pendingNmi;
+
 static Mixer* boardMixer = NULL;
 static int (*syncToRealClock)(int, int) = NULL;
 
@@ -75,7 +78,6 @@ static BoardTimer* mixerTimer;
 static BoardTimer* stateTimer;
 static BoardTimer* breakpointTimer;
 
-//static BoardInfo boardInfo;
 static UInt32 boardRamSize;
 static UInt32 boardVramSize;
 static int boardRunning = 0;
@@ -480,6 +482,22 @@ int boardGetRefreshRate()
     return 0;
 }
 
+void   boardSetNmi(UInt32 nmi){
+    pendingNmi |= nmi;
+    boardInfo.setNmi(boardInfo.cpuRef);
+}
+
+void   boardClearNmi(UInt32 nmi){
+    pendingNmi &= ~nmi;
+    if (pendingNmi == 0) {
+        boardInfo.clearNmi(boardInfo.cpuRef);
+    }
+}
+
+UInt32 boardGetNmi(UInt32 nmi){
+ return pendingNmi & nmi;
+}
+
 void boardSetInt(UInt32 irq)
 {
     pendingInt |= irq;
@@ -693,7 +711,7 @@ UInt64 boardSystemTime64() {
 void boardInit(UInt32* systemTime)
 {
     static BoardTimer dummy_timer;
-	 boardSysTime = systemTime;
+    boardSysTime = systemTime;
     oldTime = *systemTime;
     boardSysTime64 = oldTime * HIRES_CYCLES_PER_LORES_CYCLE;
 
@@ -711,11 +729,12 @@ void boardInit(UInt32* systemTime)
     }
 }
 
-int boardRun(Mixer* mixer,
-              int frequency,
-              int reversePeriod,
-              int reverseBufferCnt,
-              int (*syncCallback)(int, int))
+int boardRun(Machine* machine,
+            Mixer* mixer,
+            int frequency,
+            int reversePeriod,
+            int reverseBufferCnt,
+            int (*syncCallback)(int, int))
 {
     int loadState = 0;
     int success = 1;
@@ -734,12 +753,13 @@ int boardRun(Mixer* mixer,
 
     boardSetFrequency(frequency);
 
-    boardRunning = 1;
     memset(&boardInfo, 0, sizeof(boardInfo));
+
+    boardRunning = 1;
 
     VdpSyncMode vdpSyncMode = VDP_SYNC_AUTO;
 
-    success = steckSchweinCreate(vdpSyncMode, &boardInfo);
+    success = steckSchweinCreate(machine, vdpSyncMode, &boardInfo);
 
     boardCaptureInit();
 
@@ -824,6 +844,11 @@ const char* boardGetBaseDirectory() {
 Mixer* boardGetMixer()
 {
     return boardMixer;
+}
+
+void boardSetMachine(Machine* machine)
+{
+
 }
 
 void boardReset()

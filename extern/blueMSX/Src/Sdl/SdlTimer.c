@@ -34,7 +34,7 @@
 // Timer callbacks are not needed. When disabled, there is no need for
 // archEvents either.
 
-void* archCreateTimer(int period, int (*timerCallback)(void*)) { return NULL; }
+void* archCreateTimer(int intervalMillis, int (*timerCallback)(void*)) { return NULL; }
 void archTimerDestroy(void* timer) {}
 
 
@@ -71,15 +71,15 @@ Uint32 timerCalback(Uint32 interval)
     return interval;
 }
 
-void* archCreateTimer(int period, int (*timerCallback)(void*))
+void* archCreateTimer(int intervalMillis, int (*timerCallback)(void*))
 {
-    timerFreq = 1000 / period;
+    timerFreq = 1000 / intervalMillis;
     lastTimeout = archGetSystemUpTime(timerFreq);
     timerCb  = timerCallback;
 
-    SDL_SetTimer(period, timerCalback);
+    SDL_TimerID *timerId = SDL_AddTimer(intervalMillis, timerCalback, NULL);
 
-    return timerCallback;
+    return timerId;
 }
 
 void archTimerDestroy(void* timer)
@@ -88,7 +88,7 @@ void archTimerDestroy(void* timer)
         return;
     }
 
-    SDL_SetTimer(0, NULL);
+    SDL_RemoveTimer(timer);
     timerCb = NULL;
 }
 
