@@ -28,11 +28,10 @@ $ cat /tmp/ssw_emu_uart0 & # im emu mit open("/tmp/ssw...
 # emulator device
 $ echo "Hallo Thomas... some serial" > /tmp/ssw_uart0
 Hallo Thomas... some serial
-
 */
 
 void loadFile();
-void reset_upload() ;
+void reset_upload();
 
 static uint8_t uartregisters[16];
 
@@ -247,6 +246,7 @@ void readProgram(int prg_override_start, FILE *prg_file) {
 			free(p_prg_img);
 			p_prg_img = NULL;
 		}
+		bytes_available = 2;
 	}
 }
 
@@ -296,7 +296,12 @@ void reset_upload() {
 	}
 }
 
+int uart_create(uint16_t ioPort){
+
+}
+
 void uart_init(unsigned char *p_prg_path, int p_prg_override_start, bool checkLmf) {
+  uart_create(0x220);
 	prg_path = p_prg_path;
 	prg_override_start = p_prg_override_start;
 	uart_checkUploadLmf = checkLmf;

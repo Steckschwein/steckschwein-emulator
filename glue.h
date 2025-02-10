@@ -5,8 +5,12 @@
 #ifndef _GLUE_H_
 #define _GLUE_H_
 
+#include <uart.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+
+#define NANOSECONDS_PER_SECOND 1000000000LL
 
 #define WARN(...) fprintf(stderr, __VA_ARGS__)
 
@@ -56,6 +60,11 @@ typedef struct {
 
 void actionEmuTogglePause();
 void actionEmuStepBack();
+int updateEmuDisplay(int updateAll);
+int emulatorSyncScreen();
+
+extern UartIO* uartIo0x200;
+extern UartIO* uartIo0x250;
 
 extern uint8_t a, x, y, sp, status;
 extern uint16_t pc;
@@ -72,8 +81,7 @@ extern char *gif_path;
 extern uint8_t keymap;
 
 extern void machine_dump();
-extern void machine_reset(int prg_override_start);
+extern void machine_reset();
 extern void machine_paste();
-extern void init_audio();
 
 #endif

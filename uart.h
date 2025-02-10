@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "char-io.h"
+
 #define UART_REG_IER 0
 #define UART_REG_RXTX 0
 #define UART_REG_LSR 5
@@ -16,9 +18,26 @@
 #define lsr_DR 		1<<0 // data ready
 #define lsr_THRE 	1<<5 // transmitter holding register
 
-void uart_init(unsigned char *prg_path, int prg_override_start, bool checkLastModified);
+typedef enum {UART_NONE, UART_FILE, UART_HOST } UartType;
 
-uint8_t uart_read(uint8_t reg);
-void uart_write(uint8_t reg, uint8_t value);
+typedef struct{
+
+    Chardev chr;
+
+    UartType type;
+    int  uartReady;
+
+    char* device_link;
+    void* device;
+
+    void (*recvCallback)(void* device, uint8_t* buf, int size);
+    void *thread;
+
+} UartIO;
+
+UartIO* uart_create(uint16_t ioPort, void *recvCallback);
+void uart_destroy(UartIO* uart);
+
+void uart_step(UartIO* uart);
 
 #endif

@@ -1,3 +1,4 @@
+#include "glue.h"^M
 /* Fake6502 CPU emulator core v1.1 *******************
  * (c)2011 Mike Chambers (miker00lz@gmail.com)       *
  *****************************************************

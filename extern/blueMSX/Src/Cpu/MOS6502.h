@@ -3,7 +3,7 @@
 #include "MsxTypes.h"
 #include "MOS6502.h"
 
-#define ENABLE_BREAKPOINTS
+// #define ENABLE_BREAKPOINTS
 
 #define CPU_FREQUENCY
 

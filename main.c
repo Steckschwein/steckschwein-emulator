@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <limits.h>
+#include <math.h>
 
 #include <errno.h>
 
@@ -24,7 +25,6 @@
 #include "disasm.h"
 #include "memory.h"
 #include "via.h"
-#include "uart.h"
 #include "spi.h"
 #include "sdcard.h"
 #include "ds1306.h"
@@ -98,7 +98,7 @@ uint16_t trace_address = 0;
 #endif
 
 
-extern unsigned char *prg_path; //extern - also used in uart
+unsigned char *prg_path; //extern - also used in uart
 
 bool checkUploadLmf = false; //check lmf of the upload file, if not changed no recurring uploads
 bool run_after_load = false;
@@ -217,7 +217,7 @@ void machine_dump() {
 
 void machine_reset(int prg_override_start) {
   spi_rtc_reset();
-  uart_init(prg_path, prg_override_start, checkUploadLmf);
+  //uart_init(prg_path, prg_override_start, checkUploadLmf);
   via1_reset();
 }
 
@@ -327,15 +327,15 @@ void archVideoOutputChange() {
 void archEmulationStopNotification() {
   DEBUG("archEmulationStopNotification\n");
 #ifdef RUN_EMU_ONCE_ONLY
-    doQuit = 1;
 #endif
+  doQuit = 1;
 }
 
 void archEmulationStartFailure() {
   DEBUG("archEmulationStartFailure\n");
 #ifdef RUN_EMU_ONCE_ONLY
-    doQuit = 1;
 #endif
+  doQuit = 1;
 }
 
 int archUpdateEmuDisplay(int syncMode) {
@@ -668,19 +668,19 @@ static int WaitForSync(int maxSpeed, int breakpointHit) {
     while ((!emuExitFlag && emuState != EMU_RUNNING) || overflowCount > 0) {
       archEventWait(emuSyncEvent, -1);
 #ifdef NO_TIMERS
-            while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
+        while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
 #endif
       overflowCount--;
     }
   } else {
     do {
 #ifdef NO_TIMERS
-            while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
+      while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
 #endif
       archEventWait(emuSyncEvent, -1);
       if (((emuMaxSpeed || emuMaxEmuSpeed) && !emuExitFlag) || overflowCount > 0) {
 #ifdef NO_TIMERS
-                while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
+        while (timerCallback(NULL) == 0) emuExitFlag |= archPollEvent();
 #endif
         archEventWait(emuSyncEvent, -1);
       }
@@ -866,15 +866,6 @@ int isEmuSingleStep() {
   return emuSingleStep;
 }
 
-void emulatorResume() {
-  if (emuState == EMU_SUSPENDED) {
-    emuSysTime = 0;
-
-    emuState = EMU_RUNNING;
-    archUpdateEmuDisplay(0);
-  }
-}
-
 void emulatorSetState(EmuState state) {
   if (state == EMU_RUNNING) {
     archSoundResume();
@@ -893,6 +884,15 @@ void emulatorSetState(EmuState state) {
     }
   }
   emuState = state;
+}
+
+void emulatorResume() {
+	if (emuState == EMU_SUSPENDED) {
+		emuSysTime = 0;
+
+		emuState = EMU_RUNNING;
+		archUpdateEmuDisplay(0);
+	}
 }
 
 void emulatorStart(const char *stateName) {
