@@ -31,7 +31,7 @@ Hallo Thomas... some serial
 */
 
 void loadFile();
-void reset_upload() ;
+void reset_upload();
 
 static uint8_t uartregisters[16];
 
@@ -247,15 +247,6 @@ void readProgram(int prg_override_start, FILE *prg_file) {
 			p_prg_img = NULL;
 		}
 		bytes_available = 2;
-	}
-}
-
-void reset_upload() {
-	upload_protocol_ix = 0;
-	if (p_prg_img != NULL) {
-		free(p_prg_img); //free
-		p_prg_img = NULL;
-		p_prg_img_ix = NULL;
 	}
 }
 

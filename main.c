@@ -217,7 +217,7 @@ void machine_dump() {
 
 void machine_reset(int prg_override_start) {
   spi_rtc_reset();
-  uart_init(prg_path, prg_override_start, checkUploadLmf);
+  //uart_init(prg_path, prg_override_start, checkUploadLmf);
   via1_reset();
 }
 
@@ -864,15 +864,6 @@ EmuState emulatorGetState() {
 
 int isEmuSingleStep() {
   return emuSingleStep;
-}
-
-void emulatorResume() {
-  if (emuState == EMU_SUSPENDED) {
-    emuSysTime = 0;
-
-    emuState = EMU_RUNNING;
-    archUpdateEmuDisplay(0);
-  }
 }
 
 void emulatorSetState(EmuState state) {

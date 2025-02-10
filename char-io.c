@@ -101,7 +101,8 @@ static void tty_serial_init(int fd, int speed,
                      | INLCR | IGNCR | ICRNL | IXON);
     tty.c_oflag &= ~OPOST;
     tty.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN | ISIG);
-    tty.c_cflag &= ~(CSIZE | PARENB | PARODD | CRTSCTS | CSTOPB);
+    //tty.c_cflag &= ~(CSIZE | PARENB | PARODD | CRTSCTS | CSTOPB);
+    tty.c_cflag &= ~(CSIZE | PARENB | PARODD | CSTOPB); // TODO FIXME
     switch (data_bits) {
     default:
     case 8:
