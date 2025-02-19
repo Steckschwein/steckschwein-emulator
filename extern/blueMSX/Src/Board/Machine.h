@@ -5,11 +5,27 @@
 #include "glue.h"
 
 typedef enum {
-    BOARD_UNKNOWN       = -1,
-    BOARD_1_0           = 0x0100 + 0x00,
-    BOARD_2_0           = 0x0200 + 0x00,
-    BOARD_MASK          = 0xff00
+    BOARD_UNKNOWN           = -1,
+    BOARD_1_0               = 0x0100 + 0x00,
+    BOARD_2_0               = 0x0200 + 0x00,
+    BOARD_STECKSCHWEIN      = 0x0300,     // 6502 / TMS9918 / 64k Ram
+    BOARD_STECKSCHWEIN_2_0  = 0x0400,     // 6502 / V9958 / 64/512k RAM
+    BOARD_JC                = 0x0500, // junior computer
+    BOARD_JC_2              = 0x0600, // junior computer ][
+    BOARD_MASK              = 0xff00
 } BoardType;
+
+
+typedef struct {
+//    RomType romType;
+    char name[512];
+    char inZipName[128];
+    char *romPath;
+    int slot;
+    int address;
+    int size;
+    int error;
+} SlotInfo;
 
 typedef struct {
     char name[64];
@@ -31,6 +47,9 @@ typedef struct {
 
     int isZipped;
     char *zipFile;
+
+    int slotInfoCount;
+    SlotInfo slotInfo[8];
 
     RomImage *romImage;
 

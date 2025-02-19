@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-//#include "IniFileParser.h"
+#include "IniFileParser.h"
 //#include "StrcmpNoCase.h"
 #include "Properties.h"
 //#include "Machine.h"
@@ -164,6 +164,21 @@ int stringToEnum(ValueNamePair* pair, const char* name)
     return -1;
 }
 */
+#define ROOT_ELEMENT "config"
+
+#define GET_STR_VALUE_2(ini, v1,v2)       iniFileGetString(ini, ROOT_ELEMENT, #v1 "." #v2, properties->v1.v2, properties->v1.v2, sizeof(properties->v1.v2));
+#define GET_BOARD_TYPE(ini, v1,v2)        iniFileGetString(ini, "Board", "type", properties->v1.v2, properties->v1.v2, sizeof(properties->v1.v2));
+
+static void propLoad(Properties* properties){
+
+    sprintf(settFilename, "%s/.sw/config.ini", getenv("HOME"));
+
+    IniFile *propFile = iniFileOpen(settFilename);
+
+    GET_BOARD_TYPE(propFile, emulation, machineName);
+
+    iniFileClose(propFile);
+}
 
 /* Default property settings */
 void propInitDefaults(Properties* properties, int langType, int syncMode, const char* themeName)
@@ -185,7 +200,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
 */
     properties->emulation.statsDefDir[0]     = 0;
     properties->emulation.shortcutProfile[0] = 0;
-    strcpy(properties->emulation.machineName, "Steckschwein");
+    strcpy(properties->emulation.machineName, "6502msx");
     properties->emulation.speed             = 50;//fps
     properties->emulation.syncMethod        = syncMode ? syncMode : P_EMU_SYNCAUTO;
     properties->emulation.syncMethodGdi     = P_EMU_SYNCAUTO;
@@ -293,7 +308,7 @@ void propInitDefaults(Properties* properties, int langType, int syncMode, const 
     properties->sound.mixerChannel[MIXER_CHANNEL_PCM].pan = 50;
     properties->sound.mixerChannel[MIXER_CHANNEL_PCM].volume = 95;
 
-    properties->sound.mixerChannel[MIXER_CHANNEL_IO].enable = 0;
+    properties->sound.mixerChannel[MIXER_CHANNEL_IO].enable = 1;
     properties->sound.mixerChannel[MIXER_CHANNEL_IO].pan = 70;
     properties->sound.mixerChannel[MIXER_CHANNEL_IO].volume = 50;
 
@@ -451,7 +466,7 @@ Properties* propCreate(int useDefault, int langType, int syncMode, const char* t
     propInitDefaults(properties, langType, syncMode, themeName);
 
     if (!useDefault) {
-//        propLoad(properties);
+      propLoad(properties);
     }
 	 /*
 #ifndef WII

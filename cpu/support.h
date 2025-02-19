@@ -3,6 +3,7 @@
 						Extracted from original single fake6502.c file
 
 */
+#include "Board.h"
 
 #define saveaccum(n) a = (uint8_t)((n) & 0x00FF)
 
@@ -20,7 +21,6 @@
 #define clearoverflow() status &= (~FLAG_OVERFLOW)
 #define setsign() status |= FLAG_SIGN
 #define clearsign() status &= (~FLAG_SIGN)
-
 
 //flag calculation macros
 #define zerocalc(n) {\

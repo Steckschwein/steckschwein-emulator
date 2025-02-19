@@ -15,6 +15,7 @@
 #include <SDL.h>
 
 extern int showDebugOnRender;
+extern UInt16 breakPoint;
 
 void DEBUGRenderDisplay(int width,int height);
 void DEBUGBreakToDebugger(void);
@@ -32,9 +33,5 @@ void DEBUGFreeUI();
 #define DBG_DATX		(34)									// Debug data starts here.
 #define DBG_STCK		(40)									// Debug stack starts here.
 #define DBG_MEMX 		(4)										// Memory Display starts here
-
-#define DMODE_STOP 		(0)										// Debugger is waiting for action.
-#define DMODE_STEP 		(1)										// Debugger is doing a single step
-#define DMODE_RUN 		(2)										// Debugger is running normally.
 
 #endif

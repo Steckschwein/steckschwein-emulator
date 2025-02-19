@@ -168,7 +168,7 @@ void spi_handle_keyevent(SDL_KeyboardEvent *keyBrdEvent) {
 
 }
 
-void dispatch_device(uint8_t port) {
+void dispatch_device(DS130x *device, uint8_t port) {
 	bool clk = port & 1;
 
 	bool is_sdcard = !((port >> 1) & 1);
@@ -248,16 +248,9 @@ void dispatch_device(uint8_t port) {
 	} else if (is_keyboard) {
 		outbyte = spi_handle_keyboard(inbyte);
 	} else if (is_rtc) {
-		outbyte = spi_rtc_handle(inbyte);
+		outbyte = spi_rtc_handle(device, inbyte);
 	}
 
 	// send byte
 	via1_sr_set(outbyte);
-}
-
-void spi_step() {
-
-	uint8_t port = via1_pb_get_out();	//PB
-
-	dispatch_device(port);
 }

@@ -1,91 +1,20 @@
-#include <inttypes.h>
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <dirent.h>
-#include <errno.h>
 #include "ds1306.h"
-#include "glue.h"
 
-static const char *SW_DIR = ".sw";
-static const char *SW_NVRAM = "nvram.dat";
-static struct tm *timestamp;
 static bool chip_select = false;
-static uint8_t nvram[96] = { 0x42, 'L', 'O', 'A', 'D', 'E', 'R', ' ', ' ', 'B', 'I', 'N', 1, 3, 0x37 };
 
-static uint8_t regs[0x20];
 
-int _1HzTimeHanler(void* timer) {
-  sprintf(stderr, ".");
-
-  return 20;//continue
+void ds1306Reset(DS130x *device) {
+  ds130xReset(device);
 }
 
-char* swHomeDir(char *swDir) {
-  #if __MINGW32_NO__
-		snprintf(swDir, FILENAME_MAX, "%s%s/%s", getenv("HOMEDRIVE"), getenv("HOME"), SW_DIR);
-	#else
-	  snprintf(swDir, FILENAME_MAX, "%s/%s", getenv("HOME"), SW_DIR);
-  #endif
-
-	DIR *dir = opendir(swDir);
-	if (dir == NULL || errno == ENOENT) {
-		#if defined(_WIN32)
-		dir = _mkdir(swDir);
-		#else
-		dir = mkdir(swDir, 0755);
-		#endif
-	}
-	if (closedir(dir)) {
-		fprintf(stderr, "error close dir %s\n", strerror(errno));
-    return NULL;
-	}
-  return swDir;
+void ds1306Destroy(DS130x *device) {
+  ds130xDestroy(device);
 }
 
-char* nvramFilePath(char *nvramFile) {
-	char swDir[FILENAME_MAX];
-	char *homeDirStr = swHomeDir(&swDir);
-  if(homeDirStr == NULL)
-    return NULL;
-	snprintf(nvramFile, FILENAME_MAX, "%s/%s", homeDirStr, SW_NVRAM);
-	return nvramFile;
+static UInt8 toBCD(UInt8 v) {
+	return (v / 10) << 4 | (v % 10);
 }
 
-void spi_rtc_reset() {
-
-	char nvramFile[FILENAME_MAX];
-	char *nvramFileStr = nvramFilePath(&nvramFile);
-  if(nvramFileStr != NULL){
-  	FILE *f = fopen(nvramFileStr, "rb");
-    if (f != NULL) {
-      size_t r = fread(nvram, 1, sizeof(nvram), f);
-      if (ferror(f) || r != sizeof(nvram)) {
-        fprintf(stderr, "error read nvram state %s\n", strerror(errno));
-      }
-      fclose(f);
-    }
-  }
-  regs[RTC_CONTROL] = 1<<6; //set WP (write protect enabled after reset)
-}
-
-void spi_rtc_destroy() {
-
-	char nvramFile[FILENAME_MAX];
-	char *nvramFileStr = nvramFilePath(&nvramFile);
-  if(nvramFileStr != NULL){
-    FILE *f = fopen(nvramFileStr, "wb");
-    if (f != NULL) {
-      size_t r = fwrite(nvram, 1, sizeof(nvram), f);
-      if (ferror(f)) {
-        fprintf(stderr, "error fwrite %s\n", strerror(errno));
-      }
-      fclose(f);
-    }
-  }
-}
 
 void spi_rtc_deselect() { // chip select /CE high
 	chip_select = false;
@@ -94,24 +23,20 @@ void spi_rtc_deselect() { // chip select /CE high
 #endif
 }
 
-void spi_rtc_select() {
+void spi_rtc_select(DS130x *device) {
 	time_t ts = time(NULL);
-	timestamp = localtime(&ts); //update timestamp with systime
+	device->timestamp = localtime(&ts); //update timestamp with systime
 #ifdef TRACE_RTC
 	printf("rtc select() %s\n", asctime(timestamp));
 #endif
 	chip_select = false;
 }
 
-uint8_t toBCD(uint8_t v) {
-	return (v / 10) << 4 | (v % 10);
-}
+UInt8 spi_rtc_handle(DS130x *device, UInt8 inbyte) {
 
-uint8_t spi_rtc_handle(uint8_t inbyte) {
+	UInt8 outbyte = 0xff;
 
-	uint8_t outbyte = 0xff;
-
-	static uint8_t addr = 0;
+	static UInt8 addr = 0;
 
 	if (!chip_select) {
 		addr = inbyte;
@@ -120,40 +45,40 @@ uint8_t spi_rtc_handle(uint8_t inbyte) {
 #ifdef TRACE_RTC
     printf("RTC access %x %x\n", (addr & 0x7f) - 0x20, inbyte);
 #endif
-		if (addr & 0x80 && ((addr & 0x1f) == RTC_CONTROL || (regs[RTC_CONTROL] & 0x40) == 0)) { //write, if WP = 0
+		if (addr & 0x80 && ((addr & 0x1f) == RTC_CONTROL || (device->regs[RTC_CONTROL] & 0x40) == 0)) { //write, if WP = 0
 			if ((addr & 0x7f) >= 0x20) { //nvram access?
-				nvram[(addr & 0x7f) - 0x20] = inbyte;
+				device->nvram[(addr & 0x7f) - 0x20] = inbyte;
 			}else{
-        regs[addr & 0x1f] = inbyte;
+        device->regs[addr & 0x1f] = inbyte;
       }
 		} else { //read
 			if (addr >= 0x20) { //nvram access
-				outbyte = nvram[addr - 0x20];
+				outbyte = device->nvram[addr - 0x20];
 			} else
 				switch (addr) {
 				case RTC_SECONDS:
-					outbyte = toBCD(timestamp->tm_sec);
+					outbyte = toBCD(device->timestamp->tm_sec);
 					break;
 				case RTC_MINUTES:
-					outbyte = toBCD(timestamp->tm_min);
+					outbyte = toBCD(device->timestamp->tm_min);
 					break;
 				case RTC_HOURS:
-					outbyte = toBCD(timestamp->tm_hour);
+					outbyte = toBCD(device->timestamp->tm_hour);
 					break;
 				case RTC_DAY_OF_WEEK:
-					outbyte = toBCD(timestamp->tm_wday);
+					outbyte = toBCD(device->timestamp->tm_wday);
 					break;
 				case RTC_DATE_OF_MONTH:
-					outbyte = toBCD(timestamp->tm_mday);
+					outbyte = toBCD(device->timestamp->tm_mday);
 					break;
 				case RTC_MONTH:
-					outbyte = toBCD(timestamp->tm_mon) + 1;
+					outbyte = toBCD(device->timestamp->tm_mon) + 1;
 					break;
 				case RTC_YEAR:
-					outbyte = toBCD(timestamp->tm_year - 100);
+					outbyte = toBCD(device->timestamp->tm_year - 100);
 					break;
         default:
-          outbyte = regs[addr & 0x1f] ;
+          outbyte = device->regs[addr & 0x1f] ;
           break;
 				}
 		}

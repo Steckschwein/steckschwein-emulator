@@ -34,7 +34,10 @@
 #include "VDP.h"
 #include "AudioMixer.h"
 #include "glue.h"
+#include "MOS6502.h"
 #include <stdio.h>
+
+extern MOS6502* mos6502;
 
 #define NMI 0x1
 

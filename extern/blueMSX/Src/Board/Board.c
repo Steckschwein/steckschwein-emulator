@@ -34,7 +34,10 @@
 #include "Adam.h"
 */
 #include "Steckschwein.h"
+#include "JuniorComputer.h"
+#include "EmulatorDebugger.h"
 #include "AudioMixer.h"
+#include "MOS6502.h"
 /*
 #include "YM2413.h"
 #include "Y8950.h"
@@ -54,6 +57,8 @@
 #include "RomLoader.h"
 #include "JoystickPort.h"
 */
+#include "Machine.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -61,6 +66,7 @@
 static int skipSync;
 static int pendingInt;
 static int pendingNmi;
+static int boardType;
 
 static Mixer* boardMixer = NULL;
 static int (*syncToRealClock)(int, int) = NULL;
@@ -100,6 +106,8 @@ static UInt32       periodicInterval;
 static BoardTimer*  periodicTimer;
 
 void boardTimerCleanup();
+
+MOS6502* mos6502;
 
 //extern void PatchReset(BoardType boardType);
 
@@ -463,12 +471,12 @@ int boardGetRefreshRate()
     return 0;
 }
 
-void   boardSetNmi(UInt32 nmi){
+void boardSetNmi(UInt32 nmi){
     pendingNmi |= nmi;
     boardInfo.setNmi(boardInfo.cpuRef);
 }
 
-void   boardClearNmi(UInt32 nmi){
+void boardClearNmi(UInt32 nmi){
     pendingNmi &= ~nmi;
     if (pendingNmi == 0) {
         boardInfo.clearNmi(boardInfo.cpuRef);
@@ -725,8 +733,8 @@ int boardRun(Machine* machine,
 
     boardMixer = mixer;
 
-//    boardType = machine->board.type;
-   // PatchReset(boardType);
+    boardType = machine->board.type;
+    //PatchReset(boardType);
 
     pendingInt = 0;
 
@@ -737,8 +745,19 @@ int boardRun(Machine* machine,
     boardRunning = 1;
 
     VdpSyncMode vdpSyncMode = VDP_SYNC_AUTO;
+    switch (boardType) {
+      case BOARD_STECKSCHWEIN:
+      case BOARD_STECKSCHWEIN_2_0:
+        success = steckSchweinCreate(machine, vdpSyncMode, &boardInfo);
+        break;
+      case BOARD_JC:
+        success = juniorComputerCreate(machine, vdpSyncMode, &boardInfo);
+        break;
+     default:
+        success = 0;
+    }
 
-    success = steckSchweinCreate(machine, vdpSyncMode, &boardInfo);
+    boardSetBreakpoint(breakPoint);//set the break point from program args if any
 
     boardCaptureInit();
 

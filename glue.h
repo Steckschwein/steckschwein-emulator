@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #define WARN(...) fprintf(stderr, __VA_ARGS__)
 
@@ -24,8 +25,10 @@ extern bool log_vdp_writes;
 extern bool log_opl_writes;
 extern bool log_rom_writes;
 
-
-void emulatorStart(const char *stateName);
+typedef struct {
+  uint16_t address; // target address
+  char *romPath;
+} RomImage;
 
 typedef enum {
 	ECHO_MODE_NONE,
@@ -48,19 +51,12 @@ typedef enum {
 	RECORD_GIF_ACTIVE
 } gif_recorder_state_t;
 
-typedef struct {
-  uint16_t address;
-  uint16_t size;
-  uint8_t *image;
-} RomImage;
-
+void emulatorStart(const char *stateName);
 void actionEmuTogglePause();
 void actionEmuStepBack();
 
 extern uint8_t a, x, y, sp, status;
 extern uint16_t pc;
-extern uint8_t* ram;
-extern uint8_t* rom;
 
 extern bool isDebuggerEnabled;
 extern bool log_video;

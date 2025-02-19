@@ -21,16 +21,18 @@ CFLAGS   = -w -O3 -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Wer
 
 # development flags (debugger support)
 CFLAGS   = -g -w -DLSB_FIRST -DNO_FILE_HISTORY -DNO_EMBEDDED_SAMPLES -Wall -Werror
-# CFLAGS   +=-DDEBUG_ENABLED
+#CFLAGS   +=-DDEBUG_ENABLED
 # Videorenderer.c segfault inline asm, we disable it entirely
 CFLAGS   +=-DNO_ASM
 
-#CFLAGS   += -DSINGLE_THREADED
-#CFLAGS   += -DNO_TIMERS
-CFLAGS   += -DNO_HIRES_TIMERS
-#CFLAGS   += -DTRACE
-#CFLAGS   += -DEMU_AVR_KEYBOARD_IRQ
-#CFLAGS   += -DTRACE_RTC
+CFLAGS+=-DRUN_EMU_ONCE_ONLY
+#CFLAGS+=-DSINGLE_THREADED
+#CFLAGS+=-DNO_TIMERS
+CFLAGS +=-DNO_HIRES_TIMERS
+#CFLAGS+=-DTRACE
+#CFLAGS+=-DEMU_AVR_KEYBOARD_IRQ
+#CFLAGS+=-DTRACE_RTC
+CFLAGS+=-DENABLE_BREAKPOINTS
 
 # ym3812 opl sound
 CFLAGS +=-DBUILD_YM3812
@@ -68,8 +70,8 @@ ifdef CROSS_COMPILE_WINDOWS
 	CFLAGS+=-Wno-error=deprecated-declarations
 #	CFLAGS+=-Wno-error=incompatible-pointer-types
 	CFLAGS+=-Wno-error=maybe-uninitialized
-#	CFLAGS+=-DENABLE_VRAM_DECAY \
-	CFLAGS+=-D_REENTRANT
+#	CFLAGS+=-DENABLE_VRAM_DECAY
+#	CFLAGS+=-D_REENTRANT
 else
 	CFLAGS+=-std=c99
 endif
@@ -85,7 +87,7 @@ ifeq ($(CROSS_COMPILE_WINDOWS),1)
 endif
 
 LIBS     = -linih
-TARGET   = steckschwein-emu
+TARGET   = 6502msx-emu
 
 SRCS        = $(SOURCE_FILES)
 OBJS        = $(patsubst %.rc,%.res,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cc,%.o,$(patsubst %.c,%.o,$(filter %.c %.cc %.cpp %.cxx %.rc,$(SRCS)))))))
@@ -94,7 +96,7 @@ OUTPUT_OBJS = $(addprefix $(OUTPUT_DIR)/, $(OBJS))
 ifdef EMSCRIPTEN
 	SOURCE_FILES += javascript_interface.c
 
-	LDFLAGS+=--shell-file webassembly/steckschwein-emu-template.html
+	LDFLAGS+=--shell-file webassembly/6502-emu-template.html
 	LDFLAGS+=--preload-file rom.bin
 #	LDFLAGS+=-s ASYNCIFY
 	LDFLAGS+=-s TOTAL_MEMORY=64MB
@@ -109,7 +111,7 @@ ifdef EMSCRIPTEN
 #	LDFLAGS+=-s ERROR_ON_UNDEFINED_SYMBOLS=0
 #	LDFLAGS+=-s WASM=0
 
-	TARGET=steckschwein-emu.html
+	TARGET=6502msx-emu.html
 endif
 
 ifneq ("$(wildcard ./rom_labels.h)","")
@@ -142,11 +144,13 @@ CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Common
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Cpu
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Debugger
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Emulator
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Io
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Memory
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Sdl
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/SoundChips
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/VideoChips
 CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/VideoRender
+CFLAGS += -I$(EXTERN_BLUEMSX_DIR)/Src/Utils
 
 #vpath % $(ROOT_DIR)
 vpath % $(ROOT_DIR)/cpu
@@ -157,11 +161,13 @@ vpath % $(EXTERN_BLUEMSX_DIR)/Src/Common
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Cpu
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Debugger
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Emulator
+vpath % $(EXTERN_BLUEMSX_DIR)/Src/Io
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Memory
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/Sdl
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/SoundChips
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/VideoChips
 vpath % $(EXTERN_BLUEMSX_DIR)/Src/VideoRender
+vpath % $(EXTERN_BLUEMSX_DIR)/Src/Utils
 
 #
 # Source files
@@ -170,7 +176,8 @@ SOURCE_FILES += EmulatorDebugger.c
 SOURCE_FILES += rendertext.c
 SOURCE_FILES += disasm.c
 SOURCE_FILES += main.c
-SOURCE_FILES += memory.c
+SOURCE_FILES += memorySteckschwein.c
+SOURCE_FILES += memoryJuniorComputer.c
 SOURCE_FILES += ym3812.c
 SOURCE_FILES += sdcard.c
 SOURCE_FILES += spi.c
@@ -178,11 +185,20 @@ SOURCE_FILES += uart.c
 SOURCE_FILES += via.c
 SOURCE_FILES += joystick.c
 
-# rtc sound
+# rtc
+SOURCE_FILES += ds130x.c
 SOURCE_FILES += ds1306.c
+SOURCE_FILES += ds1307.c
 
 # cpu 65x02
 SOURCE_FILES += fake6502.c
+
+# custom
+SOURCE_FILES += 6551.c
+SOURCE_FILES += 6551_loopback.c
+SOURCE_FILES += 6551_com.c
+#SOURCE_FILES += 6551_modem.c
+SOURCE_FILES += 8255A.c
 
 # blueMSX Src
 SOURCE_FILES += SdlEvent.c
@@ -199,6 +215,8 @@ SOURCE_FILES += hq3x.c
 SOURCE_FILES += Scalebit.c
 SOURCE_FILES += VideoRender.c
 
+SOURCE_FILES += TokenExtract.c
+
 SOURCE_FILES += Fmopl.c
 SOURCE_FILES += Ymdeltat.c
 SOURCE_FILES += AudioMixer.c
@@ -207,10 +225,19 @@ SOURCE_FILES += Properties.c
 SOURCE_FILES += Board.c
 SOURCE_FILES += Machine.c
 SOURCE_FILES += IoPort.c
+SOURCE_FILES += IniFileParser.c
 SOURCE_FILES += Steckschwein.c
+SOURCE_FILES += JuniorComputer.c
+SOURCE_FILES += jcFloppyGfxCard.c
+SOURCE_FILES += jcIoCard.c
+
 SOURCE_FILES += MOS6502.c
+SOURCE_FILES += MOS6532.c
+SOURCE_FILES += SN76489.c
+SOURCE_FILES += Speaker.c
 SOURCE_FILES += DebugDeviceManager.c
 SOURCE_FILES += Debugger.c
+SOURCE_FILES += MOS6502Debug.c
 
 all: $(OUTPUT_DIR) $(TARGET)
 
@@ -224,17 +251,20 @@ clean_$(TARGET):
 	$(ECHO) Cleaning files ...
 	$(RMDIR) -rf $(OUTPUT_DIR)
 	$(RM) -f $(TARGET)
-	$(RM) -f *.o cpu/*.o extern/src/*.o steckschwein-emu.js steckschwein-emu.wasm steckschwein-emu.data steckschwein-emu.worker.js steckschwein-emu.html steckschwein-emu.html.mem
+	$(RM) -f *.o cpu/*.o extern/src/*.o 6502msx-emu.js 6502msx-emu.wasm 6502msx-emu.data 6502msx-emu.worker.js 6502msx-emu.html 6502msx-emu.html.mem
 	$(RM) -f extern/blueMSX/objs/*.o
 
 cpu/tables.h cpu/mnemonics.h: cpu/buildtables.py cpu/6502.opcodes cpu/65c02.opcodes
 	cd cpu && python buildtables.py
 
 install: all
-	install -s -m 0755 -D $(TARGET) $(DESTDIR)/usr/bin/steckschwein-emu
+	install -s -m 0755 -D $(TARGET) $(DESTDIR)/usr/bin/6502-emu
 
 deb:
 	dpkg-buildpackage
+
+version:
+	echo -n "#define VERSION \"`git log -1 --format="%t (%cd)" --date=format-local:%Y/%m/%d\ %H:%M:%S`\"" > version.h
 
 $(OUTPUT_DIR):
 	$(ECHO) Creating directory $@...
