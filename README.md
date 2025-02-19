@@ -1,7 +1,7 @@
 6502 MSX Emulator
 ======================
 
-This is an 6502 emulator mainly implementated for the 8bit Steckschwein homebrew computer forked from the X16 naked Emulator and adapted to blueMSX. It only depends on SDL2 and therefore can be compiled on all modern operating systems.
+This is an 6502 emulator mainly implementated for the [8bit Steckschwein homebrew computer](https://www.steckschwein.de) forked from the X16 naked Emulator and adapted to blueMSX. It only depends on SDL2 and therefore can be compiled on all modern operating systems.
 
 
 Binaries & Compiling
@@ -9,8 +9,7 @@ Binaries & Compiling
 
 Binary releases for MacOS, Windows and x86_64 Linux are available on the [releases page][releases].
 
-The emulator itself is dependent only on SDL. However, to run the emulated system you will also need a compatible `rom.bin` ROM image. This will be
-loaded from the directory containing the emulator binary, or you can use the `-rom .../path/to/rom.bin` option.
+The emulator itself is dependent only on SDL. However, to run the emulated system you will also need a compatible `rom.bin` ROM image. This will be loaded from the directory containing the emulator binary, or you can use the `-rom /path/to/rom.bin` option.
 
 > __WARNING:__ Older versions of the ROM might not work in newer versions of the emulator, and vice versa.
 
@@ -67,12 +66,12 @@ Run `6502msx-emu -h` to see all command line options.
 
 Configuration File
 ------------------
-One can create a config.ini file with preconfigured emulator setup. e.g.
+With the  config.ini file you can setup various machine types and preconfigure the emulator default start parameters. e.g.
 
 ```ini
 [paths]
-rom    = ~/dev/steckschwein-code/steckos/bios/bios.bin
-sdcard = ~/dev/steckschwein-code/steckos.img
+rom    = <path to rom>/bios.bin
+sdcard = <path to sdcard image>/steckos.img
 
 [display]
 scale=4 # zoom factor
@@ -81,8 +80,15 @@ quality=best  # linear, composite
 [config]
 
 [CPU]
-type=6502 # TODO not supported yet
+type=65c02 # 6502 - TODO not supported yet, default is 65c02
 freq=10000000Hz
+
+[RAM] # TODO not implemented yet
+
+[ROM] # TODO configuration not implemented yet, "hard coded" to ROM type below
+type=AMIC A29040B
+id=0x3786
+size=512kB
 
 [Slots]
 # <address>, <size>, <type>, <params>
@@ -91,11 +97,13 @@ freq=10000000Hz
 # 0x1000 0x400 jcFloppyGfxCard "/path/to/roms/jc/FGC BIOS 0.3 ROM.BIN"
 
 [Video]
-version=V9938 # VDP version - V9938, V9958, TMS9918
-vram size=192kB
+version=V9938     # VDP version - V9938, V9958, TMS9918
+vram size=192kB   # VDP VRam size
 
 [Board]
-type=Steckschwein-2.0 # JuniorComputer ][, tbd.
+type=Steckschwein-2.0
+#type=JuniorComputer ][
+#type=... more may follow
 ```
 
 Keyboard Layout
@@ -222,9 +230,8 @@ Features
 * CPU: Full 6502/65C02 instruction set (improved "fake6502")
 * MSX Video (TMS9929, VDP9938, VDP9958)
 	* Mostly cycle exact emulation
-	* Supports almost all features: composer, two layers, sprites, progressive/interlaced
+	* Supports almost all features: command engine, sprites, progressive/interlaced
 * VIA
-	* ROM/RAM banking
 	* PS/2 keyboard
 	* SD card (SPI)
 	* Game controllers e.g. XBox Controller
@@ -240,13 +247,6 @@ Missing Features
 * VIA
 	* Does not support counters/timers/IRQs
 
-License
--------
-
-Copyright (c) 2019 Michael Steil &lt;mist64@mac.com&gt;, [www.pagetable.com](https://www.pagetable.com/).
-All rights reserved. License: 2-clause BSD
-
-
 Known Issues
 ------------
 - n.a.
@@ -254,6 +254,13 @@ Known Issues
 Release Notes
 -------------
 - n.a.
+
+License
+-------
+
+#### Copyright (c) 2019 Thomas Woinke, Marko Lauke, [www.steckschwein.de](https://www.steckschwein.de) All rights reserved. License: MIT License
+
+#### Copyright (c) 2019 Michael Steil &lt;mist64@mac.com&gt;, [www.pagetable.com](https://www.pagetable.com/). All rights reserved. License: 2-clause BSD
 
 <!-------------------------------------------------------------------->
 [releases]: https://github.com/Steckschwein/steckschwein-emulator/releases
